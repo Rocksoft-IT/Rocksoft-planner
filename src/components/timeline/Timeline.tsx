@@ -14,6 +14,8 @@ import { calcUtilization, getAllocationStyle, hexToRgba, cn } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
+import ProjectFilter from '@/components/ui/ProjectFilter'
+import SkillsFilter from '@/components/ui/SkillsFilter'
 import type { AllocationWithProject, TeamMember, Project, TimeOff } from '@/lib/types'
 import { TIME_OFF_LABELS } from '@/lib/types'
 import AllocationModal from './AllocationModal'
@@ -24,11 +26,11 @@ const DAYS_BEFORE = 180  // 6 miesięcy wstecz
 const DAYS_AFTER  = 548  // ~18 miesięcy do przodu
 
 const LANE_HEIGHT = 28   // px per allocation block
-const LANE_GAP = 4       // px between lanes
-const ROW_PADDING = 8    // px top + bottom
+const LANE_GAP = 2       // px between lanes
+const ROW_PADDING = 4    // px top + bottom
 
 function calcRowHeight(numLanes: number) {
-  return Math.max(56, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
+  return Math.max(44, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
 }
 
 function assignLanes(allocs: AllocationWithProject[]): (AllocationWithProject & { lane: number })[] {
@@ -77,8 +79,9 @@ interface TimelineProps {
 }
 
 export default function Timeline({ people, projects, allocations, timeOffs, onRefresh }: TimelineProps) {
-  const [roleFilter, setRoleFilter] = useState<string | null>(null)
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[]>([])
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
   const [visibleDate, setVisibleDate] = useState(new Date())
 
   // Fixed base date — never changes, whole range rendered once
@@ -148,9 +151,13 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   }
 
   const filteredPeople = people.filter((p) => {
-    const passRole = !roleFilter || p.role.split(',').map((r) => r.trim()).includes(roleFilter)
+    const personRoles = p.role.split(',').map((r) => r.trim())
+    const passRole = selectedRoles.length === 0 || selectedRoles.some((r) => personRoles.includes(r))
     const passPeople = selectedPeopleIds.length === 0 || selectedPeopleIds.includes(p.id)
-    return passRole && passPeople
+    const passProject = selectedProjectIds.length === 0 || allocations.some(
+      (a) => a.person_id === p.id && selectedProjectIds.includes(a.project_id)
+    )
+    return passRole && passPeople && passProject
   })
 
   // Precompute lanes + row heights for each person (allocations + time offs combined)
@@ -237,40 +244,20 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           onChange={setSelectedPeopleIds}
         />
 
-        {/* Role filter */}
-        <div className="flex items-center gap-1 flex-wrap">
-          <button
-            onClick={() => setRoleFilter(null)}
-            className={cn(
-              'px-2.5 py-1 text-xs font-medium rounded-full transition',
-              roleFilter === null
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700'
-            )}
-          >
-            Wszyscy
-          </button>
-          {ROLES.map((role) => {
-            const count = people.filter((p) =>
-              p.role.split(',').map((r) => r.trim()).includes(role)
-            ).length
-            if (count === 0) return null
-            return (
-              <button
-                key={role}
-                onClick={() => setRoleFilter(roleFilter === role ? null : role)}
-                className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-full transition',
-                  roleFilter === role
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700'
-                )}
-              >
-                {role} <span className="opacity-60">({count})</span>
-              </button>
-            )
-          })}
-        </div>
+        <ProjectFilter
+          projects={projects}
+          selected={selectedProjectIds}
+          onChange={setSelectedProjectIds}
+        />
+
+        <SkillsFilter
+          roles={ROLES}
+          selected={selectedRoles}
+          onChange={setSelectedRoles}
+          peopleCounts={Object.fromEntries(
+            ROLES.map((r) => [r, people.filter((p) => p.role.split(',').map((x) => x.trim()).includes(r)).length])
+          )}
+        />
 
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -294,25 +281,87 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar */}
-        <div className="w-56 shrink-0 border-r border-slate-800 overflow-y-auto overflow-x-hidden bg-slate-950">
-          <div className="h-[56px] border-b border-slate-800 px-4 flex items-end pb-1">
-            <span className="text-xs text-slate-500 font-medium">
-              ZESPÓŁ {(roleFilter || selectedPeopleIds.length > 0) && `· ${filteredPeople.length}`}
-            </span>
+      {/* Grid — single scroll container (frozen-panes pattern) */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-auto"
+        style={{ cursor: isDragging.current ? 'grabbing' : 'grab' }}
+        onScroll={handleScroll}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {/* Inner content: sidebar width + timeline width */}
+        <div style={{ width: 224 + days.length * DAY_WIDTH, minHeight: '100%' }}>
+
+          {/* ── Sticky header row ── */}
+          <div className="flex sticky top-0 z-20">
+            {/* Top-left corner: sticky top + left */}
+            <div
+              className="shrink-0 sticky left-0 z-30 bg-slate-950 border-b border-r border-slate-800 px-4 flex items-end pb-1"
+              style={{ width: 224, height: 56 }}
+            >
+              <span className="text-xs text-slate-500 font-medium">
+                ZESPÓŁ {(selectedRoles.length > 0 || selectedPeopleIds.length > 0 || selectedProjectIds.length > 0) && `· ${filteredPeople.length}`}
+              </span>
+            </div>
+            {/* Month + day header */}
+            <div className="bg-slate-950 border-b border-slate-800" style={{ width: days.length * DAY_WIDTH }}>
+              <div className="flex h-7 border-b border-slate-800">
+                {monthGroups.map(({ label, count }) => (
+                  <div
+                    key={label}
+                    className="flex items-center px-3 text-xs font-semibold text-slate-400 border-r border-slate-800"
+                    style={{ width: count * DAY_WIDTH }}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <div className="flex h-[29px]">
+                {days.map((day) => {
+                  const weekend = isWeekend(day)
+                  const today = isToday(day)
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={cn(
+                        'flex flex-col items-center justify-center border-r border-slate-800 text-xs shrink-0',
+                        weekend ? 'bg-slate-900' : '',
+                        today ? 'bg-indigo-950' : ''
+                      )}
+                      style={{ width: DAY_WIDTH }}
+                    >
+                      <span className={cn('text-[10px]', weekend ? 'text-slate-600' : 'text-slate-500')}>
+                        {format(day, 'EEE')[0]}
+                      </span>
+                      <span className={cn(
+                        'text-[11px] font-medium leading-none',
+                        today ? 'text-indigo-400 font-bold' : weekend ? 'text-slate-600' : 'text-slate-300'
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-          {rowData.map(({ person, personAllocs, personOffs, rowHeight }) => {
+
+          {/* ── Person rows ── */}
+          {rowData.map(({ person, laned, personAllocs, personOffs, rowHeight }) => {
             const util = calcUtilization(personAllocs, days, person.capacity_hours_per_day, personOffs)
             const { allocated, free, allocatedHours, capacityHours, ooodays } = util
             const barColor = allocated > 100 ? '#ef4444' : allocated > 85 ? '#f59e0b' : '#10b981'
 
             return (
+            <div key={person.id} className="flex border-b border-slate-800" style={{ height: rowHeight }}>
+
+              {/* Frozen left cell */}
               <div
-                key={person.id}
-                className="flex items-center px-4 border-b border-slate-800 gap-3"
-                style={{ height: rowHeight }}
+                className="shrink-0 sticky left-0 z-10 bg-slate-950 border-r border-slate-800 flex items-center px-4 gap-3"
+                style={{ width: 224 }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
@@ -340,79 +389,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   </div>
                 </div>
               </div>
-            )
-          })}
 
-          {filteredPeople.length === 0 && roleFilter && (
-            <div className="px-4 py-6 text-center text-xs text-slate-500">
-              Brak osób z tym stanowiskiem
-            </div>
-          )}
-        </div>
-
-        {/* Right: timeline grid */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-auto"
-          style={{ cursor: isDragging.current ? 'grabbing' : 'grab' }}
-          onScroll={handleScroll}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          <div
-            className="sticky top-0 z-10 bg-slate-950 border-b border-slate-800"
-            style={{ width: days.length * DAY_WIDTH }}
-          >
-            {/* Month row */}
-            <div className="flex h-7 border-b border-slate-800">
-              {monthGroups.map(({ label, count }) => (
-                <div
-                  key={label}
-                  className="flex items-center px-3 text-xs font-semibold text-slate-400 border-r border-slate-800"
-                  style={{ width: count * DAY_WIDTH }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-            {/* Day row */}
-            <div className="flex h-[29px]">
-              {days.map((day) => {
-                const weekend = isWeekend(day)
-                const today = isToday(day)
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={cn(
-                      'flex flex-col items-center justify-center border-r border-slate-800 text-xs shrink-0',
-                      weekend ? 'bg-slate-900' : '',
-                      today ? 'bg-indigo-950' : ''
-                    )}
-                    style={{ width: DAY_WIDTH }}
-                  >
-                    <span className={cn('text-[10px]', weekend ? 'text-slate-600' : 'text-slate-500')}>
-                      {format(day, 'EEE')[0]}
-                    </span>
-                    <span className={cn(
-                      'text-[11px] font-medium leading-none',
-                      today ? 'text-indigo-400 font-bold' : weekend ? 'text-slate-600' : 'text-slate-300'
-                    )}>
-                      {format(day, 'd')}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {rowData.map(({ person, laned, rowHeight }) => (
-            <div
-              key={person.id}
-              className="relative border-b border-slate-800 flex"
-              style={{ width: days.length * DAY_WIDTH, height: rowHeight }}
-            >
+              {/* Timeline cells */}
+              <div
+                className="relative flex"
+                style={{ width: days.length * DAY_WIDTH, height: rowHeight }}
+              >
               {/* Clickable day cells */}
               {days.map((day) => {
                 const weekend = isWeekend(day)
@@ -438,9 +420,11 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               {laned.map((item) => {
                 const { left, width, visible } = getAllocationStyle(item, days, DAY_WIDTH)
                 if (!visible) return null
-                const topOffset = ROW_PADDING + item.lane * (LANE_HEIGHT + LANE_GAP)
 
-                // ── OOO block ──
+                // Lane top = where the full LANE_HEIGHT slot starts
+                const laneTop = ROW_PADDING + item.lane * (LANE_HEIGHT + LANE_GAP)
+
+                // ── OOO block — always full lane height ──
                 if (item.kind === 'timeoff') {
                   const { label, emoji } = TIME_OFF_LABELS[item.type]
                   return (
@@ -450,7 +434,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                       onClick={(e) => { e.stopPropagation(); if (!didDrag.current) openEditOoo(item) }}
                       className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity"
                       style={{
-                        left, width, top: topOffset, height: LANE_HEIGHT,
+                        left, width, top: laneTop, height: LANE_HEIGHT,
                         background: `repeating-linear-gradient(45deg, #1e293b, #1e293b 4px, #253047 4px, #253047 8px)`,
                         borderLeft: '3px solid #475569',
                       }}
@@ -462,46 +446,69 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   )
                 }
 
-                // ── Allocation block ──
+                // ── Allocation block — height proportional to hours_per_day / 8h ──
                 const project = item.project
                 const bg = project?.color ?? '#6366f1'
                 const isTentative = item.status === 'tentative'
+
+                // Scale height: 8h = full LANE_HEIGHT, minimum 6px so it's always visible
+                const ratio = Math.min(item.hours_per_day / 8, 1)
+                const blockHeight = Math.max(6, Math.round(LANE_HEIGHT * ratio))
+                // Center vertically within the lane slot
+                const blockTop = laneTop + Math.round((LANE_HEIGHT - blockHeight) / 2)
 
                 return (
                   <div
                     key={`alloc-${item.id}`}
                     data-block
                     onClick={(e) => { e.stopPropagation(); if (!didDrag.current) openEdit(item) }}
-                    className="absolute rounded cursor-pointer flex items-center px-2 overflow-hidden hover:opacity-90 transition-opacity"
-                    style={{
-                      left, width, top: topOffset, height: LANE_HEIGHT,
-                      background: isTentative
-                        ? `repeating-linear-gradient(45deg,${hexToRgba(bg,0.12)},${hexToRgba(bg,0.12)} 4px,${hexToRgba(bg,0.28)} 4px,${hexToRgba(bg,0.28)} 8px)`
-                        : hexToRgba(bg, 0.25),
-                      borderLeft: `3px solid ${bg}`,
-                      borderStyle: isTentative ? 'dashed' : 'solid',
-                      opacity: isTentative ? 0.85 : 1,
-                    }}
+                    className="absolute cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ left, width, top: laneTop, height: LANE_HEIGHT }}
                     title={`${project?.name} — ${item.hours_per_day}h/dzień · ${isTentative ? 'Tentative' : 'Confirmed'}`}
                   >
-                    <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
-                      {project?.name}
-                    </span>
-                    <div className="ml-auto flex items-center gap-1 shrink-0">
-                      {isTentative && (
-                        <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
-                      )}
-                      <span className="text-[10px] opacity-70 leading-none" style={{ color: bg }}>
-                        {item.hours_per_day}h
+                    {/* Colored bar — proportional height, centered */}
+                    <div
+                      className="absolute rounded"
+                      style={{
+                        left: 0, right: 0,
+                        top: blockTop - laneTop, height: blockHeight,
+                        background: isTentative
+                          ? `repeating-linear-gradient(45deg,${hexToRgba(bg,0.12)},${hexToRgba(bg,0.12)} 4px,${hexToRgba(bg,0.28)} 4px,${hexToRgba(bg,0.28)} 8px)`
+                          : hexToRgba(bg, 0.25),
+                        borderLeft: `3px solid ${bg}`,
+                        borderStyle: isTentative ? 'dashed' : 'solid',
+                        opacity: isTentative ? 0.85 : 1,
+                      }}
+                    />
+                    {/* Label — always visible, full lane height */}
+                    <div className="absolute inset-0 flex items-center px-2 gap-1 overflow-hidden">
+                      <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
+                        {project?.name}
                       </span>
+                      <div className="ml-auto flex items-center gap-1 shrink-0">
+                        {isTentative && (
+                          <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
+                        )}
+                        <span className="text-[10px] opacity-70 leading-none" style={{ color: bg }}>
+                          {item.hours_per_day}h
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )
               })}
+              </div>{/* end timeline cells */}
+            </div>/* end person row */
+          )})}
+
+          {filteredPeople.length === 0 && (
+            <div className="px-4 py-6 text-center text-xs text-slate-500">
+              Brak osób spełniających kryteria filtrowania
             </div>
-          ))}
-        </div>
-      </div>
+          )}
+
+        </div>{/* end inner content */}
+      </div>{/* end single scroll container */}
 
       <AllocationModal
         open={modal.open}
