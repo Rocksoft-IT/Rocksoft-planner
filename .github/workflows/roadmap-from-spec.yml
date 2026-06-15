@@ -1,0 +1,18 @@
+name: Roadmap from spec
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+
+jobs:
+  create-roadmap-issue:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'spec/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create roadmap issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --repo "$GITHUB_REPOSITORY" --title "Create RoadMap from spec" --body ""
