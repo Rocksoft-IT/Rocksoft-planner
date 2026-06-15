@@ -6,7 +6,7 @@ updated: 2026-06-15
 product_type: web-app
 target_scale:
   users: small
-estimated_effort: (not specified — to be estimated)
+estimated_effort: medium — roughly one day
 ---
 
 ## Vision & Problem
@@ -37,10 +37,16 @@ Administrator** — the person responsible for who can use the tool and at what 
 - An **Admin** grants an **access role** to move an account from pending to active.
   Two roles exist today — **Admin** and **Member** — and the model is designed so further
   roles can be added later without rework.
+- **Only Admins can create, edit or delete** planner data (projects, allocations, time
+  off, people). A **Member has read-only access**: they can view the planner but change
+  nothing.
 - If a signing-in Microsoft email matches an existing account's email, it is treated as
   the **same person** (linked), preserving their existing profile and data.
 - One account is **seeded as Admin** (piotr@rocksoft.pl) so that roles can be granted from
   day one, breaking the chicken-and-egg of an all-pending user base.
+- When an employee leaves, an Admin **disables** their account (revokes access); their
+  **historical data is retained** — allocations and profile stay in the planner for the
+  record and are never deleted as part of offboarding.
 
 ## Success Criteria
 ### Primary
@@ -57,6 +63,8 @@ assign or change a role from within the tool.
 - Existing planner data (people, projects, allocations, time off) must not be lost or
   duplicated when accounts move from password login to Microsoft sign-in.
 - A pending account must never be able to read or modify planner data.
+- Disabling a departed employee's account must never delete their historical allocations
+  or profile.
 
 ## Functional Requirements
 - FR-001: Employee can sign in with their Microsoft (Rocksoft Entra) account via a
@@ -109,15 +117,21 @@ assign or change a role from within the tool.
   > view? Either is acceptable; the requirement is that an Admin can see status and assign
   > roles somewhere in the tool.
 
-- FR-010: An active Member can use the planner (timeline, projects, people, allocations,
-  time off) per the tool's existing capabilities. Priority: must-have
-  > Challenge: Do Members and Admins differ beyond role assignment? For v1 the only
-  > guaranteed difference is that Admins manage access roles; finer permission splits are
-  > an open question (see Open Questions).
+- FR-010: An active Member can view the planner (timeline, projects, people, allocations,
+  time off) in read-only mode; only an Admin can create, edit or delete that data.
+  Priority: must-have
+  > Challenge: If Members cannot edit, why not just call them viewers? The role stays named
+  > "Member" so the model can grow (more roles, finer edit rights) without renaming; for v1
+  > the edit boundary is simply Admin-only.
 
 - FR-011: A signed-in employee can sign out, ending their session. Priority: must-have
   > Challenge: Does sign-out also sign them out of Microsoft? No — local session only;
   > the Microsoft session is managed by the identity provider.
+
+- FR-012: Admin can disable a departed employee's account to revoke access while retaining
+  that person's historical allocations and profile. Priority: must-have
+  > Challenge: Why disable rather than delete? Deleting would erase the planning history
+  > that allocations represent; disabling cuts access while keeping the record intact.
 
 ## User Stories
 ### US-01 — Existing employee, first SSO sign-in
@@ -135,22 +149,29 @@ assign or change a role from within the tool.
 ### US-03 — Admin grants access
 - Given I am an Admin and a colleague's account is pending,
 - When I open the accounts list and assign them the Member role,
-- Then their account becomes active and they can use the planner on their next visit.
+- Then their account becomes active and they can view the planner on their next visit.
+
+### US-04 — Member views, cannot edit
+- Given I am an active Member,
+- When I open the timeline and try to change an allocation,
+- Then I can see all planner data but no edit, create or delete actions are available to me.
 
 ## Business Logic
 Access to the planner is gated by an access role that an administrator must grant; a valid
-Rocksoft Microsoft identity by itself confers no access.
+Rocksoft Microsoft identity by itself confers no access, and editing is reserved to Admins.
 
 The user-visible input is a single "Sign in with Microsoft" action plus, for Admins, the
-act of assigning a role to an account. The output is a binary, role-shaped access decision:
-pending (no data), Member (use the planner), or Admin (use the planner and manage access
-roles). Employees meet this rule at two moments — at first sign-in, where they land on the
-pending screen, and on every subsequent visit, where their granted role determines what
-they can do.
+acts of assigning a role to an account and disabling departed accounts. The output is a
+role-shaped access decision: **pending** (no data), **Member** (read-only view of the
+planner), or **Admin** (full view plus create/edit/delete and access-role management).
+Employees meet this rule at two moments — at first sign-in, where they land on the pending
+screen, and on every subsequent visit, where their granted role determines what they can
+see and do.
 
 This is a workflow/validation rule, not generic CRUD: the system does not simply create a
 user record on sign-in, it withholds capability until an explicit administrative approval
-moves the account through the pending → active transition.
+moves the account through the pending → active transition, and it preserves historical
+data when access is later revoked.
 
 ## Non-Functional Requirements
 - Sign-in via Microsoft should feel immediate — a redirect-and-return flow completing in a
@@ -165,13 +186,14 @@ moves the account through the pending → active transition.
 - No employee passwords are stored or handled by the tool once SSO is the only login.
 
 ## Non-Goals
-- Automatic deprovisioning / offboarding (disabling accounts when someone leaves Entra) —
-  v1 relies on tenant restriction plus manual role removal; lifecycle automation is later.
+- Automatic deprovisioning / offboarding (disabling accounts automatically when someone
+  leaves Entra) — v1 relies on tenant restriction plus an Admin manually disabling the
+  account (FR-012); lifecycle automation is later.
 - Mapping Entra groups to access roles automatically — roles are assigned manually in-app.
 - External guests, contractors outside the tenant, or multi-tenant access — explicitly
   excluded; this release is "employees only".
-- Fine-grained, per-project or per-resource permissions — the role model stays coarse
-  (Admin/Member) for v1.
+- Fine-grained, per-project or per-resource permissions — the edit boundary stays coarse
+  (Admin edits, Member reads) for v1.
 - Self-service access requests or approval notifications/emails — an Admin checks and
   grants; no request workflow.
 - Audit logging of role changes — designed to be addable later, not built now.
@@ -181,25 +203,20 @@ moves the account through the pending → active transition.
   the sole authentication method. Avoid: "social login".
 - **Rocksoft tenant** — the company's Microsoft Entra directory; the only directory whose
   identities may sign in.
-- **Access role** — the in-app permission level granted to an account: Admin or Member
-  (extensible). Avoid: confusing with "Job role".
+- **Access role** — the in-app permission level granted to an account: **Admin** (full
+  view plus create/edit/delete and role management) or **Member** (read-only view);
+  extensible. Avoid: confusing with "Job role".
 - **Job role** — the existing free-text descriptor of what a person does (e.g. "Developer")
   shown in the planner; unrelated to access. Avoid: "role" used unqualified.
 - **Pending account** — an account that has signed in but has no access role yet and cannot
   see planner data.
 - **Active account** — an account that has been granted an access role and can use the tool.
+- **Disabled account** — a departed employee's account whose access has been revoked while
+  their historical allocations and profile are retained.
 - **Seeded admin** — the pre-designated account that holds the Admin role from day one so
   access can be granted to everyone else.
 - **Profile** — the existing per-person record (name, job role, capacity, avatar) that an
   account is linked to.
-
-## Open Questions
-- Beyond managing access roles, do Members and Admins differ in what they can edit
-  (projects, other people's allocations)? Current data access is flat for all signed-in
-  users; the desired Member/Admin split needs deciding.
-- Offboarding: when an employee leaves, what should happen to their account and their
-  historical allocations (disable vs. retain vs. anonymise)?
-- Rough effort estimate for the release — not yet provided.
 
 ## Forward: tech-stack
 Volunteered/observed stack context (not a commitment, for the build phase):
@@ -209,5 +226,6 @@ Volunteered/observed stack context (not a commitment, for the build phase):
   OAuth code-exchange path is largely in place.
 - The `proxy.ts` route guard and the `profiles` table (which already has `is_admin` and a
   trigger that auto-creates a profile on signup) are the natural places for the pending
-  state and access-role model; expect a new column/concept for access role + status and
-  updated RLS policies, plus removal of the password auth pages.
+  state and access-role model; expect a new column/concept for access role + status (and a
+  disabled flag), updated RLS policies that make writes Admin-only, plus removal of the
+  password auth pages.
