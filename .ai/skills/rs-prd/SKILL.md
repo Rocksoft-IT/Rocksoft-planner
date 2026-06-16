@@ -168,9 +168,6 @@ Fill every required key per the schema, copying from the input where present:
 - `context_type` — from Step 1.5.
 - `product_type`, `target_scale` — copy verbatim if present; else
   `# TODO: <field> — see Open Questions` plus a matching Open Question entry.
-- `estimated_effort` — copy verbatim from the input. If absent, leave it blank or
-  `unknown`. Do NOT create an Open Question for it — it is a plain record, not a
-  required field.
 
 Do NOT fill any stack-shaped field (framework, language, deployment, team).
 Those belong to the downstream build step. If the input carries them under
@@ -223,8 +220,7 @@ Before any disk write, run a self-verification on the in-memory PRD:
    `context_type` (10 greenfield / 11 brownfield). Verify all are present, in
    order, with exact spelling. The PRD must NOT contain a `## Data Model` section.
 2. Verify the frontmatter declares all required keys (`project`, `version`,
-   `status`, `created`, `context_type`, `product_type`, `target_scale`,
-   `estimated_effort`).
+   `status`, `created`, `context_type`, `product_type`, `target_scale`).
 3. Verify `## Success Criteria` has `### Primary` / `### Secondary` /
    `### Guardrails` (or they are TODO-marked with matching Open Questions).
 

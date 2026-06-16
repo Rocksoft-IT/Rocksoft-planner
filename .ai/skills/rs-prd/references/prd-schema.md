@@ -31,7 +31,6 @@ context_type: <enum>         # greenfield | brownfield
 product_type: <enum>         # web-app | api | cli | mobile | desktop | library | data-pipeline | other
 target_scale:
   users: <enum>              # small | medium | large | enterprise
-estimated_effort: <string>   # the user's own rough estimate, verbatim — a plain record, never a gate
 ---
 ```
 
@@ -43,10 +42,6 @@ Notes:
 - **`status`** — `draft` on first write. `rs-prd` never promotes past `draft`.
 - **`context_type`** — read from the discovery-notes frontmatter; determines
   which section list (10 greenfield / 11 brownfield) the PRD uses.
-- **`estimated_effort`** — copied verbatim from discovery-notes. It is a plain
-  record of the user's estimate. The PRD carries NO timeline gate, deadline, or
-  effort-discipline field. If absent in the input, leave it blank or `unknown` —
-  do NOT create an Open Question for it.
 
 Stack-shaped concerns — framework, language, database, deployment, CI/CD, team
 composition — are intentionally absent. They belong to the downstream build step.

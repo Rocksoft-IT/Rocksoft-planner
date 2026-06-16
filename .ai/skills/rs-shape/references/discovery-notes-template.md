@@ -17,7 +17,6 @@ updated: <YYYY-MM-DD>
 product_type: web-app | api | cli | mobile | desktop | library | data-pipeline | other
 target_scale:
   users: small | medium | large | enterprise
-estimated_effort: <free text — the user's own rough estimate, e.g. "~2 weeks", "a few weekends", "unknown">
 checkpoint:
   current_phase: <int>       # 1..6, then 7 (gate), 8 (handoff)
   phases_completed: [<int>, ...]
@@ -27,9 +26,8 @@ checkpoint:
 ```
 
 `product_type` and `target_scale` are the ONLY product-level commitments
-captured; `estimated_effort` is a plain record, not a commitment. No framework,
-database, language, or platform belongs here — those are downstream of
-discovery.
+captured. No framework, database, language, or platform belongs here — those are
+downstream of discovery.
 
 ## Section order
 
@@ -138,6 +136,3 @@ These are parked separately so they never leak into the product shape:
 ## Forward: tech-stack      # volunteered stack opinions → feed into rs-init's tech-stack.md
 ## Forward: technical-roadmap  # volunteered implementation/test/CI thoughts
 ```
-
-The user's rough time estimate is recorded only in the `estimated_effort`
-frontmatter field — a plain record, never a gate or a commitment.
