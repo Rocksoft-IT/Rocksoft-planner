@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import type { DragStartEvent, DragEndEvent, DragCancelEvent } from '@dnd-kit/core'
 import {
   format,
   addDays,
@@ -79,6 +81,8 @@ interface TimelineProps {
 }
 
 export default function Timeline({ people, projects, allocations, timeOffs, onRefresh }: TimelineProps) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[]>([])
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
@@ -207,7 +211,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     else monthGroups.push({ label, count: 1 })
   }
 
+  function handleDragStart(_event: DragStartEvent) {}
+  function handleDragEnd(_event: DragEndEvent) {}
+  function handleDragCancel(_event: DragCancelEvent) {}
+
   return (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
     <div className="flex flex-col h-full">
       {/* Top bar */}
       <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 bg-slate-950 shrink-0 flex-wrap">
@@ -531,5 +540,6 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         people={people}
       />
     </div>
+    </DndContext>
   )
 }
