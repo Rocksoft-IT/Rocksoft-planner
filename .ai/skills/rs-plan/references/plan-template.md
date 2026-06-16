@@ -100,7 +100,7 @@ omit the Source column if there are no upstream artifacts)
 <In / Out>
 ## Architecture / Approach
 ## Phases at a glance
-<table: Phase | Delivers | Key risk>  + Prerequisites + Estimated effort
+<table: Phase | Delivers | Key risk>  + Prerequisites
 ## Open risks & assumptions
 ## Success criteria (summary)
 ```
