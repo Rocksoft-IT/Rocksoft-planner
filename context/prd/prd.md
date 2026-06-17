@@ -45,10 +45,9 @@ The gap between current and desired state is a missing input method: the
 Timeline displays Allocation blocks as positioned objects but provides no way to
 manipulate their position directly. Introducing drag-to-move and drag-to-resize
 on the existing Timeline removes that friction without changing the underlying
-planning model. The moment is now because `@dnd-kit` is already a declared
-dependency, the Timeline already differentiates pointer-down on blocks vs.
-background, and the activation-threshold pattern to separate click from drag is
-well-understood in the codebase.
+planning model. The moment is now because the Timeline already differentiates
+pointer-down on blocks vs. background, and the activation-threshold pattern to
+separate click from drag is well-established in the codebase.
 
 ## User & Persona
 
