@@ -2,6 +2,15 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragCancelEvent,
+} from '@dnd-kit/core'
+import {
   format,
   addDays,
   subDays,
@@ -106,6 +115,23 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     [baseDate, totalDays]
   )
 
+  // dnd-kit sensor — activation distance of 5 px keeps a click (< 5 px movement) from
+  // starting a drag, while a deliberate move gesture fires dnd-kit's onDragStart.
+  // 5 px > the pan gesture's implicit 3 px threshold (didDrag.current) so block clicks
+  // are never mistaken for drags by either gesture system.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
+
+  // Stub handlers — S-01 (drag-allocation-move) and S-02 (drag-allocation-resize)
+  // will replace these with typed implementations.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleDragStart(_event: DragStartEvent) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleDragEnd(_event: DragEndEvent) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleDragCancel(_event: DragCancelEvent) {}
+
   // Drag-to-scroll state
   const isDragging = useRef(false)
   const dragStartX = useRef(0)
@@ -208,6 +234,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
     <div className="flex flex-col h-full">
       {/* Top bar */}
       <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 bg-slate-950 shrink-0 flex-wrap">
@@ -531,5 +563,6 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         people={people}
       />
     </div>
+    </DndContext>
   )
 }
