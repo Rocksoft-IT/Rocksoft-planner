@@ -162,10 +162,9 @@ move or resize.
   this change wires it up rather than introducing a new drag library.
 - **Authorization unchanged:** existing row-level-security policies (any
   authenticated user can update any Allocation) are not modified.
-- **Data-flow:** the Timeline currently refetches Allocations via an
-  `onRefresh` callback after edits; the new gesture must leave the displayed
-  state correct after a drop (lanes, utilization, and block position all
-  consistent with the saved dates), whether via optimistic update or refetch.
+- **Data-flow consistency:** after a drop, the displayed state must immediately
+  reflect the persisted dates — lanes, utilization, and block position must all
+  be consistent with the saved dates without requiring a manual page reload.
 - **Drop is committed immediately** with no undo step (accepted in FR-004
   challenge).
 - **Responsiveness:** the dragged block gives immediate visual feedback during
