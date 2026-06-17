@@ -3,7 +3,7 @@ project: Drag and drop reallocation on the timeline
 version: 1
 status: active
 created: 2026-06-16
-updated: 2026-06-16
+updated: 2026-06-17
 prd_version: 1
 main_goal: speed
 top_blocker: none
@@ -36,7 +36,7 @@ Success Criterion.
 
 | ID   | Change ID                  | Outcome                                                             | Prerequisites | PRD refs                        | Status  |
 |------|----------------------------|---------------------------------------------------------------------|---------------|---------------------------------|---------|
-| F-01 | dnd-context-wiring         | Drag context wired; gesture arbitration established                 | —             | FR-006                          | ready   |
+| F-01 | dnd-context-wiring         | Drag context wired; gesture arbitration established                 | —             | FR-006                          | done    |
 | S-01 | drag-allocation-move       | Planner can drag an Allocation block to shift its dates (move)      | F-01          | FR-001, FR-004, FR-005, US-01   | ready   |
 | S-02 | drag-allocation-resize     | Planner can drag an Allocation edge to change its duration (resize) | F-01          | FR-002, FR-004, FR-005          | ready   |
 | S-03 | drag-live-preview          | Planner sees a live ghost preview while dragging                    | S-01, S-02    | FR-003                          | ready   |
@@ -73,7 +73,7 @@ sensor that all downstream gesture slices share.
 - **Blockers:** none
 - **Unknowns:** none
 - **Risk:** Activation-distance threshold tuning may need one iteration; the existing `data-block` separation already proves the arbitration point is correct.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -165,4 +165,4 @@ Non-Goals and the deferred Secondary success criterion):
 
 ## Done
 
-_(empty — populated only by an archive step)_
+- dnd-context-wiring — Wire @dnd-kit DndContext into Timeline with gesture arbitration (closed by PR #32)
