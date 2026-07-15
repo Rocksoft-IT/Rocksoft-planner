@@ -292,7 +292,7 @@ it does not change what gets written to the `allocations` table or when.
 
 ### Phase 1: Snap the move gesture's live preview to day boundaries
 #### Automated
-- [ ] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
+- [x] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
 #### Manual
 - [ ] 1.2 Move drag shows the block jumping to each successive day-column position as the pointer crosses a day boundary, rather than following the pointer's raw pixel position
 - [ ] 1.3 The block's visually-previewed position during a move drag always matches the position it settles into after drop
