@@ -256,7 +256,7 @@ writes to the same `start_date`/`end_date` columns that the modal already writes
 
 ### Phase 1: Make allocation blocks draggable and wire drag-end handler
 #### Automated
-- [ ] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
+- [x] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
 #### Manual
 - [ ] 1.2 Dragging a block three days right moves it three days right; utilization bar updates
 - [ ] 1.3 Dragging a block left moves it left by the correct number of days
