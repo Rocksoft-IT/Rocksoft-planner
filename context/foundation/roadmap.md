@@ -3,7 +3,7 @@ project: Drag and drop reallocation on the timeline
 version: 1
 status: active
 created: 2026-06-16
-updated: 2026-06-17
+updated: 2026-07-15
 prd_version: 1
 main_goal: speed
 top_blocker: none
@@ -39,7 +39,7 @@ Success Criterion.
 | F-01 | dnd-context-wiring         | Drag context wired; gesture arbitration established                 | —             | FR-006                          | done    |
 | S-01 | drag-allocation-move       | Planner can drag an Allocation block to shift its dates (move)      | F-01          | FR-001, FR-004, FR-005, US-01   | ready   |
 | S-02 | drag-allocation-resize     | Planner can drag an Allocation edge to change its duration (resize) | F-01          | FR-002, FR-004, FR-005          | ready   |
-| S-03 | drag-live-preview          | Planner sees a live ghost preview while dragging                    | S-01, S-02    | FR-003                          | ready   |
+| S-03 | drag-live-preview          | Planner sees a live ghost preview while dragging                    | S-01, S-02    | FR-003                          | done    |
 
 ## Baseline
 
@@ -130,7 +130,7 @@ solid.
 - **Blockers:** none
 - **Unknowns:** none
 - **Risk:** Continuous preview rendering during drag may cause jank on large Timelines; must validate against the real dataset size.
-- **Status:** ready
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -166,3 +166,4 @@ Non-Goals and the deferred Secondary success criterion):
 ## Done
 
 - dnd-context-wiring — Wire @dnd-kit DndContext into Timeline with gesture arbitration (closed by PR #32)
+- drag-live-preview — Live ghost preview during drag (move and resize) (closed by PR #41)
