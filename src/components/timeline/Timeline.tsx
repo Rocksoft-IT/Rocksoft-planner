@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragCancelEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -95,6 +96,30 @@ interface DraggableAllocBlockProps {
   onClick: (e: React.MouseEvent) => void
 }
 
+const RESIZE_HANDLE_WIDTH = 8
+
+function ResizeHandle({ id, side }: { id: string; side: 'left' | 'right' }) {
+  const { attributes, listeners, setNodeRef } = useDraggable({ id })
+  const { onPointerDown, ...restListeners } = listeners ?? {}
+  return (
+    <div
+      ref={setNodeRef}
+      className="absolute top-0 bottom-0 z-10"
+      style={{
+        [side]: 0,
+        width: RESIZE_HANDLE_WIDTH,
+        cursor: 'ew-resize',
+      }}
+      {...attributes}
+      {...restListeners}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        onPointerDown?.(e)
+      }}
+    />
+  )
+}
+
 function DraggableAllocBlock({
   id,
   left,
@@ -149,6 +174,8 @@ function DraggableAllocBlock({
           </span>
         </div>
       </div>
+      <ResizeHandle id={`resize-left-${id}`} side="left" />
+      <ResizeHandle id={`resize-right-${id}`} side="right" />
     </div>
   )
 }
@@ -183,6 +210,13 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     defaultStartDate?: string
   }>({ open: false })
   const [dragError, setDragError] = useState('')
+  // Live preview of an in-progress resize so the block visibly grows/shrinks while
+  // dragging a handle (dnd-kit gives the move drag this feedback via `transform`, but
+  // the resize handles only surface `event.delta.x` at drop). dayOffset is snapped to
+  // whole days, matching the persistence logic in handleDragEnd.
+  const [resizePreview, setResizePreview] = useState<
+    { allocId: string; side: 'left' | 'right'; dayOffset: number } | null
+  >(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const days = useMemo(
@@ -208,14 +242,87 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     dragActiveRef.current = true
   }
 
+  function handleDragMove(event: DragMoveEvent) {
+    const activeId = String(event.active.id)
+    const isRight = activeId.startsWith('resize-right-')
+    const isLeft = activeId.startsWith('resize-left-')
+    if (!isRight && !isLeft) return
+
+    const allocId = isRight
+      ? activeId.slice('resize-right-'.length)
+      : activeId.slice('resize-left-'.length)
+    const side: 'left' | 'right' = isRight ? 'right' : 'left'
+    const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
+
+    // Only update when the snapped offset actually changes (once per day boundary
+    // crossed) to avoid re-rendering every row on every pointer move.
+    setResizePreview((prev) =>
+      prev && prev.allocId === allocId && prev.side === side && prev.dayOffset === dayOffset
+        ? prev
+        : { allocId, side, dayOffset }
+    )
+  }
+
   function clearDragActive() {
     setTimeout(() => { dragActiveRef.current = false }, 0)
   }
 
   async function handleDragEnd(event: DragEndEvent) {
     clearDragActive()
+    setResizePreview(null)
 
-    const alloc = allocations.find((a) => String(a.id) === String(event.active.id))
+    const activeId = String(event.active.id)
+
+    if (activeId.startsWith('resize-right-') || activeId.startsWith('resize-left-')) {
+      const isRight = activeId.startsWith('resize-right-')
+      const allocId = isRight
+        ? activeId.slice('resize-right-'.length)
+        : activeId.slice('resize-left-'.length)
+      const alloc = allocations.find((a) => String(a.id) === allocId)
+      if (!alloc) return
+      const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
+      if (dayOffset === 0) return
+
+      const supabase = createClient()
+
+      if (isRight) {
+        const newEnd = formatDate(addDays(new Date(alloc.end_date), dayOffset))
+        const clampedEnd = newEnd < alloc.start_date ? alloc.start_date : newEnd
+        if (clampedEnd === alloc.end_date) return
+
+        const { error } = await supabase
+          .from('allocations')
+          .update({ end_date: clampedEnd })
+          .eq('id', alloc.id)
+
+        if (error) {
+          console.error('Failed to persist allocation resize:', error)
+          setDragError('Nie udało się zapisać zmiany długości alokacji. Spróbuj ponownie.')
+          return
+        }
+      } else {
+        const newStart = formatDate(addDays(new Date(alloc.start_date), dayOffset))
+        const clampedStart = newStart > alloc.end_date ? alloc.end_date : newStart
+        if (clampedStart === alloc.start_date) return
+
+        const { error } = await supabase
+          .from('allocations')
+          .update({ start_date: clampedStart })
+          .eq('id', alloc.id)
+
+        if (error) {
+          console.error('Failed to persist allocation resize:', error)
+          setDragError('Nie udało się zapisać zmiany długości alokacji. Spróbuj ponownie.')
+          return
+        }
+      }
+
+      setDragError('')
+      onRefresh()
+      return
+    }
+
+    const alloc = allocations.find((a) => String(a.id) === activeId)
     if (!alloc) return
     const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
     if (dayOffset === 0) return
@@ -241,6 +348,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
   function handleDragCancel(_event: DragCancelEvent) {
     clearDragActive()
+    setResizePreview(null)
   }
 
   // Drag-to-scroll state
@@ -348,6 +456,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
@@ -611,12 +720,28 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                 // Center vertically within the lane slot
                 const blockTop = laneTop + Math.round((LANE_HEIGHT - blockHeight) / 2)
 
+                // Live resize preview: grow/shrink the block by the snapped day offset.
+                // Minimum width is a single day (matching the drop-time clamp to start/end).
+                let previewLeft = left
+                let previewWidth = width
+                const minWidth = DAY_WIDTH - 4
+                if (resizePreview && resizePreview.allocId === String(item.id)) {
+                  const shift = resizePreview.dayOffset * DAY_WIDTH
+                  if (resizePreview.side === 'right') {
+                    previewWidth = Math.max(minWidth, width + shift)
+                  } else {
+                    const clampedShift = Math.min(shift, width - minWidth)
+                    previewLeft = left + clampedShift
+                    previewWidth = width - clampedShift
+                  }
+                }
+
                 return (
                   <DraggableAllocBlock
                     key={`alloc-${item.id}`}
                     id={String(item.id)}
-                    left={left}
-                    width={width}
+                    left={previewLeft}
+                    width={previewWidth}
                     laneTop={laneTop}
                     blockTop={blockTop}
                     blockHeight={blockHeight}
