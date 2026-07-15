@@ -123,6 +123,15 @@ code shape, matches the pattern established by F-01 (which modifies only
 `Timeline.tsx`), and avoids scope creep. If `Timeline.tsx` grows further, a
 component extract is a clean subsequent refactor.
 
+**Implementation note (deviation from plan):** The implementation extracted a
+`DraggableAllocBlock` function component within `Timeline.tsx` rather than
+calling `useDraggable` inline in the render loop. The component stays in the
+same file (no new file introduced), making the option a variant of Option A.
+This was accepted as an improvement: pre-computing layout values in the outer
+loop and passing them as props removed the conditional complexity from the
+inner JSX. The architectural intent of Option A (no separate file, no scope
+creep) is preserved.
+
 The drag-end handler computes the day offset from the `delta.x` value provided
 by dnd-kit's `DragEndEvent`, divides by the pixel width of a day column
 (`DAY_WIDTH` constant already in the file), rounds to the nearest integer, then
@@ -256,7 +265,7 @@ writes to the same `start_date`/`end_date` columns that the modal already writes
 
 ### Phase 1: Make allocation blocks draggable and wire drag-end handler
 #### Automated
-- [ ] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
+- [x] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
 #### Manual
 - [ ] 1.2 Dragging a block three days right moves it three days right; utilization bar updates
 - [ ] 1.3 Dragging a block left moves it left by the correct number of days
