@@ -352,6 +352,17 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
       onDragCancel={handleDragCancel}
     >
     <div className="flex flex-col h-full">
+      {dragError && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm shrink-0">
+          <span>{dragError}</span>
+          <button
+            onClick={() => setDragError('')}
+            className="text-red-400 hover:text-red-300 shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Top bar */}
       <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 bg-slate-950 shrink-0 flex-wrap">
         <div className="flex items-center gap-1">
