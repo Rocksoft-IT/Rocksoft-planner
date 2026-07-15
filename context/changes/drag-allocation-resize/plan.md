@@ -279,7 +279,7 @@ move gesture already write, one field at a time.
 
 ### Phase 1: Add resize edge handles and wire resize handling in drag-end
 #### Automated
-- [ ] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
+- [x] 1.1 `pnpm build` completes with no new TypeScript errors and no new ESLint errors
 #### Manual
 - [ ] 1.2 Dragging the right edge rightward extends end date; start date unchanged
 - [ ] 1.3 Dragging the right edge leftward shortens end date but clamps at start date (one-day minimum), no invalid write sent
