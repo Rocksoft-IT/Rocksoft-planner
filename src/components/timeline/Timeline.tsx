@@ -4,12 +4,13 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import {
   DndContext,
   PointerSensor,
+  useDraggable,
   useSensor,
   useSensors,
-  type DragStartEvent,
   type DragEndEvent,
   type DragCancelEvent,
 } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import {
   format,
   addDays,
@@ -19,7 +20,7 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, getAllocationStyle, hexToRgba, cn } from '@/lib/utils'
+import { calcUtilization, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
@@ -29,6 +30,7 @@ import type { AllocationWithProject, TeamMember, Project, TimeOff } from '@/lib/
 import { TIME_OFF_LABELS } from '@/lib/types'
 import AllocationModal from './AllocationModal'
 import TimeOffModal from './TimeOffModal'
+import { createClient } from '@/lib/supabase/client'
 
 const DAY_WIDTH = 44
 const DAYS_BEFORE = 180  // 6 miesięcy wstecz
@@ -79,6 +81,78 @@ function assignLanesAll(
   })
 }
 
+interface DraggableAllocBlockProps {
+  id: string
+  left: number
+  width: number
+  laneTop: number
+  blockTop: number
+  blockHeight: number
+  bg: string
+  isTentative: boolean
+  hoursPerDay: number
+  projectName: string
+  onClick: (e: React.MouseEvent) => void
+}
+
+function DraggableAllocBlock({
+  id,
+  left,
+  width,
+  laneTop,
+  blockTop,
+  blockHeight,
+  bg,
+  isTentative,
+  hoursPerDay,
+  projectName,
+  onClick,
+}: DraggableAllocBlockProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      data-block
+      onClick={onClick}
+      className="absolute cursor-pointer hover:opacity-90 transition-opacity"
+      style={{
+        left, width, top: laneTop, height: LANE_HEIGHT,
+        transform: CSS.Transform.toString(transform ? { ...transform, y: 0 } : null),
+      }}
+      title={`${projectName} — ${hoursPerDay}h/dzień · ${isTentative ? 'Tentative' : 'Confirmed'}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        className="absolute rounded"
+        style={{
+          left: 0, right: 0,
+          top: blockTop - laneTop, height: blockHeight,
+          background: isTentative
+            ? `repeating-linear-gradient(45deg,${hexToRgba(bg,0.12)},${hexToRgba(bg,0.12)} 4px,${hexToRgba(bg,0.28)} 4px,${hexToRgba(bg,0.28)} 8px)`
+            : hexToRgba(bg, 0.25),
+          borderLeft: `3px solid ${bg}`,
+          borderStyle: isTentative ? 'dashed' : 'solid',
+          opacity: isTentative ? 0.85 : 1,
+        }}
+      />
+      <div className="absolute inset-0 flex items-center px-2 gap-1 overflow-hidden">
+        <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
+          {projectName}
+        </span>
+        <div className="ml-auto flex items-center gap-1 shrink-0">
+          {isTentative && (
+            <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
+          )}
+          <span className="text-[10px] opacity-70 leading-none" style={{ color: bg }}>
+            {hoursPerDay}h
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface TimelineProps {
   people: TeamMember[]
   projects: Project[]
@@ -123,13 +197,31 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
-  // Stub handlers — S-01 (drag-allocation-move) and S-02 (drag-allocation-resize)
-  // will replace these with typed implementations.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function handleDragStart(_event: DragStartEvent) {}
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function handleDragEnd(_event: DragEndEvent) {}
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleDragStart() {}
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const alloc = allocations.find((a) => String(a.id) === String(event.active.id))
+    if (!alloc) return
+    const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
+    if (dayOffset === 0) return
+
+    const newStart = formatDate(addDays(new Date(alloc.start_date), dayOffset))
+    const newEnd = formatDate(addDays(new Date(alloc.end_date), dayOffset))
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('allocations')
+      .update({ start_date: newStart, end_date: newEnd })
+      .eq('id', alloc.id)
+
+    if (error) {
+      console.error('Failed to persist allocation move:', error)
+      return
+    }
+
+    onRefresh()
+  }
+
   function handleDragCancel(_event: DragCancelEvent) {}
 
   // Drag-to-scroll state
@@ -490,43 +582,20 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                 const blockTop = laneTop + Math.round((LANE_HEIGHT - blockHeight) / 2)
 
                 return (
-                  <div
+                  <DraggableAllocBlock
                     key={`alloc-${item.id}`}
-                    data-block
+                    id={String(item.id)}
+                    left={left}
+                    width={width}
+                    laneTop={laneTop}
+                    blockTop={blockTop}
+                    blockHeight={blockHeight}
+                    bg={bg}
+                    isTentative={isTentative}
+                    hoursPerDay={item.hours_per_day}
+                    projectName={project?.name ?? ''}
                     onClick={(e) => { e.stopPropagation(); if (!didDrag.current) openEdit(item) }}
-                    className="absolute cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ left, width, top: laneTop, height: LANE_HEIGHT }}
-                    title={`${project?.name} — ${item.hours_per_day}h/dzień · ${isTentative ? 'Tentative' : 'Confirmed'}`}
-                  >
-                    {/* Colored bar — proportional height, centered */}
-                    <div
-                      className="absolute rounded"
-                      style={{
-                        left: 0, right: 0,
-                        top: blockTop - laneTop, height: blockHeight,
-                        background: isTentative
-                          ? `repeating-linear-gradient(45deg,${hexToRgba(bg,0.12)},${hexToRgba(bg,0.12)} 4px,${hexToRgba(bg,0.28)} 4px,${hexToRgba(bg,0.28)} 8px)`
-                          : hexToRgba(bg, 0.25),
-                        borderLeft: `3px solid ${bg}`,
-                        borderStyle: isTentative ? 'dashed' : 'solid',
-                        opacity: isTentative ? 0.85 : 1,
-                      }}
-                    />
-                    {/* Label — always visible, full lane height */}
-                    <div className="absolute inset-0 flex items-center px-2 gap-1 overflow-hidden">
-                      <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
-                        {project?.name}
-                      </span>
-                      <div className="ml-auto flex items-center gap-1 shrink-0">
-                        {isTentative && (
-                          <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
-                        )}
-                        <span className="text-[10px] opacity-70 leading-none" style={{ color: bg }}>
-                          {item.hours_per_day}h
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  />
                 )
               })}
               </div>{/* end timeline cells */}
