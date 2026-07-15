@@ -184,6 +184,57 @@ function DraggableAllocBlock({
   )
 }
 
+interface DraggableOooBlockProps {
+  id: string
+  left: number
+  width: number
+  laneTop: number
+  emoji: string
+  label: string
+  notes: string | null
+  onClick: (e: React.MouseEvent) => void
+}
+
+// OOO (time-off) counterpart of DraggableAllocBlock. Body-drag only in this
+// phase; the drag id is namespaced `ooo-<id>` so handleDragEnd can route the
+// drop to the `time_off` table instead of `allocations`. Resize handles + live
+// preview are added in phase 2.
+function DraggableOooBlock({
+  id,
+  left,
+  width,
+  laneTop,
+  emoji,
+  label,
+  notes,
+  onClick,
+}: DraggableOooBlockProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `ooo-${id}` })
+  // Snap the live drag preview to whole-day increments, mirroring handleDragEnd's
+  // Math.round(delta.x / DAY_WIDTH) — same rule as DraggableAllocBlock.
+  const snappedX = transform ? Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH : 0
+  return (
+    <div
+      ref={setNodeRef}
+      data-block
+      onClick={onClick}
+      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity"
+      style={{
+        left, width, top: laneTop, height: LANE_HEIGHT,
+        background: `repeating-linear-gradient(45deg, #1e293b, #1e293b 4px, #253047 4px, #253047 8px)`,
+        borderLeft: '3px solid #475569',
+        transform: CSS.Transform.toString(transform ? { ...transform, x: snappedX, y: 0 } : null),
+      }}
+      title={`${label} · ${notes ?? ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <span className="text-sm leading-none">{emoji}</span>
+      <span className="text-[11px] font-medium text-slate-300 truncate leading-none">{label}</span>
+    </div>
+  )
+}
+
 interface TimelineProps {
   people: TeamMember[]
   projects: Project[]
@@ -276,6 +327,34 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     setResizePreview(null)
 
     const activeId = String(event.active.id)
+
+    // ── OOO (time-off) move — namespaced `ooo-<id>`, persists to `time_off` ──
+    if (activeId.startsWith('ooo-')) {
+      const timeOffId = activeId.slice('ooo-'.length)
+      const off = timeOffs.find((t) => String(t.id) === timeOffId)
+      if (!off) return
+      const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
+      if (dayOffset === 0) return
+
+      const newStart = formatDate(addDays(new Date(off.start_date), dayOffset))
+      const newEnd = formatDate(addDays(new Date(off.end_date), dayOffset))
+
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('time_off')
+        .update({ start_date: newStart, end_date: newEnd })
+        .eq('id', off.id)
+
+      if (error) {
+        console.error('Failed to persist time-off move:', error)
+        setDragError('Nie udało się zapisać przesunięcia nieobecności. Spróbuj ponownie.')
+        return
+      }
+
+      setDragError('')
+      onRefresh()
+      return
+    }
 
     if (activeId.startsWith('resize-right-') || activeId.startsWith('resize-left-')) {
       const isRight = activeId.startsWith('resize-right-')
@@ -695,21 +774,17 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                 if (item.kind === 'timeoff') {
                   const { label, emoji } = TIME_OFF_LABELS[item.type]
                   return (
-                    <div
+                    <DraggableOooBlock
                       key={`ooo-${item.id}`}
-                      data-block
-                      onClick={(e) => { e.stopPropagation(); if (!didDrag.current) openEditOoo(item) }}
-                      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity"
-                      style={{
-                        left, width, top: laneTop, height: LANE_HEIGHT,
-                        background: `repeating-linear-gradient(45deg, #1e293b, #1e293b 4px, #253047 4px, #253047 8px)`,
-                        borderLeft: '3px solid #475569',
-                      }}
-                      title={`${label} · ${item.notes ?? ''}`}
-                    >
-                      <span className="text-sm leading-none">{emoji}</span>
-                      <span className="text-[11px] font-medium text-slate-300 truncate leading-none">{label}</span>
-                    </div>
+                      id={String(item.id)}
+                      left={left}
+                      width={width}
+                      laneTop={laneTop}
+                      emoji={emoji}
+                      label={label}
+                      notes={item.notes}
+                      onClick={(e) => { e.stopPropagation(); if (!didDrag.current && !dragActiveRef.current) openEditOoo(item) }}
+                    />
                   )
                 }
 
