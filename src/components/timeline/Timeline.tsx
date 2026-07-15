@@ -182,6 +182,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     defaultPersonId?: string
     defaultStartDate?: string
   }>({ open: false })
+  const [dragError, setDragError] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const days = useMemo(
@@ -197,9 +198,23 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
-  function handleDragStart() {}
+  // True for the duration of a dnd-kit drag, and briefly after it ends — long enough
+  // to swallow the click event a pointerup can still trigger on the dragged block.
+  // This is the explicit guard the plan called for instead of relying solely on
+  // assumed dnd-kit click-suppression behavior.
+  const dragActiveRef = useRef(false)
+
+  function handleDragStart() {
+    dragActiveRef.current = true
+  }
+
+  function clearDragActive() {
+    setTimeout(() => { dragActiveRef.current = false }, 0)
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
+    clearDragActive()
+
     const alloc = allocations.find((a) => String(a.id) === String(event.active.id))
     if (!alloc) return
     const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
@@ -216,13 +231,17 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
     if (error) {
       console.error('Failed to persist allocation move:', error)
+      setDragError('Nie udało się zapisać przesunięcia alokacji. Spróbuj ponownie.')
       return
     }
 
+    setDragError('')
     onRefresh()
   }
 
-  function handleDragCancel(_event: DragCancelEvent) {}
+  function handleDragCancel(_event: DragCancelEvent) {
+    clearDragActive()
+  }
 
   // Drag-to-scroll state
   const isDragging = useRef(false)
@@ -594,7 +613,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     isTentative={isTentative}
                     hoursPerDay={item.hours_per_day}
                     projectName={project?.name ?? ''}
-                    onClick={(e) => { e.stopPropagation(); if (!didDrag.current) openEdit(item) }}
+                    onClick={(e) => { e.stopPropagation(); if (!didDrag.current && !dragActiveRef.current) openEdit(item) }}
                   />
                 )
               })}
