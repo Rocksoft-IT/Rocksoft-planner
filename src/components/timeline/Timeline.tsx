@@ -95,6 +95,30 @@ interface DraggableAllocBlockProps {
   onClick: (e: React.MouseEvent) => void
 }
 
+const RESIZE_HANDLE_WIDTH = 8
+
+function ResizeHandle({ id, side }: { id: string; side: 'left' | 'right' }) {
+  const { attributes, listeners, setNodeRef } = useDraggable({ id })
+  const { onPointerDown, ...restListeners } = listeners ?? {}
+  return (
+    <div
+      ref={setNodeRef}
+      className="absolute top-0 bottom-0 z-10"
+      style={{
+        [side]: 0,
+        width: RESIZE_HANDLE_WIDTH,
+        cursor: 'ew-resize',
+      }}
+      {...attributes}
+      {...restListeners}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        onPointerDown?.(e)
+      }}
+    />
+  )
+}
+
 function DraggableAllocBlock({
   id,
   left,
@@ -149,6 +173,8 @@ function DraggableAllocBlock({
           </span>
         </div>
       </div>
+      <ResizeHandle id={`resize-left-${id}`} side="left" />
+      <ResizeHandle id={`resize-right-${id}`} side="right" />
     </div>
   )
 }
@@ -215,7 +241,58 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   async function handleDragEnd(event: DragEndEvent) {
     clearDragActive()
 
-    const alloc = allocations.find((a) => String(a.id) === String(event.active.id))
+    const activeId = String(event.active.id)
+
+    if (activeId.startsWith('resize-right-') || activeId.startsWith('resize-left-')) {
+      const isRight = activeId.startsWith('resize-right-')
+      const allocId = isRight
+        ? activeId.slice('resize-right-'.length)
+        : activeId.slice('resize-left-'.length)
+      const alloc = allocations.find((a) => String(a.id) === allocId)
+      if (!alloc) return
+      const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
+      if (dayOffset === 0) return
+
+      const supabase = createClient()
+
+      if (isRight) {
+        const newEnd = formatDate(addDays(new Date(alloc.end_date), dayOffset))
+        const clampedEnd = newEnd < alloc.start_date ? alloc.start_date : newEnd
+        if (clampedEnd === alloc.end_date) return
+
+        const { error } = await supabase
+          .from('allocations')
+          .update({ end_date: clampedEnd })
+          .eq('id', alloc.id)
+
+        if (error) {
+          console.error('Failed to persist allocation resize:', error)
+          setDragError('Nie udało się zapisać zmiany długości alokacji. Spróbuj ponownie.')
+          return
+        }
+      } else {
+        const newStart = formatDate(addDays(new Date(alloc.start_date), dayOffset))
+        const clampedStart = newStart > alloc.end_date ? alloc.end_date : newStart
+        if (clampedStart === alloc.start_date) return
+
+        const { error } = await supabase
+          .from('allocations')
+          .update({ start_date: clampedStart })
+          .eq('id', alloc.id)
+
+        if (error) {
+          console.error('Failed to persist allocation resize:', error)
+          setDragError('Nie udało się zapisać zmiany długości alokacji. Spróbuj ponownie.')
+          return
+        }
+      }
+
+      setDragError('')
+      onRefresh()
+      return
+    }
+
+    const alloc = allocations.find((a) => String(a.id) === activeId)
     if (!alloc) return
     const dayOffset = Math.round(event.delta.x / DAY_WIDTH)
     if (dayOffset === 0) return
