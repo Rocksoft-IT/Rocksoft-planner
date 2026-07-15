@@ -267,7 +267,7 @@ move gesture already write, one field at a time.
 ## References
 
 - Roadmap slice S-02 (`context/foundation/roadmap.md`, S-02 block)
-- PRD FR-002, FR-004, FR-005 (`context/discovery/discovery-notes.md`)
+- PRD FR-002, FR-004, FR-005 (`context/prd/prd.md`)
 - Sibling slice S-01 plan (already implemented):
   `context/changes/drag-allocation-move/plan.md`
 - Timeline root: `src/components/timeline/Timeline.tsx`

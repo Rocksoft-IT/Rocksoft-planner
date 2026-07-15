@@ -2,7 +2,7 @@
 
 → Full plan: [`plan.md`](./plan.md)
 → Roadmap slice: S-02 in `context/foundation/roadmap.md`
-→ PRD refs: FR-002, FR-004, FR-005 in `context/discovery/discovery-notes.md`
+→ PRD refs: FR-002, FR-004, FR-005 in `context/prd/prd.md`
 → Prerequisite: `dnd-context-wiring` (F-01, done)
 → Sibling slice: S-01 `drag-allocation-move` (already implemented — shares the
   same `DndContext`/sensor and block component)
