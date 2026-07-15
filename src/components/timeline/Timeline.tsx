@@ -134,6 +134,10 @@ function DraggableAllocBlock({
   onClick,
 }: DraggableAllocBlockProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id })
+  // Snap the live drag preview to whole-day increments, mirroring handleDragEnd's
+  // Math.round(delta.x / DAY_WIDTH) so the in-drag position always matches what
+  // gets persisted at drop instead of following the pointer pixel-for-pixel.
+  const snappedX = transform ? Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH : 0
   return (
     <div
       ref={setNodeRef}
@@ -142,7 +146,7 @@ function DraggableAllocBlock({
       className="absolute cursor-pointer hover:opacity-90 transition-opacity"
       style={{
         left, width, top: laneTop, height: LANE_HEIGHT,
-        transform: CSS.Transform.toString(transform ? { ...transform, y: 0 } : null),
+        transform: CSS.Transform.toString(transform ? { ...transform, x: snappedX, y: 0 } : null),
       }}
       title={`${projectName} — ${hoursPerDay}h/dzień · ${isTentative ? 'Tentative' : 'Confirmed'}`}
       {...attributes}
