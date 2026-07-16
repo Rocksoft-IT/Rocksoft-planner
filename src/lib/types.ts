@@ -48,6 +48,7 @@ export interface Allocation {
   // joined
   project?: Project
   person?: Profile
+  creator?: { id: string; full_name: string; email: string } | null
 }
 
 export interface AllocationWithProject extends Allocation {

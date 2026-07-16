@@ -77,9 +77,16 @@ export default function AllocationModal({
       notes: notes || null,
     }
 
-    const { error: dbError } = allocation
-      ? await supabase.from('allocations').update(payload).eq('id', allocation.id)
-      : await supabase.from('allocations').insert(payload)
+    let dbError = null
+    if (allocation) {
+      const res = await supabase.from('allocations').update(payload).eq('id', allocation.id)
+      dbError = res.error
+    } else {
+      // Stamp the creating user so we can later show who assigned this allocation.
+      const { data: { user } } = await supabase.auth.getUser()
+      const res = await supabase.from('allocations').insert({ ...payload, created_by: user?.id ?? null })
+      dbError = res.error
+    }
 
     setLoading(false)
     if (dbError) { setError(dbError.message); return }
@@ -96,6 +103,11 @@ export default function AllocationModal({
     onSaved()
     onClose()
   }
+
+  const creatorName = allocation?.creator?.full_name || allocation?.creator?.email || null
+  const createdAtLabel = allocation?.created_at
+    ? new Date(allocation.created_at).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
 
   return (
     <Modal
@@ -274,6 +286,20 @@ export default function AllocationModal({
             </button>
           </div>
         </div>
+
+        {/* Audit footer — who created this allocation (which manager assigned the project) */}
+        {allocation && (
+          <div className="border-t border-slate-800 pt-3">
+            <p className="text-xs text-slate-500">
+              {creatorName ? (
+                <>Dodane przez <span className="text-slate-300 font-medium">{creatorName}</span></>
+              ) : (
+                <span className="italic">Brak informacji o osobie, która dodała tę alokację</span>
+              )}
+              {createdAtLabel && <> · {createdAtLabel}</>}
+            </p>
+          </div>
+        )}
       </form>
     </Modal>
   )

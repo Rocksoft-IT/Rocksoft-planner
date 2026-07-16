@@ -21,7 +21,7 @@ export default function TimelineClient({ initialPeople, initialProjects, initial
   const refresh = useCallback(async () => {
     const supabase = createClient()
     const [{ data: allocs }, { data: offs }] = await Promise.all([
-      supabase.from('allocations').select('*, project:projects(*)').order('start_date'),
+      supabase.from('allocations').select('*, project:projects(*), creator:profiles!created_by(id, full_name, email)').order('start_date'),
       supabase.from('time_off').select('*').order('start_date'),
     ])
     if (allocs) setAllocations(allocs as AllocationWithProject[])

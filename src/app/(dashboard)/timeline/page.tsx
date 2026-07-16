@@ -9,7 +9,7 @@ export default async function TimelinePage() {
   const [{ data: people }, { data: projects }, { data: allocations }, { data: timeOffs }] = await Promise.all([
     supabase.from('team_members').select('*').order('full_name'),
     supabase.from('projects').select('*').order('name'),
-    supabase.from('allocations').select('*, project:projects(*)').order('start_date'),
+    supabase.from('allocations').select('*, project:projects(*), creator:profiles!created_by(id, full_name, email)').order('start_date'),
     supabase.from('time_off').select('*').order('start_date'),
   ])
 
