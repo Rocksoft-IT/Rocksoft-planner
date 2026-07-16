@@ -66,6 +66,7 @@ create table if not exists public.allocations (
   hours_per_day numeric(4,1) not null default 8,
   notes         text,
   created_by    uuid references public.profiles(id) on delete set null,
+  updated_by    uuid references public.profiles(id) on delete set null,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   constraint valid_date_range check (end_date >= start_date)
