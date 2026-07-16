@@ -260,7 +260,7 @@ by dragging back or editing in the modal.
 
 ### Phase 1: OOO move (drag the body)
 #### Automated
-- [x] 1.1 `pnpm build` completes with no new TypeScript or ESLint errors — da8716f (via `npm run build`; no pnpm on host)
+- [x] 1.1 `pnpm build` completes with no new TypeScript or ESLint errors — da8716f (via `npm run build`; no pnpm on host at the time); re-confirmed with `pnpm build` directly — clean compile, no new TS/ESLint errors
 #### Manual
 - [ ] 1.2 Dragging an OOO block three days right moves it three days right; OOO/utilization figures update
 - [ ] 1.3 Dragging left moves it left by the correct number of days; duration unchanged
