@@ -5,9 +5,9 @@ client: wojciech.drozdzik@rocksoft.pl
 repository:
   name: RS Planner
   git_url: git@github.com:Rocksoft-IT/Rocksoft-planner.git
-status: planned
+status: implementing
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-16
 archived_at: null
 ---
 
