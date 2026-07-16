@@ -51,4 +51,5 @@ Wymaga to zmiany w bazie:
 - Stopka panelu: główna linia „Ostatnio edytowane przez: <imię> · <data>", pod nią
   wyszarzone „Utworzone przez: <imię> · <data>".
 
-Ten zakres zastępuje wcześniejszy PR #45 (sama wersja z twórcą). #45 należy zamknąć.
+Ten zakres rozszerza już scalony PR #45 (sama wersja z twórcą, scalony w `main`)
+o śledzenie ostatniego edytującego.

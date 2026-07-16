@@ -66,7 +66,6 @@ export default function AllocationModal({
 
     setLoading(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
     const payload = {
       person_id: personId,
@@ -78,24 +77,27 @@ export default function AllocationModal({
       notes: notes || null,
     }
 
+    // created_by/updated_by are stamped server-side from the authenticated
+    // session (see set_allocation_audit_fields trigger) — not client-supplied,
+    // so a request can't be forged to attribute a change to someone else.
     let dbError = null
     if (allocation) {
-      // Stamp the editing user + bump the timestamp so we can show who last touched it.
       const res = await supabase
         .from('allocations')
-        .update({ ...payload, updated_by: user?.id ?? null, updated_at: new Date().toISOString() })
+        .update({ ...payload, updated_at: new Date().toISOString() })
         .eq('id', allocation.id)
       dbError = res.error
     } else {
-      // On create, the author is both the creator and the last editor.
-      const res = await supabase
-        .from('allocations')
-        .insert({ ...payload, created_by: user?.id ?? null, updated_by: user?.id ?? null })
+      const res = await supabase.from('allocations').insert(payload)
       dbError = res.error
     }
 
     setLoading(false)
-    if (dbError) { setError(dbError.message); return }
+    if (dbError) {
+      console.error('Allocation save failed:', dbError)
+      setError('Nie udało się zapisać alokacji. Spróbuj ponownie.')
+      return
+    }
     onSaved()
     onClose()
   }
