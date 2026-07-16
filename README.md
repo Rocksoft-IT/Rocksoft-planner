@@ -29,6 +29,19 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Database migrations
+
+`supabase-schema.sql` is the consolidated schema used to provision a fresh
+Supabase project — it always reflects the current state of the database.
+
+Changes to an already-provisioned (live) database go through a one-off SQL
+file under `migrations/`, named `YYYY-MM-DD-<short-description>.sql`, run
+manually via the Supabase Dashboard SQL Editor. Each migration should be
+idempotent (`add column if not exists`, `create or replace function`, etc.)
+so it's safe to re-run. When you add a migration, also apply the same
+change to `supabase-schema.sql` so fresh installs stay in sync — there's no
+automated tool enforcing this, so keep the two in lockstep by hand.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

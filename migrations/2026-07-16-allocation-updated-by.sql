@@ -8,9 +8,12 @@
 --   Safe to run more than once (idempotent).
 --
 -- IMPORTANT
---   The app code writes `allocations.updated_by` on every create/update.
---   Until this column exists, saving an allocation will fail. Run this
---   migration before (or together with) deploying the matching code.
+--   `created_by`/`updated_by` are stamped by the trigger below, not by the
+--   app code directly. If this migration hasn't run yet when the matching
+--   code deploys, saves will NOT fail — they'll succeed silently with
+--   `updated_by` (and `created_by`) left NULL, quietly losing the audit
+--   trail until the migration is applied. Run this migration before (or
+--   together with) deploying the matching code.
 -- ============================================================
 
 -- 1. Add the column (nullable FK to the person who last edited the row).
@@ -27,6 +30,9 @@ update public.allocations
 -- 3. Stamp created_by/updated_by from the authenticated session rather than
 --    trusting the client-supplied value in the request payload — otherwise
 --    any authenticated user could attribute a change to someone else.
+--    updated_at is stamped here too so every write path (modal edits, and
+--    the Timeline drag-move/resize handlers, which never set it themselves)
+--    stays in sync with updated_by.
 create or replace function public.set_allocation_audit_fields()
 returns trigger language plpgsql security definer set search_path = public
 as $$
@@ -35,6 +41,7 @@ begin
     new.created_by := auth.uid();
   end if;
   new.updated_by := auth.uid();
+  new.updated_at := now();
   return new;
 end;
 $$;

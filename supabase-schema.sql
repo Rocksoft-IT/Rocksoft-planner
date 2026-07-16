@@ -74,6 +74,9 @@ create table if not exists public.allocations (
 
 -- Trigger: stamp created_by/updated_by from the authenticated session
 -- rather than trusting the client-supplied value in the request payload.
+-- updated_at is stamped here too so every write path (modal edits, and the
+-- Timeline drag-move/resize handlers, which never set it themselves) stays
+-- in sync with updated_by.
 create or replace function public.set_allocation_audit_fields()
 returns trigger language plpgsql security definer set search_path = public
 as $$
@@ -82,6 +85,7 @@ begin
     new.created_by := auth.uid();
   end if;
   new.updated_by := auth.uid();
+  new.updated_at := now();
   return new;
 end;
 $$;
