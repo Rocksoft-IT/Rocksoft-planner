@@ -1,0 +1,43 @@
+-- ============================================================
+-- Migration: stamp allocation author/editor in the DATABASE
+-- Feature: "Ostatnio edytowane przez …" on the /timeline allocation detail
+-- ============================================================
+--
+-- WHY
+--   The client (browser) does not reliably return the logged-in user, so the
+--   app was writing created_by / updated_by as NULL even though the request
+--   itself was authenticated. Stamping these columns in a BEFORE trigger from
+--   auth.uid() (the identity carried in the request JWT) makes author tracking
+--   reliable regardless of what the client sends.
+--
+-- HOW TO RUN
+--   Supabase Dashboard → SQL Editor → paste this file → Run.
+--   Safe to run more than once (create or replace / drop ... if exists).
+--
+-- REQUIRES
+--   The `allocations.updated_by` column (see 2026-07-16-allocation-updated-by.sql).
+-- ============================================================
+
+-- Stamp created_by / updated_by from the authenticated user (auth.uid()).
+-- The profiles lookup guards the foreign key: it yields a valid profile id or
+-- NULL, never an id that is absent from profiles — so it can't raise an FK error.
+create or replace function public.set_allocation_actor()
+returns trigger language plpgsql as $$
+declare
+  actor uuid := (select id from public.profiles where id = auth.uid());
+begin
+  if (tg_op = 'INSERT') then
+    new.created_by := coalesce(new.created_by, actor);
+    new.updated_by := coalesce(new.updated_by, actor);
+  elsif (tg_op = 'UPDATE') then
+    new.updated_by := actor;
+    new.updated_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists allocations_set_actor on public.allocations;
+create trigger allocations_set_actor
+  before insert or update on public.allocations
+  for each row execute function public.set_allocation_actor();
