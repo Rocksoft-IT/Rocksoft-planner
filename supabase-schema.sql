@@ -66,10 +66,34 @@ create table if not exists public.allocations (
   hours_per_day numeric(4,1) not null default 8,
   notes         text,
   created_by    uuid references public.profiles(id) on delete set null,
+  updated_by    uuid references public.profiles(id) on delete set null,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   constraint valid_date_range check (end_date >= start_date)
 );
+
+-- Trigger: stamp created_by/updated_by from the authenticated session
+-- rather than trusting the client-supplied value in the request payload.
+-- updated_at is stamped here too so every write path (modal edits, and the
+-- Timeline drag-move/resize handlers, which never set it themselves) stays
+-- in sync with updated_by.
+create or replace function public.set_allocation_audit_fields()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.created_by := auth.uid();
+  end if;
+  new.updated_by := auth.uid();
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_allocation_audit_fields on public.allocations;
+create trigger set_allocation_audit_fields
+  before insert or update on public.allocations
+  for each row execute procedure public.set_allocation_audit_fields();
 
 -- 4. ROW LEVEL SECURITY
 

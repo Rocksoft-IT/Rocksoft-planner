@@ -77,19 +77,28 @@ export default function AllocationModal({
       notes: notes || null,
     }
 
+    // created_by/updated_by/updated_at are stamped server-side from the
+    // authenticated session (see set_allocation_audit_fields trigger) — not
+    // client-supplied, so a request can't be forged to attribute a change
+    // to someone else, and every write path stays in sync.
     let dbError = null
     if (allocation) {
-      const res = await supabase.from('allocations').update(payload).eq('id', allocation.id)
+      const res = await supabase
+        .from('allocations')
+        .update(payload)
+        .eq('id', allocation.id)
       dbError = res.error
     } else {
-      // Stamp the creating user so we can later show who assigned this allocation.
-      const { data: { user } } = await supabase.auth.getUser()
-      const res = await supabase.from('allocations').insert({ ...payload, created_by: user?.id ?? null })
+      const res = await supabase.from('allocations').insert(payload)
       dbError = res.error
     }
 
     setLoading(false)
-    if (dbError) { setError(dbError.message); return }
+    if (dbError) {
+      console.error('Allocation save failed:', dbError)
+      setError('Nie udało się zapisać alokacji. Spróbuj ponownie.')
+      return
+    }
     onSaved()
     onClose()
   }
@@ -104,10 +113,13 @@ export default function AllocationModal({
     onClose()
   }
 
+  const fmtDate = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+
   const creatorName = allocation?.creator?.full_name || allocation?.creator?.email || null
-  const createdAtLabel = allocation?.created_at
-    ? new Date(allocation.created_at).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null
+  const editorName = allocation?.editor?.full_name || allocation?.editor?.email || null
+  const createdAtLabel = fmtDate(allocation?.created_at)
+  const updatedAtLabel = fmtDate(allocation?.updated_at)
 
   return (
     <Modal
@@ -287,17 +299,23 @@ export default function AllocationModal({
           </div>
         </div>
 
-        {/* Audit footer — who created this allocation (which manager assigned the project) */}
+        {/* Audit footer — who last edited (and who first created) this allocation,
+            so you know which manager to contact about the assignment. */}
         {allocation && (
-          <div className="border-t border-slate-800 pt-3">
+          <div className="border-t border-slate-800 pt-3 space-y-1">
             <p className="text-xs text-slate-500">
-              {creatorName ? (
-                <>Dodane przez <span className="text-slate-300 font-medium">{creatorName}</span></>
+              {editorName ? (
+                <>Ostatnio edytowane przez <span className="text-slate-300 font-medium">{editorName}</span></>
               ) : (
-                <span className="italic">Brak informacji o osobie, która dodała tę alokację</span>
+                <span className="italic">Brak informacji o ostatniej edycji</span>
               )}
-              {createdAtLabel && <> · {createdAtLabel}</>}
+              {updatedAtLabel && <> · {updatedAtLabel}</>}
             </p>
+            {creatorName && (
+              <p className="text-[11px] text-slate-600">
+                Utworzone przez {creatorName}{createdAtLabel && <> · {createdAtLabel}</>}
+              </p>
+            )}
           </div>
         )}
       </form>

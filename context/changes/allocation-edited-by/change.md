@@ -36,3 +36,20 @@ Wykorzystano istniejącą (ale wcześniej niewypełnianą) kolumnę `allocations
 
 Ograniczenie świadome: pokazujemy **twórcę** alokacji (kto przydzielił projekt), nie „ostatniego
 edytującego". Śledzenie ostatniej edycji wymagałoby dodatkowej kolumny `updated_by` i migracji.
+
+### 2026-07-16 — rozszerzenie: ostatnio edytujący (wymaga migracji bazy)
+
+Na życzenie klienta dodano śledzenie **ostatniego edytującego** (nie tylko twórcy).
+Wymaga to zmiany w bazie:
+
+- **Migracja** `migrations/2026-07-16-allocation-updated-by.sql`: nowa kolumna
+  `allocations.updated_by` (FK → `profiles`) + backfill z `created_by`. Trzeba ją uruchomić
+  w Supabase SQL Editor **przed/wraz z** deployem kodu — inaczej zapis alokacji zwróci błąd.
+- `AllocationModal`: `updated_by` = zalogowany user przy tworzeniu **i** edycji;
+  przy edycji odświeżany też `updated_at`.
+- Zapytania timeline dociągają edytującego: embed `editor:profiles!updated_by(...)`.
+- Stopka panelu: główna linia „Ostatnio edytowane przez: <imię> · <data>", pod nią
+  wyszarzone „Utworzone przez: <imię> · <data>".
+
+Ten zakres rozszerza już scalony PR #45 (sama wersja z twórcą, scalony w `main`)
+o śledzenie ostatniego edytującego.

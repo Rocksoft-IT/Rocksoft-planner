@@ -43,12 +43,14 @@ export interface Allocation {
   status: 'confirmed' | 'tentative'
   notes: string | null
   created_by: string | null
+  updated_by: string | null
   created_at: string
   updated_at: string
   // joined
   project?: Project
   person?: Profile
   creator?: { id: string; full_name: string; email: string } | null
+  editor?: { id: string; full_name: string; email: string } | null
 }
 
 export interface AllocationWithProject extends Allocation {
