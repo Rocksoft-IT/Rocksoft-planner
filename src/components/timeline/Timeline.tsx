@@ -37,12 +37,15 @@ const DAY_WIDTH = 44
 const DAYS_BEFORE = 180  // 6 miesięcy wstecz
 const DAYS_AFTER  = 548  // ~18 miesięcy do przodu
 
-const LANE_HEIGHT = 28   // px per allocation block
-const LANE_GAP = 2       // px between lanes
-const ROW_PADDING = 4    // px top + bottom
+const LANE_HEIGHT = 24   // px per allocation block — compact stacking (869e6vum3)
+const LANE_GAP = 2       // px between lanes (minimal gap between a person's projects)
+const ROW_PADDING = 3    // px top + bottom
 
+// Floor is driven by the frozen left cell (avatar + name + utilization stats),
+// not by the lanes — keep it tall enough that the name and stats don't blend
+// into the row above/below (869e5gwa8).
 function calcRowHeight(numLanes: number) {
-  return Math.max(44, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
+  return Math.max(50, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
 }
 
 function assignLanes(allocs: AllocationWithProject[]): (AllocationWithProject & { lane: number })[] {
@@ -93,6 +96,7 @@ interface DraggableAllocBlockProps {
   isTentative: boolean
   hoursPerDay: number
   projectName: string
+  scrollLeft: number
   onClick: (e: React.MouseEvent) => void
 }
 
@@ -131,6 +135,7 @@ function DraggableAllocBlock({
   isTentative,
   hoursPerDay,
   projectName,
+  scrollLeft,
   onClick,
 }: DraggableAllocBlockProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id })
@@ -138,6 +143,10 @@ function DraggableAllocBlock({
   // Math.round(delta.x / DAY_WIDTH) so the in-drag position always matches what
   // gets persisted at drop instead of following the pointer pixel-for-pixel.
   const snappedX = transform ? Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH : 0
+  // Keep the project name visible: if the block starts before the viewport's
+  // left edge, slide the label right to the visible edge, clamped so it never
+  // runs past the block's right edge (869e6rn52).
+  const labelOffset = Math.max(0, Math.min(scrollLeft - left, Math.max(0, width - 96)))
   return (
     <div
       ref={setNodeRef}
@@ -165,7 +174,11 @@ function DraggableAllocBlock({
           opacity: isTentative ? 0.85 : 1,
         }}
       />
-      <div className="absolute inset-0 flex items-center px-2 gap-1 overflow-hidden">
+      {/* Label — always visible, follows the viewport's left edge */}
+      <div
+        className="absolute inset-0 flex items-center pr-2 gap-1 overflow-hidden"
+        style={{ paddingLeft: 8 + labelOffset }}
+      >
         <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
           {projectName}
         </span>
@@ -248,6 +261,9 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[]>([])
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
   const [visibleDate, setVisibleDate] = useState(new Date())
+  // Horizontal scroll offset (px), used to keep a block's project label visible
+  // when the block starts before the viewport's left edge (869e6rn52).
+  const [scrollLeft, setScrollLeft] = useState(0)
 
   // Fixed base date — never changes, whole range rendered once
   const baseDate = useMemo(() => subDays(new Date(), DAYS_BEFORE), [])
@@ -454,7 +470,9 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
   function handleScroll() {
     if (!scrollRef.current) return
-    const offset = Math.floor(scrollRef.current.scrollLeft / DAY_WIDTH)
+    const sl = scrollRef.current.scrollLeft
+    setScrollLeft(sl)
+    const offset = Math.floor(sl / DAY_WIDTH)
     setVisibleDate(addDays(baseDate, offset))
   }
 
@@ -716,8 +734,8 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   {person.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate leading-tight">{person.full_name}</p>
-                  <div className="mt-1">
+                  <p className="text-sm font-medium text-white truncate leading-tight mb-1.5">{person.full_name}</p>
+                  <div className="mt-1.5">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-[10px] text-slate-500">{allocatedHours}h / {capacityHours}h</span>
                       <span className="text-[10px] font-medium" style={{ color: barColor }}
@@ -828,6 +846,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     isTentative={isTentative}
                     hoursPerDay={item.hours_per_day}
                     projectName={project?.name ?? ''}
+                    scrollLeft={scrollLeft}
                     onClick={(e) => { e.stopPropagation(); if (!didDrag.current && !dragActiveRef.current) openEdit(item) }}
                   />
                 )
