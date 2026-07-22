@@ -7,7 +7,7 @@ repository:
   git_url: git@github.com:Rocksoft-IT/Rocksoft-planner.git
 status: in-progress
 created: 2026-06-18
-updated: 2026-07-16
+updated: 2026-07-20
 archived_at: null
 ---
 
@@ -51,5 +51,22 @@ Wymaga to zmiany w bazie:
 - Stopka panelu: główna linia „Ostatnio edytowane przez: <imię> · <data>", pod nią
   wyszarzone „Utworzone przez: <imię> · <data>".
 
-Ten zakres rozszerza już scalony PR #45 (sama wersja z twórcą, scalony w `main`)
-o śledzenie ostatniego edytującego.
+Ten zakres zastępuje wcześniejszy PR #45 (sama wersja z twórcą). #45 należy zamknąć.
+
+### 2026-07-20 — fix: stemplowanie autora w bazie (trigger)
+
+Po wdrożeniu #46 okazało się, że `created_by`/`updated_by` zapisywały się jako `NULL`
+(bez błędu) — klient (`supabase.auth.getUser()` w przeglądarce) nie zwracał zalogowanego
+użytkownika, mimo że samo żądanie było uwierzytelnione. Diagnoza na danych: świeżo
+edytowane wiersze miały `updated_by = NULL`, brak błędu zapisu.
+
+Naprawa **po stronie bazy** (niezależna od klienta):
+
+- `migrations/2026-07-20-allocation-actor-trigger.sql` + odpowiedni fragment w
+  `supabase-schema.sql`: funkcja `set_allocation_actor()` + trigger `allocations_set_actor`
+  `before insert or update`, który stempluje `created_by`/`updated_by` z `auth.uid()`.
+  Lookup do `profiles` pełni rolę guardu na klucz obcy (zwraca poprawne id albo `NULL`).
+- Zweryfikowane na produkcji: po dodaniu triggera edycja pokazuje „Ostatnio edytowane
+  przez <użytkownik>".
+
+Uwaga: stare alokacje pokazują „Brak informacji o ostatniej edycji" do pierwszej edycji.
