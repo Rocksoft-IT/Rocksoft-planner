@@ -74,3 +74,64 @@ export const TIME_OFF_LABELS: Record<TimeOff['type'], { label: string; emoji: st
 }
 
 export type ViewMode = 'week' | '3weeks' | 'month' | 'quarter'
+
+// ---------- Competency base ----------
+
+export type CompetencyKind = 'skill' | 'technology'
+
+export interface CompetencyTag {
+  id: string
+  kind: CompetencyKind
+  name: string
+  slug: string
+  is_curated: boolean
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TeamMemberCompetency {
+  id: string
+  team_member_id: string
+  competency_tag_id: string
+  proficiency: number | null
+  years_experience: number | null
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+  // joined
+  tag?: CompetencyTag
+}
+
+export interface ProjectExperience {
+  id: string
+  team_member_id: string
+  project_id: string | null
+  title: string
+  role: string | null
+  description: string | null
+  start_date: string | null
+  end_date: string | null
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+  // joined
+  tags?: CompetencyTag[]
+  project?: Project | null
+}
+
+// Result row of the search_experts() RPC.
+export interface ExpertSearchResult {
+  team_member_id: string
+  full_name: string
+  email: string
+  role: string
+  score: number
+  matched: {
+    skills_technologies: { kind: CompetencyKind; name: string; slug: string }[]
+    experience: { id: string; title: string; role: string | null }[]
+  }
+}
