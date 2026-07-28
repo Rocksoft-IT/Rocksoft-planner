@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils'
 export const ROLES = [
   'Backend Developer',
   'Frontend Developer',
+  'Mobile Developer',
   'Wordpress Developer',
   'UI/UX',
   'Graphic Designer',
   'Marketing',
+  'Administration Support',
   'Management',
 ] as const
 
