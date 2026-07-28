@@ -126,6 +126,34 @@ export function formatDate(date: Date | string): string {
   return format(new Date(date), 'yyyy-MM-dd')
 }
 
+// Forward-looking availability window: today through today + 13 (the next 2 weeks).
+// Weekends are dropped downstream by calcUtilization.
+export function getAvailabilityWindow(): Date[] {
+  const today = new Date()
+  return eachDayOfInterval({ start: today, end: addDays(today, 13) })
+}
+
+// Turn a calcUtilization result into a free-resources-focused label + color, so
+// the People page and the Timeline present availability identically.
+export function formatAvailability(util: {
+  allocated: number
+  free: number
+  allocatedHours: number
+  capacityHours: number
+}): { freeHours: number; freePct: number; isFull: boolean; isOver: boolean; color: string; label: string } {
+  const isOver = util.allocated > 100
+  const freeHours = Math.max(0, Math.round((util.capacityHours - util.allocatedHours) * 10) / 10)
+  const freePct = Math.max(0, util.free)
+  const isFull = !isOver && freePct <= 0
+  const color = isOver ? '#ef4444' : freePct <= 15 ? '#f59e0b' : '#10b981'
+  const label = isOver
+    ? 'Przeciążony'
+    : isFull
+      ? 'Brak wolnych godzin'
+      : `Wolne: ${freeHours}h z ${util.capacityHours}h (${freePct}%)`
+  return { freeHours, freePct, isFull, isOver, color, label }
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)

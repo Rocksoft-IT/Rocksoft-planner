@@ -3,25 +3,29 @@
 import { useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PersonModal from '@/components/people/PersonModal'
-import { calcUtilization, getViewDays, cn } from '@/lib/utils'
+import { format } from 'date-fns'
+import { calcUtilization, getAvailabilityWindow, formatAvailability, cn } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
-import type { TeamMember, Allocation } from '@/lib/types'
+import type { TeamMember, Allocation, TimeOff } from '@/lib/types'
 
 type GroupMode = 'none' | 'role' | 'capacity'
 
 interface Props {
   initialPeople: TeamMember[]
   initialAllocations: Allocation[]
+  initialTimeOff: TimeOff[]
 }
 
-export default function PeopleClient({ initialPeople, initialAllocations }: Props) {
+export default function PeopleClient({ initialPeople, initialAllocations, initialTimeOff }: Props) {
   const [people, setPeople] = useState<TeamMember[]>(initialPeople)
   const [allocations] = useState<Allocation[]>(initialAllocations)
+  const [timeOff] = useState<TimeOff[]>(initialTimeOff)
   const [modal, setModal] = useState<{ open: boolean; person?: TeamMember | null }>({ open: false })
   const [groupMode, setGroupMode] = useState<GroupMode>('none')
 
-  // Use current month as reference period for utilization
-  const days = useMemo(() => getViewDays(new Date(), 'month'), [])
+  // Availability is measured over the next 2 weeks (today → +13 days).
+  const days = useMemo(() => getAvailabilityWindow(), [])
+  const windowLabel = `${format(days[0], 'dd.MM')}–${format(days[days.length - 1], 'dd.MM')}`
 
   const refresh = useCallback(async () => {
     const supabase = createClient()
@@ -31,7 +35,8 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
 
   function getPersonUtil(person: TeamMember) {
     const personAllocs = allocations.filter((a) => a.person_id === person.id)
-    return calcUtilization(personAllocs, days, person.capacity_hours_per_day)
+    const personOffs = timeOff.filter((t) => t.person_id === person.id)
+    return calcUtilization(personAllocs, days, person.capacity_hours_per_day, personOffs)
   }
 
   // Build grouped sections
@@ -52,28 +57,28 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
 
     if (groupMode === 'capacity') {
       const free100: TeamMember[] = []
-      const free50: TeamMember[] = []
+      const partial: TeamMember[] = []
       const busy: TeamMember[] = []
       const over: TeamMember[] = []
 
       for (const p of people) {
-        const { allocated } = getPersonUtil(p)
+        const { allocated, free } = getPersonUtil(p)
         if (allocated > 100) over.push(p)
-        else if (allocated >= 86) busy.push(p)
-        else if (allocated >= 1) free50.push(p)
+        else if (free <= 15) busy.push(p)
+        else if (free < 100) partial.push(p)
         else free100.push(p)
       }
 
       return [
-        { label: 'Wolni', sublabel: '0% zajęty', color: '#10b981', people: free100 },
-        { label: 'Częściowo wolni', sublabel: '1–85% zajęty', color: '#6366f1', people: free50 },
-        { label: 'Prawie pełni', sublabel: '86–100% zajęty', color: '#f59e0b', people: busy },
+        { label: 'Wolni', sublabel: '100% wolne', color: '#10b981', people: free100 },
+        { label: 'Częściowo wolni', sublabel: '16–99% wolne', color: '#6366f1', people: partial },
+        { label: 'Prawie pełni', sublabel: '0–15% wolne', color: '#f59e0b', people: busy },
         { label: 'Przeciążeni', sublabel: '>100% zajęty', color: '#ef4444', people: over },
       ].filter((s) => s.people.length > 0)
     }
 
     return [{ label: '', people }]
-  }, [people, groupMode, allocations, days])
+  }, [people, groupMode, allocations, timeOff, days])
 
   return (
     <div className="p-6">
@@ -117,7 +122,7 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
         </div>
         {groupMode !== 'none' && (
           <span className="text-xs text-slate-500 ml-1">
-            · zajętość liczona na bieżący miesiąc
+            · dostępność na najbliższe 2 tygodnie ({windowLabel})
           </span>
         )}
       </div>
@@ -142,8 +147,8 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {group.people.map((person) => {
-                const { allocated, free, allocatedHours, capacityHours } = getPersonUtil(person)
-                const barColor = allocated > 100 ? '#ef4444' : allocated > 85 ? '#f59e0b' : '#10b981'
+                const util = getPersonUtil(person)
+                const av = formatAvailability(util)
                 const roles = person.role.split(',').map((r) => r.trim()).filter(Boolean)
 
                 return (
@@ -175,20 +180,21 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
                       </div>
                     </div>
 
-                    {/* Utilization bar */}
+                    {/* Availability — next 2 weeks (green bar = how much is free) */}
                     <div className="mt-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-slate-500">{allocatedHours}h / {capacityHours}h ten miesiąc</span>
-                        <span className="text-[10px] font-semibold" style={{ color: barColor }}>
-                          {free > 0 ? `${free}% wolny` : 'pełny'}
+                        <span className="text-[10px] text-slate-500">Najbliższe 2 tygodnie · {windowLabel}</span>
+                        <span className="text-[10px] font-semibold" style={{ color: av.color }}>
+                          {av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
-                          style={{ width: `${Math.min(allocated, 100)}%`, backgroundColor: barColor }}
+                          style={{ width: `${Math.min(av.freePct, 100)}%`, backgroundColor: av.color }}
                         />
                       </div>
+                      <p className="text-[10px] mt-1 font-medium" style={{ color: av.color }}>{av.label}</p>
                     </div>
 
                     {/* Capacity + email */}
