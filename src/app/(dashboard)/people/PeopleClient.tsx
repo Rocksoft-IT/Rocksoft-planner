@@ -60,12 +60,14 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
       const partial: TeamMember[] = []
       const busy: TeamMember[] = []
       const over: TeamMember[] = []
+      const unavailable: TeamMember[] = []
 
       for (const p of people) {
-        const { allocated, free } = getPersonUtil(p)
-        if (allocated > 100) over.push(p)
-        else if (free <= 15) busy.push(p)
-        else if (free < 100) partial.push(p)
+        const av = formatAvailability(getPersonUtil(p))
+        if (av.isUnavailable) unavailable.push(p)
+        else if (av.isOver) over.push(p)
+        else if (av.freePct <= 15) busy.push(p)
+        else if (av.freePct < 100) partial.push(p)
         else free100.push(p)
       }
 
@@ -74,6 +76,7 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
         { label: 'Częściowo wolni', sublabel: '16–99% wolne', color: '#6366f1', people: partial },
         { label: 'Prawie pełni', sublabel: '0–15% wolne', color: '#f59e0b', people: busy },
         { label: 'Przeciążeni', sublabel: '>100% zajęty', color: '#ef4444', people: over },
+        { label: 'Niedostępni', sublabel: 'brak dostępnych godzin (urlop / 0h)', color: '#64748b', people: unavailable },
       ].filter((s) => s.people.length > 0)
     }
 
@@ -185,7 +188,7 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] text-slate-500">Najbliższe 2 tygodnie · {windowLabel}</span>
                         <span className="text-[10px] font-semibold" style={{ color: av.color }}>
-                          {av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
+                          {av.isUnavailable ? 'niedostępny' : av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">

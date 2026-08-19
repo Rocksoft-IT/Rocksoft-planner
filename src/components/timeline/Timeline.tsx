@@ -21,7 +21,7 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, formatAvailability, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
+import { calcUtilization, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
@@ -294,6 +294,10 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     () => eachDayOfInterval({ start: baseDate, end: addDays(baseDate, totalDays - 1) }),
     [baseDate, totalDays]
   )
+
+  // The availability bar measures the next 2 weeks, not the whole rendered axis
+  // (~24 months). Kept separate from `days` (which drives the timeline layout).
+  const availabilityDays = useMemo(() => getAvailabilityWindow(), [])
 
   // dnd-kit sensor — activation distance of 5 px keeps a click (< 5 px movement) from
   // starting a drag, while a deliberate move gesture fires dnd-kit's onDragStart.
@@ -715,7 +719,9 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
           {/* ── Person rows ── */}
           {rowData.map(({ person, laned, personAllocs, personOffs, rowHeight }) => {
-            const util = calcUtilization(personAllocs, days, person.capacity_hours_per_day, personOffs)
+            // Availability bar reflects the next 2 weeks (availabilityDays), not the
+            // whole rendered axis — consistent with the People page.
+            const util = calcUtilization(personAllocs, availabilityDays, person.capacity_hours_per_day, personOffs)
             const { capacityHours, ooodays } = util
             const av = formatAvailability(util)
 
@@ -740,7 +746,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                       <span className="text-[10px] text-slate-500">Wolne {av.freeHours}h / {capacityHours}h</span>
                       <span className="text-[10px] font-medium" style={{ color: av.color }}
                         title={`${util.allocated}% zajęty · ${av.freePct}% wolne`}>
-                        {av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
+                        {av.isUnavailable ? 'niedostępny' : av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
                       </span>
                     </div>
                     <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">

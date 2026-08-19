@@ -135,23 +135,56 @@ export function getAvailabilityWindow(): Date[] {
 
 // Turn a calcUtilization result into a free-resources-focused label + color, so
 // the People page and the Timeline present availability identically.
+//
+// Status (isUnavailable/isOver/isFull) is derived from the raw hours, not the
+// rounded percentages — otherwise a person with a fraction of an hour free could
+// be labelled "pełny", or a tiny overallocation could round down to "pełny".
+// The percentage is presentation only.
 export function formatAvailability(util: {
   allocated: number
   free: number
   allocatedHours: number
   capacityHours: number
-}): { freeHours: number; freePct: number; isFull: boolean; isOver: boolean; color: string; label: string } {
-  const isOver = util.allocated > 100
-  const freeHours = Math.max(0, Math.round((util.capacityHours - util.allocatedHours) * 10) / 10)
-  const freePct = Math.max(0, util.free)
-  const isFull = !isOver && freePct <= 0
-  const color = isOver ? '#ef4444' : freePct <= 15 ? '#f59e0b' : '#10b981'
-  const label = isOver
-    ? 'Przeciążony'
-    : isFull
-      ? 'Brak wolnych godzin'
-      : `Wolne: ${freeHours}h z ${util.capacityHours}h (${freePct}%)`
-  return { freeHours, freePct, isFull, isOver, color, label }
+}): {
+  freeHours: number
+  freePct: number
+  isFull: boolean
+  isOver: boolean
+  isUnavailable: boolean
+  color: string
+  label: string
+} {
+  const { allocatedHours, capacityHours } = util
+  const rawFreeHours = capacityHours - allocatedHours
+
+  // No available capacity in the window (e.g. fully on time-off, or 0h/day) —
+  // this is "not available", not "fully booked".
+  const isUnavailable = capacityHours <= 0
+  const isOver = !isUnavailable && rawFreeHours < 0
+  const isFull = !isUnavailable && !isOver && rawFreeHours <= 0
+
+  const freeHours = Math.max(0, Math.round(rawFreeHours * 10) / 10)
+  const freePct = isUnavailable
+    ? 0
+    : Math.max(0, Math.min(100, Math.round((rawFreeHours / capacityHours) * 100)))
+
+  const color = isUnavailable
+    ? '#64748b'
+    : isOver
+      ? '#ef4444'
+      : freePct <= 15
+        ? '#f59e0b'
+        : '#10b981'
+
+  const label = isUnavailable
+    ? 'Niedostępny'
+    : isOver
+      ? 'Przeciążony'
+      : isFull
+        ? 'Brak wolnych godzin'
+        : `Wolne: ${freeHours}h z ${capacityHours}h (${freePct}%)`
+
+  return { freeHours, freePct, isFull, isOver, isUnavailable, color, label }
 }
 
 export function hexToRgba(hex: string, alpha: number): string {
