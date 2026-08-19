@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import TagMultiSelect from './TagMultiSelect'
 import { createClient } from '@/lib/supabase/client'
 import type { CompetencyTag, ProjectExperience } from '@/lib/types'
 
 interface ExperienceModalProps {
-  open: boolean
   onClose: () => void
   onSaved: () => void
   memberId: string
@@ -15,29 +14,17 @@ interface ExperienceModalProps {
   experience?: ProjectExperience | null
 }
 
-export default function ExperienceModal({ open, onClose, onSaved, memberId, techOptions, experience }: ExperienceModalProps) {
-  const [title, setTitle] = useState('')
-  const [role, setRole] = useState('')
-  const [description, setDescription] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [techSlugs, setTechSlugs] = useState<string[]>([])
+// The parent mounts this fresh per open (keyed by experience id), so state is
+// initialized straight from props — no prop→state syncing effect needed.
+export default function ExperienceModal({ onClose, onSaved, memberId, techOptions, experience }: ExperienceModalProps) {
+  const [title, setTitle] = useState(experience?.title ?? '')
+  const [role, setRole] = useState(experience?.role ?? '')
+  const [description, setDescription] = useState(experience?.description ?? '')
+  const [startDate, setStartDate] = useState(experience?.start_date ?? '')
+  const [endDate, setEndDate] = useState(experience?.end_date ?? '')
+  const [techSlugs, setTechSlugs] = useState<string[]>((experience?.tags ?? []).map((t) => t.slug))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (experience) {
-      setTitle(experience.title)
-      setRole(experience.role ?? '')
-      setDescription(experience.description ?? '')
-      setStartDate(experience.start_date ?? '')
-      setEndDate(experience.end_date ?? '')
-      setTechSlugs((experience.tags ?? []).map((t) => t.slug))
-    } else {
-      setTitle(''); setRole(''); setDescription(''); setStartDate(''); setEndDate(''); setTechSlugs([])
-    }
-    setError('')
-  }, [experience, open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,33 +32,20 @@ export default function ExperienceModal({ open, onClose, onSaved, memberId, tech
     setLoading(true)
     const supabase = createClient()
 
-    const payload = {
-      team_member_id: memberId,
-      title,
-      role: role || null,
-      description: description || null,
-      start_date: startDate || null,
-      end_date: endDate || null,
-    }
-
-    let experienceId = experience?.id ?? null
-    if (experienceId) {
-      const { error: e1 } = await supabase.from('project_experience').update(payload).eq('id', experienceId)
-      if (e1) { setError(e1.message); setLoading(false); return }
-    } else {
-      const { data, error: e1 } = await supabase.from('project_experience').insert(payload).select('id').single()
-      if (e1 || !data) { setError(e1?.message ?? 'Nie udało się zapisać.'); setLoading(false); return }
-      experienceId = data.id
-    }
-
-    // Reconcile technology tags for this experience entry.
-    await supabase.from('project_experience_tags').delete().eq('experience_id', experienceId)
+    // Single transactional RPC: upsert the row and reconcile its tags atomically,
+    // so a failure can't leave a saved experience with the wrong (or no) tags.
     const tagIds = techOptions.filter((t) => techSlugs.includes(t.slug)).map((t) => t.id)
-    if (tagIds.length > 0) {
-      const rows = tagIds.map((competency_tag_id) => ({ experience_id: experienceId, competency_tag_id }))
-      const { error: e2 } = await supabase.from('project_experience_tags').insert(rows)
-      if (e2) { setError(e2.message); setLoading(false); return }
-    }
+    const { error: err } = await supabase.rpc('save_project_experience', {
+      p_experience_id: experience?.id ?? null,
+      p_member_id: memberId,
+      p_title: title,
+      p_role: role || null,
+      p_description: description || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+      p_tag_ids: tagIds,
+    })
+    if (err) { setError(err.message); setLoading(false); return }
 
     setLoading(false)
     onSaved()
@@ -82,7 +56,8 @@ export default function ExperienceModal({ open, onClose, onSaved, memberId, tech
     if (!experience) return
     setLoading(true)
     const supabase = createClient()
-    await supabase.from('project_experience').delete().eq('id', experience.id)
+    const { error: err } = await supabase.from('project_experience').delete().eq('id', experience.id)
+    if (err) { setError(err.message); setLoading(false); return }
     setLoading(false)
     onSaved()
     onClose()
@@ -92,7 +67,7 @@ export default function ExperienceModal({ open, onClose, onSaved, memberId, tech
     'w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500'
 
   return (
-    <Modal open={open} onClose={onClose} title={experience ? 'Edytuj doświadczenie' : 'Dodaj doświadczenie'} className="max-w-lg">
+    <Modal open onClose={onClose} title={experience ? 'Edytuj doświadczenie' : 'Dodaj doświadczenie'} className="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{error}</div>}
 

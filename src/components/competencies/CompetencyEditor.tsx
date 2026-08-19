@@ -20,7 +20,9 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
   const [editingExp, setEditingExp] = useState<ProjectExperience | null>(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
+    // No synchronous setState here: `loading` starts true (useState) and the effect
+    // only calls this async loader, which sets state after awaiting — keeps the
+    // effect free of synchronous state updates.
     const supabase = createClient()
     const [{ data: comps }, { data: exps }] = await Promise.all([
       supabase
@@ -43,6 +45,9 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
     setLoading(false)
   }, [memberId])
 
+  // Fetch on mount / member change. `load` only setStates after awaiting, so there is
+  // no synchronous cascading render; the rule can't model the async boundary here.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load() }, [load])
 
   async function ensureTag(kind: CompetencyKind, name: string): Promise<CompetencyTag | null> {
@@ -134,14 +139,18 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
         )}
       </section>
 
-      <ExperienceModal
-        open={expModalOpen}
-        onClose={() => setExpModalOpen(false)}
-        onSaved={load}
-        memberId={memberId}
-        techOptions={techOptions}
-        experience={editingExp}
-      />
+      {/* Mount fresh per open (keyed by the row) so the modal initializes its form
+          from props without a prop→state effect. */}
+      {expModalOpen && (
+        <ExperienceModal
+          key={editingExp?.id ?? 'new'}
+          onClose={() => setExpModalOpen(false)}
+          onSaved={load}
+          memberId={memberId}
+          techOptions={techOptions}
+          experience={editingExp}
+        />
+      )}
     </div>
   )
 }

@@ -255,6 +255,11 @@ create index if not exists project_experience_member_idx on public.project_exper
 create index if not exists project_experience_tsv_idx on public.project_experience using gin (search_tsv);
 create index if not exists pet_tag_idx on public.project_experience_tags(competency_tag_id);
 
+-- Guard years_experience even on direct (non-UI) writes. Idempotent drop/add.
+alter table public.team_member_competencies drop constraint if exists tmc_years_experience_check;
+alter table public.team_member_competencies add constraint tmc_years_experience_check
+  check (years_experience is null or (years_experience >= 0 and years_experience <= 80));
+
 alter table public.competency_tags           enable row level security;
 alter table public.team_member_competencies  enable row level security;
 alter table public.project_experience         enable row level security;
@@ -267,7 +272,12 @@ create policy "competency_tags: read"
   on public.competency_tags for select to authenticated using (true);
 drop policy if exists "competency_tags: insert" on public.competency_tags;
 create policy "competency_tags: insert"
-  on public.competency_tags for insert to authenticated with check (true);
+  on public.competency_tags for insert to authenticated
+  -- Only admins may mint curated tags (otherwise a user could self-elevate is_curated).
+  with check (
+    is_curated = false
+    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
 drop policy if exists "competency_tags: admin update" on public.competency_tags;
 create policy "competency_tags: admin update"
   on public.competency_tags for update to authenticated
@@ -277,31 +287,52 @@ create policy "competency_tags: admin delete"
   on public.competency_tags for delete to authenticated
   using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
 
--- Broad authenticated CRUD for the join/experience tables (see migration for the DO-block form).
+-- Ownership helpers: a profile owns a team_member by matching email; admins edit anyone.
+-- security definer so the lookups aren't themselves gated by RLS. (See migration for rationale.)
+create or replace function public.can_edit_member(p_member_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1
+    from public.team_members tm
+    join public.profiles pr on lower(pr.email) = lower(tm.email)
+    where tm.id = p_member_id and pr.id = auth.uid()
+  ) or exists (
+    select 1 from public.profiles where id = auth.uid() and is_admin = true
+  );
+$$;
+
+create or replace function public.can_edit_experience(p_experience_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.can_edit_member(pe.team_member_id)
+  from public.project_experience pe
+  where pe.id = p_experience_id;
+$$;
+
+-- Join/experience tables: anyone reads; only the owner (or an admin) writes.
 drop policy if exists "team_member_competencies: read"   on public.team_member_competencies;
 create policy "team_member_competencies: read"   on public.team_member_competencies for select to authenticated using (true);
 drop policy if exists "team_member_competencies: insert" on public.team_member_competencies;
-create policy "team_member_competencies: insert" on public.team_member_competencies for insert to authenticated with check (true);
+create policy "team_member_competencies: insert" on public.team_member_competencies for insert to authenticated with check (public.can_edit_member(team_member_id));
 drop policy if exists "team_member_competencies: update" on public.team_member_competencies;
-create policy "team_member_competencies: update" on public.team_member_competencies for update to authenticated using (true);
+create policy "team_member_competencies: update" on public.team_member_competencies for update to authenticated using (public.can_edit_member(team_member_id)) with check (public.can_edit_member(team_member_id));
 drop policy if exists "team_member_competencies: delete" on public.team_member_competencies;
-create policy "team_member_competencies: delete" on public.team_member_competencies for delete to authenticated using (true);
+create policy "team_member_competencies: delete" on public.team_member_competencies for delete to authenticated using (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience: read"   on public.project_experience;
 create policy "project_experience: read"   on public.project_experience for select to authenticated using (true);
 drop policy if exists "project_experience: insert" on public.project_experience;
-create policy "project_experience: insert" on public.project_experience for insert to authenticated with check (true);
+create policy "project_experience: insert" on public.project_experience for insert to authenticated with check (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience: update" on public.project_experience;
-create policy "project_experience: update" on public.project_experience for update to authenticated using (true);
+create policy "project_experience: update" on public.project_experience for update to authenticated using (public.can_edit_member(team_member_id)) with check (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience: delete" on public.project_experience;
-create policy "project_experience: delete" on public.project_experience for delete to authenticated using (true);
+create policy "project_experience: delete" on public.project_experience for delete to authenticated using (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience_tags: read"   on public.project_experience_tags;
 create policy "project_experience_tags: read"   on public.project_experience_tags for select to authenticated using (true);
 drop policy if exists "project_experience_tags: insert" on public.project_experience_tags;
-create policy "project_experience_tags: insert" on public.project_experience_tags for insert to authenticated with check (true);
+create policy "project_experience_tags: insert" on public.project_experience_tags for insert to authenticated with check (public.can_edit_experience(experience_id));
 drop policy if exists "project_experience_tags: update" on public.project_experience_tags;
-create policy "project_experience_tags: update" on public.project_experience_tags for update to authenticated using (true);
+create policy "project_experience_tags: update" on public.project_experience_tags for update to authenticated using (public.can_edit_experience(experience_id)) with check (public.can_edit_experience(experience_id));
 drop policy if exists "project_experience_tags: delete" on public.project_experience_tags;
-create policy "project_experience_tags: delete" on public.project_experience_tags for delete to authenticated using (true);
+create policy "project_experience_tags: delete" on public.project_experience_tags for delete to authenticated using (public.can_edit_experience(experience_id));
 
 create or replace function public.search_experts(
   p_skill_slugs text[] default '{}',
@@ -311,7 +342,17 @@ create or replace function public.search_experts(
 returns table (team_member_id uuid, full_name text, email text, role text, score numeric, matched jsonb)
 language sql stable security invoker set search_path = public
 as $$
-  with wanted as (
+  with q as (
+    -- OR tsquery so ANY brief word can match (plainto_tsquery ANDs them). 'simple' =
+    -- no stemming; proper Polish stemming needs a dedicated dictionary (tracked separately).
+    select to_tsquery('simple', string_agg(tok, ' | ')) as query
+    from (
+      select regexp_replace(lower(w), '[^a-z0-9ąćęłńóśźż]+', '', 'g') as tok
+      from unnest(regexp_split_to_array(coalesce(p_query, ''), '\s+')) as w
+    ) tokens
+    where tok <> ''
+  ),
+  wanted as (
     select distinct slug, kind from (
       select unnest(coalesce(p_skill_slugs, '{}')) as slug, 'skill'::text      as kind
       union all
@@ -320,9 +361,16 @@ as $$
     where slug is not null and slug <> ''
   ),
   tag_hits as (
+    -- Match wanted slugs on own competencies AND on project-experience tags (union dedups).
     select tmc.team_member_id, ct.kind, ct.name, ct.slug
     from public.team_member_competencies tmc
     join public.competency_tags ct on ct.id = tmc.competency_tag_id
+    join wanted w on w.slug = ct.slug and w.kind = ct.kind
+    union
+    select pe.team_member_id, ct.kind, ct.name, ct.slug
+    from public.project_experience pe
+    join public.project_experience_tags pet on pet.experience_id = pe.id
+    join public.competency_tags ct on ct.id = pet.competency_tag_id
     join wanted w on w.slug = ct.slug and w.kind = ct.kind
   ),
   agg_tags as (
@@ -332,10 +380,10 @@ as $$
   ),
   exp_hits as (
     select pe.team_member_id,
-           sum(ts_rank(pe.search_tsv, plainto_tsquery('simple', p_query)))::numeric as rank,
+           sum(ts_rank(pe.search_tsv, (select query from q)))::numeric as rank,
            jsonb_agg(jsonb_build_object('id', pe.id, 'title', pe.title, 'role', pe.role)) as experiences
     from public.project_experience pe
-    where p_query is not null and p_query <> '' and pe.search_tsv @@ plainto_tsquery('simple', p_query)
+    where (select query from q) is not null and pe.search_tsv @@ (select query from q)
     group by pe.team_member_id
   ),
   combined as (
@@ -353,4 +401,53 @@ as $$
   from combined where score > 0 order by score desc, full_name asc;
 $$;
 
-grant execute on function public.search_experts(text[], text[], text) to authenticated;
+-- Revoke the implicit PUBLIC execute so anon can't bypass the API-key check.
+revoke execute on function public.search_experts(text[], text[], text) from public;
+grant execute on function public.search_experts(text[], text[], text) to authenticated, service_role;
+
+-- Atomic save of a project-experience row + its technology tags (one transaction).
+-- security invoker so RLS ownership applies to every write. Returns the row id.
+create or replace function public.save_project_experience(
+  p_experience_id uuid,
+  p_member_id     uuid,
+  p_title         text,
+  p_role          text,
+  p_description   text,
+  p_start_date    date,
+  p_end_date      date,
+  p_tag_ids       uuid[] default '{}'
+)
+returns uuid
+language plpgsql security invoker set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if p_experience_id is null then
+    insert into public.project_experience (team_member_id, title, role, description, start_date, end_date)
+    values (p_member_id, p_title, p_role, p_description, p_start_date, p_end_date)
+    returning id into v_id;
+  else
+    update public.project_experience
+       set title = p_title, role = p_role, description = p_description,
+           start_date = p_start_date, end_date = p_end_date
+     where id = p_experience_id
+    returning id into v_id;
+    if v_id is null then
+      raise exception 'project_experience % not found', p_experience_id;
+    end if;
+  end if;
+
+  delete from public.project_experience_tags where experience_id = v_id;
+  if array_length(p_tag_ids, 1) is not null then
+    insert into public.project_experience_tags (experience_id, competency_tag_id)
+    select v_id, unnest(p_tag_ids)
+    on conflict do nothing;
+  end if;
+
+  return v_id;
+end;
+$$;
+
+revoke execute on function public.save_project_experience(uuid, uuid, text, text, text, date, date, uuid[]) from public;
+grant execute on function public.save_project_experience(uuid, uuid, text, text, text, date, date, uuid[]) to authenticated;

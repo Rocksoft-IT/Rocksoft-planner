@@ -4,12 +4,39 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+// Bounds on caller-supplied input so a valid API key can't drive unbounded RPC work.
+const MAX_SLUGS = 50
+const MAX_SLUG_LEN = 100
+const MAX_TEXT_LEN = 2000
+
+function cleanSlugs(values: string[]): string[] {
+  return values
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s.length <= MAX_SLUG_LEN)
+    .slice(0, MAX_SLUGS)
+}
+
 function splitCsv(v: string | null): string[] {
   if (!v) return []
-  return v.split(',').map((s) => s.trim()).filter(Boolean)
+  return cleanSlugs(v.split(','))
+}
+
+function cleanText(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const trimmed = v.trim()
+  if (!trimmed) return null
+  return trimmed.slice(0, MAX_TEXT_LEN)
 }
 
 async function runSearch(skills: string[], technologies: string[], query: string | null) {
+  // Require at least one criterion — an empty search would scan everything for nothing.
+  if (skills.length === 0 && technologies.length === 0 && !query) {
+    return NextResponse.json(
+      { error: 'Provide at least one of: skills, technologies, or a text query.' },
+      { status: 400 }
+    )
+  }
+
   const supabase = createAdminClient()
   const { data, error } = await supabase.rpc('search_experts', {
     p_skill_slugs: skills,
@@ -34,7 +61,7 @@ export async function GET(request: NextRequest) {
   return runSearch(
     splitCsv(searchParams.get('skills')),
     splitCsv(searchParams.get('technologies')),
-    searchParams.get('q')
+    cleanText(searchParams.get('q'))
   )
 }
 
@@ -46,27 +73,24 @@ export async function POST(request: NextRequest) {
   const denied = requireApiKey(request)
   if (denied) return denied
 
-  let body: {
-    skills?: unknown
-    technologies?: unknown
-    description?: unknown
-    query?: unknown
-  }
+  let body: unknown
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
   }
+  // Reject anything that isn't a JSON object (null, arrays, scalars) up front.
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Body must be a JSON object.' }, { status: 400 })
+  }
+  const b = body as Record<string, unknown>
 
   const asStringArray = (v: unknown): string[] =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean) : []
+    Array.isArray(v) ? cleanSlugs(v.filter((x): x is string => typeof x === 'string')) : []
 
-  const text =
-    typeof body.description === 'string'
-      ? body.description
-      : typeof body.query === 'string'
-        ? body.query
-        : null
-
-  return runSearch(asStringArray(body.skills), asStringArray(body.technologies), text)
+  return runSearch(
+    asStringArray(b.skills),
+    asStringArray(b.technologies),
+    cleanText(b.description) ?? cleanText(b.query)
+  )
 }
