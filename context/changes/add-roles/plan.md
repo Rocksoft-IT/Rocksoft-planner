@@ -12,9 +12,14 @@ Nowe role: **Administration Support** i **Mobile Developer**.
 - Konsumenci `ROLES` (importują tę samą stałą, więc zmiana propaguje się sama):
   - `src/components/timeline/Timeline.tsx` — grupowanie/liczniki po rolach.
   - `src/app/(dashboard)/people/PeopleClient.tsx` — sekcje listy osób.
-- **Baza danych: brak enuma, brak CHECK.** Kolumna `profiles.role` to
-  `text not null default ''`. Rola osoby jest przechowywana jako string
-  rozdzielony przecinkami (multi-select). → **Migracja SQL nie jest potrzebna.**
+- **Baza danych: brak enuma, brak CHECK.** Rola osoby siedzi w kolumnie
+  `role` tabeli `team_members` — to jej dotyczą wszystkie odczyty i zapisy
+  z UI (`people/page.tsx`, `PeopleClient.tsx`, `timeline/page.tsx`,
+  `PersonModal.tsx`). Tabela nie jest zdefiniowana w zacommitowanym
+  `supabase-schema.sql` (jest tam tylko `profiles.role text not null default ''`,
+  używane przy zakładaniu konta — inny obiekt, nie ta lista). Wartość jest
+  przechowywana jako string rozdzielony przecinkami (multi-select) i na żadnym
+  z tych obiektów nie ma constraintu. → **Migracja SQL nie jest potrzebna.**
 
 ## Zakres zmiany
 
