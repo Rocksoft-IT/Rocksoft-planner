@@ -184,7 +184,9 @@ together with, the code deploy. They are individually idempotent
 two stamping triggers on `allocations` (`set_allocation_audit_fields` from the
 first, `allocations_set_actor` from the second), whereas a database provisioned
 from `supabase-schema.sql` has only `allocations_set_actor`. Reconciling the two
-is out of scope for this record and is left to review.
+was out of scope for this record and was left to review; it is resolved
+separately by `migrations/2026-08-19-consolidate-allocation-actor-trigger.sql`,
+which drops `set_allocation_audit_fields`.
 
 Rollback is `drop trigger …; drop function …; alter table public.allocations drop
 column updated_by;` — the UI degrades to "Brak informacji o ostatniej edycji"

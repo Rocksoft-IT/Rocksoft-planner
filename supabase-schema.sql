@@ -73,18 +73,25 @@ create table if not exists public.allocations (
 );
 
 -- Trigger: stamp created_by / updated_by from the authenticated user (auth.uid()),
--- so author tracking is reliable even when the client doesn't send the id. The
--- profiles lookup guards the FK: it yields a valid profile id or NULL, never an
--- id absent from profiles.
+-- so author tracking is reliable even when the client doesn't send the id, and
+-- cannot be forged when it does. RLS lets any authenticated user insert any
+-- allocation row, so these columns are assigned rather than defaulted.
+-- SECURITY DEFINER keeps the profiles lookup working however the profiles
+-- SELECT policy is scoped.
 create or replace function public.set_allocation_actor()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+security definer set search_path = public
+as $$
 declare
+  -- Guards the FK: a valid profile id, or NULL — never an id absent from profiles.
   actor uuid := (select id from public.profiles where id = auth.uid());
 begin
   if (tg_op = 'INSERT') then
-    new.created_by := coalesce(new.created_by, actor);
-    new.updated_by := coalesce(new.updated_by, actor);
+    new.created_by := actor;
+    new.updated_by := actor;
   elsif (tg_op = 'UPDATE') then
+    -- The author does not change when someone else edits the allocation.
+    new.created_by := old.created_by;
     new.updated_by := actor;
     new.updated_at := now();
   end if;
