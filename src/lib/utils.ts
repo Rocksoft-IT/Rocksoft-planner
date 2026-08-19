@@ -164,9 +164,10 @@ export function formatAvailability(util: {
   const isFull = !isUnavailable && !isOver && rawFreeHours <= 0
 
   const freeHours = Math.max(0, Math.round(rawFreeHours * 10) / 10)
-  const freePct = isUnavailable
-    ? 0
-    : Math.max(0, Math.min(100, Math.round((rawFreeHours / capacityHours) * 100)))
+  // Percentage is presentation only. Keep it the exact complement of the rounded
+  // allocated% (util.free === 100 - util.allocated) so "% zajęty" + "% wolne" always
+  // sum to 100, and a person with any allocation never rounds up into 100% free.
+  const freePct = isUnavailable ? 0 : Math.max(0, util.free)
 
   const color = isUnavailable
     ? '#64748b'
