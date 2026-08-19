@@ -77,7 +77,10 @@ a trailing `/`, and if it still contains `/` take the last path segment →
 4. **Soft warnings** (queue all, then one prompt): status not in `{implemented,
    impl_reviewed}`; pending `## Progress` items (Automated/Manual aware); missing
    impl-review; `[x]` rows without a ` — <sha>` suffix. (If the only pending
-   items are manual, append "(Recommended)" to the Continue label.)
+   items are manual, append "(Recommended)" to the Continue label.) **Exempt an
+   as-built plan** from the two Progress warnings — one carrying the `AS-BUILT`
+   marker (written by `rs-change-from-pr`, never executed by `rs-implement`) has
+   unchecked, SHA-less rows by design; note that in the summary instead.
 5. **Fork** (skip if no warnings): **Continue archiving** → step 6; **Resume
    implementation** → print and clipboard-copy `rs-implement <change-id>`, STOP;
    **Cancel** → STOP.

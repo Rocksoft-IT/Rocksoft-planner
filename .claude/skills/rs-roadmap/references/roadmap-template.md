@@ -54,13 +54,25 @@ top_blocker: <enum>          # skills | capacity | time | decisions | external |
    with the entry's `Prerequisites` field.
 
    **`Ready for rs-plan`** is therefore a dependency gate, not a "spec is complete"
-   flag: it is `Yes` only when **`Depends on`** is `—` (no prerequisite slice or
-   foundation) AND the entry's `Status` is not `blocked`. Every row with a
-   prerequisite is `No` — it becomes ready only once its prerequisites are
-   delivered (downstream automation flips it then). This is what stops the whole
-   backlog from being planned at once the moment it is exported: only the roots
-   (typically the first foundation, or a slice with no `F-NN`/`S-NN` prerequisite)
-   are `Yes` on day one.
+   flag. It is `Yes` only when all three hold:
+
+   - every id in **`Depends on`** has landed (that entry's `Status` is `done`) —
+     on a freshly generated roadmap nothing has landed yet, so this reduces to
+     `Depends on` being `—`;
+   - the entry's own `Status` is `proposed` or `ready` — a row that is `blocked`,
+     already under way (`planning` / `in-progress`) or `done` is never `Yes`,
+     because there is nothing left to hand to `rs-plan`;
+   - the entry has no pending **`Blockers`** (external state — an account, a key,
+     an approval — that `Status` does not capture, since `blocked` tracks
+     Block:yes unknowns only).
+
+   `Depends on` is the static graph and never shrinks; what changes over time is
+   whether the ids in it have reached `done`. A row with an unmet prerequisite is
+   `No` and becomes ready once its prerequisites are delivered (downstream
+   automation flips it then). This is what stops the whole backlog from being
+   planned at once the moment it is exported: only the roots (typically the first
+   foundation, or a slice with no `F-NN`/`S-NN` prerequisite) are `Yes` on day
+   one.
 9. `## Open Roadmap Questions` — PRD Open Questions verbatim + new cross-slice
    questions surfaced during the interview. Each: question, owner, Block yes/no.
 10. `## Parked` — PRD Non-Goals + items deferred during the interview.
@@ -124,6 +136,11 @@ Ids: `F-01…`, `S-01…` (two-digit, leading zero).
 11. No estimates / time units / framework-level detail anywhere.
 12. Backlog Handoff dependency gate: each row's `Depends on` lists exactly the
     `F-NN`/`S-NN` ids from that entry's `Prerequisites` (or `—`); and
-    `Ready for rs-plan = Yes` ⟺ `Depends on` is `—` AND `Status` ≠ `blocked`. At
-    least one row must be `Yes` (a graph with no ready root is a cycle — already
-    caught by item 5, but re-assert here).
+    `Ready for rs-plan = Yes` ⟺ every id in `Depends on` is `done` AND the row's
+    own `Status` is `proposed` or `ready` AND it has no pending `Blockers`. At
+    least one **root** (a row whose `Depends on` is `—`) must exist — none at all
+    is a cycle, already caught by item 5. A freshly generated roadmap, where
+    nothing is `done` yet, therefore has at least one `Yes` row unless every root
+    is blocked. Do **not** abort when no row is `Yes` on a roadmap that is
+    legitimately blocked, already under way, or fully delivered — report the
+    reason instead.

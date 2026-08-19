@@ -194,18 +194,18 @@ STOP. Never auto-chain.
    those belong to `rs-plan`.
 5. **Surface unknowns; don't paper over them.** Block:yes unknowns mark a slice
    `blocked` and push resolution to where a human decides.
-5a. **Dependency gate is machine-readable.** Every Backlog Handoff row carries a
+6. **Dependency gate is machine-readable.** Every Backlog Handoff row carries a
    `Depends on` list (its `Prerequisites` ids) and `Ready for rs-plan` is `Yes`
    only with no unmet dependency — so issue automation starts the roots, not the
    whole backlog at once. Keep `Depends on` in sync with `Prerequisites`.
-6. **Baseline is surveyed, not asked.** Step 4 probes the codebase; the user only
+7. **Baseline is surveyed, not asked.** Step 4 probes the codebase; the user only
    confirms.
-7. **Self-check aborts on drift.** A missing section/field or a graph cycle aborts
+8. **Self-check aborts on drift.** A missing section/field or a graph cycle aborts
    the write with a named failure.
-8. **Foundation-document convention.** Archive-then-replace; surgical refinement
+9. **Foundation-document convention.** Archive-then-replace; surgical refinement
    is out of scope.
-9. **Never auto-chain.** Step 10 announces one next move; the user invokes
-   `rs-plan` when ready.
+10. **Never auto-chain.** Step 10 announces one next move; the user invokes
+    `rs-plan` when ready.
 
 ## Notes
 

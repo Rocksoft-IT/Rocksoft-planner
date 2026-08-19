@@ -144,9 +144,9 @@ context/
 ## Status lifecycle (`change.md`)
 
 ```
-new ──▶ preparing ──────▶ planned ──▶ implementing ──▶ implemented ──▶ impl_reviewed ──▶ archived
-rs-change rs-frame /        rs-plan     rs-implement      rs-implement     rs-impl_review     rs-archive
-         rs-research
+new       ──▶ preparing   ──▶ planned ──▶ implementing ──▶ implemented  ──▶ impl_reviewed  ──▶ archived
+rs-change     rs-frame /      rs-plan     rs-implement     rs-implement     rs-impl_review     rs-archive
+              rs-research
 ```
 
 `new` and `preparing` only appear when the optional rs-change / rs-frame /
