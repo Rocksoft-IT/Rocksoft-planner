@@ -194,7 +194,7 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
                       <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
-                          style={{ width: `${Math.min(av.freePct, 100)}%`, backgroundColor: av.color }}
+                          style={{ width: `${av.barPct}%`, backgroundColor: av.color }}
                         />
                       </div>
                       <p className="text-[10px] mt-1 font-medium" style={{ color: av.color }}>{av.label}</p>

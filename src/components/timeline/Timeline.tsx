@@ -751,7 +751,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     </div>
                     <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
-                        style={{ width: `${Math.min(av.freePct, 100)}%`, backgroundColor: av.color }} />
+                        style={{ width: `${av.barPct}%`, backgroundColor: av.color }} />
                     </div>
                     {ooodays > 0 && (
                       <p className="text-[10px] text-slate-500 mt-0.5">🏖️ {ooodays} dni OOO</p>

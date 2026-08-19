@@ -148,6 +148,7 @@ export function formatAvailability(util: {
 }): {
   freeHours: number
   freePct: number
+  barPct: number
   isFull: boolean
   isOver: boolean
   isUnavailable: boolean
@@ -185,7 +186,13 @@ export function formatAvailability(util: {
         ? 'Brak wolnych godzin'
         : `Wolne: ${freeHours}h z ${capacityHours}h (${freePct}%)`
 
-  return { freeHours, freePct, isFull, isOver, isUnavailable, color, label }
+  // Bar width: a partial-availability person shows their free fraction (green/amber).
+  // The no-availability states (over / full / unavailable) fill the whole bar in the
+  // status color, so the most important cases are the most visible — not an invisible
+  // 0%-wide bar.
+  const barPct = isUnavailable || isOver || isFull ? 100 : freePct
+
+  return { freeHours, freePct, barPct, isFull, isOver, isUnavailable, color, label }
 }
 
 export function hexToRgba(hex: string, alpha: number): string {
