@@ -114,9 +114,9 @@ export default function AllocationModal({
     }
 
     // created_by/updated_by/updated_at are stamped server-side from the
-    // authenticated session (see set_allocation_audit_fields trigger) — not
-    // client-supplied, so a request can't be forged to attribute a change
-    // to someone else, and every write path stays in sync.
+    // authenticated session (see the allocations_set_actor trigger in
+    // supabase-schema.sql) — not client-supplied, so a request can't be forged
+    // to attribute a change to someone else, and every write path stays in sync.
     let dbError = null
     if (allocation) {
       const res = await supabase

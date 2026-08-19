@@ -27,7 +27,12 @@ update public.allocations
   where updated_by is null
     and created_by is not null;
 
--- 3. Stamp created_by/updated_by from the authenticated session rather than
+-- 3. SUPERSEDED by 2026-08-19-consolidate-allocation-actor-trigger.sql, which
+--    drops this trigger in favour of allocations_set_actor
+--    (2026-07-20-allocation-actor-trigger.sql). Kept here as the historical
+--    record of what was run; do not re-introduce it.
+--
+--    Stamp created_by/updated_by from the authenticated session rather than
 --    trusting the client-supplied value in the request payload — otherwise
 --    any authenticated user could attribute a change to someone else.
 --    updated_at is stamped here too so every write path (modal edits, and
