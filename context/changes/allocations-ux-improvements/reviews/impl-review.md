@@ -64,7 +64,9 @@ recorded as SKIPPED.
   makes the inconsistency clearly accidental rather than intended.
 - **Fix**: Move the `!projectId` check up beside the person check at line 81 (guarded with
   `kind === 'project' || allocation`), or add `setLoading(false)` before the return.
-- **Decision**: PENDING
+- **Decision**: APPLIED — the guard now runs before `setLoading(true)`, using a shared
+  `isTimeOffEntry` const so the validation and the branch below cannot drift apart.
+  `npm run build` green after the fix.
 
 ### F2 — The new time-off path leaks raw database errors and logs nothing
 - **Severity**: WARNING
