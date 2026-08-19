@@ -1,7 +1,7 @@
 {
   "name": "rs-skills",
   "description": "An end-to-end project chain: declare a stack, shape an idea, write a PRD, sequence a roadmap, optionally open/research/frame a change, plan it, implement it (standard or test-first), review it, and archive it. A parallel rs-test-plan drives a risk-driven test rollout. Greenfield and brownfield aware.",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "author": {
     "name": "Szymon"
   },

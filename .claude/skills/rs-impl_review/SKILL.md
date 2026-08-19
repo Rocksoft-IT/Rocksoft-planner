@@ -15,6 +15,8 @@ description: >
 argument-hint: "<change-id> [phase N] | <saved-review-path>"
 allowed-tools:
   - Read
+  - Write
+  - Skill
   - Glob
   - Grep
   - Bash
@@ -92,8 +94,10 @@ and there is real work to review (a git diff / a linked PR):
 
 This is the one write `rs-impl_review` may cause, and only to
 `context/changes/<change-id>/` (never to code). If `rs-change-from-pr` returns
-`NO_ACTION_NEEDED` (the folder already existed) just continue. If there is no
-diff/PR to reconstruct from either, STOP with the normal missing-change error.
+`NO_ACTION_NEEDED`, re-check for `plan.md`: it exists → continue to Step 1; it
+still does not → STOP with the normal missing-change error (never continue into
+Step 1, which would load a file that is not there). If there is no diff/PR to
+reconstruct from either, STOP with the normal missing-change error.
 
 > The reconstructed plan is as-built (derived from the code), so *Plan Adherence*
 > and *Scope Discipline* can't meaningfully drift against it — anchor those

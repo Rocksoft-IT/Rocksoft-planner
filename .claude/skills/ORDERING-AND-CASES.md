@@ -137,7 +137,7 @@ dir), not a second slot in this repo.
 | You have… | You want… | Run |
 |---|---|---|
 | Nothing, empty dir | A new product | `rs-init → rs-discovery → rs-prd → rs-roadmap`, then per-slice `rs-plan…` |
-| Existing repo, no rs-skills context | One known change | `rs-change <id>` (or straight to `rs-plan <id>`) → `rs-implement` → … |
+| Existing repo, no rs-skills context | One known change | `rs-init` (or just `mkdir -p context/changes`) → `rs-change <id>` (or straight to `rs-plan <id>`) → `rs-implement` → … |
 | Foundation done, roadmap with slices | Next idea | Pick a slice → `rs-plan <change-id>` → `rs-implement` → `rs-archive` |
 | Foundation done, idea **not** in roadmap | Next idea | `rs-change <change-id>` → `[rs-research]` → `[rs-frame]` → `rs-plan` → … |
 | Discovery exists, re-ran `rs-discovery` by accident | Keep going | Choose **Resume** (default) — completed phases aren't re-run |

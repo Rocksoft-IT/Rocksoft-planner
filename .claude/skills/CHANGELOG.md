@@ -2,6 +2,90 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2026-08-19
+
+### Fixed
+- `rs-impl_review` Step 0 no longer dead-ends on a half-written change folder.
+  Step 0 fires when `plan.md` is missing, but `rs-change-from-pr` keyed its
+  no-op on the *folder* existing, so a folder written by `rs-change` but never
+  planned (`change.md` only) returned `NO_ACTION_NEEDED` and Step 0 continued
+  into Step 1, which then loaded a `plan.md` that was still not there.
+  - `rs-change-from-pr` now keys idempotency on `plan.md`, not the folder: a
+    folder holding a `plan.md` is a complete record and still no-ops; a folder
+    without one is incomplete, so the skill writes the missing `plan.md` only
+    and leaves the existing `change.md` untouched (resolution rule 2,
+    id-validation note, closing output line, guardrail 3).
+  - `rs-impl_review` Step 0 re-checks for `plan.md` after a `NO_ACTION_NEEDED`
+    and STOPs with the normal missing-change error if it is still absent,
+    instead of falling through to Step 1.
+- `rs-impl_review` `allowed-tools` now lists `Skill` and `Write`. Step 0 is
+  required to run `rs-change-from-pr` and write `context/changes/<id>/`, which
+  the declared toolset could not do.
+- `rs-change-from-pr` reads commit subjects with the **two-dot** range
+  (`git log --oneline origin/main..HEAD`). The three-dot default is right for
+  `git diff` (merge-base) but is the symmetric difference in `git log`, so
+  commits that landed on the base branch were folded into the as-built phases.
+- `rs-roadmap` `Ready for rs-plan` is defined against the *state* of a row's
+  dependencies rather than the presence of the column, and honours two signals
+  it previously ignored. It is now `Yes` ⟺ every id in `Depends on` is `done`
+  AND the row's own `Status` is `proposed`/`ready` AND it has no pending
+  `Blockers`. Three defects fall out of the old reading:
+  - `Blockers` was never consulted, and `Status: blocked` is defined as a
+    Block:yes *unknown*, so a root waiting on external state (an API key, a
+    provisioned account) was exported ready and automation started planning it.
+  - the biconditional `Yes ⟺ Depends on is —` contradicted the same
+    paragraph's "becomes ready once its prerequisites are delivered": a slice
+    whose prerequisites had landed could not be flipped without failing the
+    self-check, since `Depends on` mirrors `Prerequisites` and never shrinks.
+  - rows already `done` or under way were eligible for `Yes`, so a delivered
+    foundation was still advertised as ready to plan.
+- `rs-roadmap` self-check item 12 no longer aborts a roadmap with no `Yes` row.
+  It asserted "at least one row must be `Yes`" on the grounds that no ready root
+  implies a cycle — false for a roadmap whose only root is `blocked` (required
+  by guardrail 5 for a Block:yes unknown), and equally false for one that is
+  already under way or fully delivered. It now asserts a root *exists* (no root
+  at all is the cycle item 5 catches) and reports the reason when none is `Yes`.
+- `rs-archive` no longer soft-warns on an as-built plan's unchecked `## Progress`
+  rows. `rs-implement` is the only writer of that section and a backfilled change
+  never runs it, so every `rs-change-from-pr` record tripped the pending-progress
+  and SHA-less warnings by design. Plans carrying the `AS-BUILT` marker are
+  exempt and noted in the summary instead.
+- `rs-roadmap` guardrail `5a.` renumbered to `6.` (6-9 shift to 7-10).
+  `5a.` is not a valid CommonMark ordered-list marker: it rendered as a
+  paragraph and terminated the guardrail list, restarting the numbering below it.
+- `ORDERING-AND-CASES.md` quick reference routes "existing repo, no rs-skills
+  context" through `rs-init` first. `rs-change` validation 3 requires
+  `context/changes/` to exist and explicitly does not create it, so the row as
+  written made the skill STOP with an error.
+- `CHANGELOG.md` 0.1.0 and 0.2.0 refer to `rs-shape` / `rs-new` again — the
+  names those releases actually shipped. The 0.3.0/0.4.0 renames had been
+  applied retroactively, so 0.1.0 claimed to ship skills that the entries below
+  it go on to announce as renames.
+- `README.md` status-lifecycle diagram realigned; the `rs-new` → `rs-change`
+  rename is 3 characters longer and had pushed every label off its state.
+
+### Migration
+No action needed for existing changes; this release is prompt-only. Two notes:
+
+- A roadmap generated before 0.7.0 has the old 5-column `## Backlog Handoff`
+  table (no `Depends on`) and free-text readiness such as `yes (after F-01)`.
+  Nothing reads it as a gate until it is regenerated. To retrofit by hand: add a
+  `Depends on` column listing each row's `Prerequisites` ids (`—` when none),
+  then set `Ready for rs-plan` to `Yes` only for rows whose dependencies are all
+  `done`, whose own `Status` is `proposed`/`ready`, and that have no pending
+  `Blockers`. On a roadmap that is already part-delivered this legitimately
+  yields no `Yes` row at all.
+- A change folder holding a `change.md` but no `plan.md` now gets its `plan.md`
+  backfilled by `rs-impl_review` Step 0 instead of dead-ending. The existing
+  `change.md` is never overwritten.
+
+### Skills Affected
+- `rs-change-from-pr` — idempotency keyed on `plan.md`; two-dot commit log
+- `rs-impl_review` — Step 0 re-check; `allowed-tools`
+- `rs-roadmap` — self-check item 12; `Blockers` in the gate; guardrail renumber
+- `rs-archive` — as-built Progress exemption
+- docs — `README.md`, `ORDERING-AND-CASES.md`, `CHANGELOG.md` history
+
 ## [0.8.0] - 2026-06-25
 
 ### Changed
@@ -156,7 +240,7 @@ Invoke the skill as `rs-discovery` instead of `rs-shape`. Existing `context/disc
 ### Removed
 - Removed time estimate questions from discovery workflow
   - Removed `estimated_effort` field from discovery-notes schema
-  - Removed effort estimation from rs-discovery skill
+  - Removed effort estimation from rs-shape skill
   - Removed estimated_effort from PRD schema and generation
   - Removed Estimated effort column from plan-brief template
 
@@ -164,10 +248,10 @@ Invoke the skill as `rs-discovery` instead of `rs-shape`. Existing `context/disc
 Estimation is unnecessary when working on different tasks and adds friction to the workflow. The discovery process focuses on product definition, not timeline predictions.
 
 ### Migration
-If your projects have existing discovery-notes files with `estimated_effort` field, they can remain unchanged — the field is simply no longer requested during `rs-discovery`. Existing PRD files will not be affected.
+If your projects have existing discovery-notes files with `estimated_effort` field, they can remain unchanged — the field is simply no longer requested during `rs-shape` (renamed `rs-discovery` in 0.4.0). Existing PRD files will not be affected.
 
 ### Skills Affected
-- `rs-discovery` — no longer asks for rough time estimate
+- `rs-shape` — no longer asks for rough time estimate
 - `rs-prd` — no longer copies/validates estimated_effort field
 - `rs-plan` — plan-brief template no longer includes effort column
 
@@ -177,7 +261,7 @@ If your projects have existing discovery-notes files with `estimated_effort` fie
 
 ### Added
 - Initial release of rs-skills plugin
-- 12 skills: rs-init, rs-discovery, rs-prd, rs-roadmap, rs-change, rs-research, rs-frame, rs-plan, rs-implement, rs-impl-review, rs-archive, rs-test-plan
+- 12 skills: rs-init, rs-shape, rs-prd, rs-roadmap, rs-new, rs-research, rs-frame, rs-plan, rs-implement, rs-impl-review, rs-archive, rs-test-plan
 - Full discovery → planning → implementation → review workflow
 - Greenfield and brownfield support
 - Risk-driven test planning via rs-test-plan

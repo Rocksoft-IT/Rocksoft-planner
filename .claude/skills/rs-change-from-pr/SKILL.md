@@ -49,9 +49,11 @@ has something to stand on.
 - **A change-id** — explicit argument, or derived (see *Change-id resolution*).
 - **The work** — the diff that represents the change. Either a PR (`--pr N` →
   `gh pr diff N`, `gh pr view N`) or a local commit range (`--range
-  base..head`, default `origin/main...HEAD`). Read the diff and the commit
-  subjects; do **not** load every changed file into context — sample what you
-  need.
+  base..head`, default `origin/main...HEAD` for the **diff**, `origin/main..HEAD`
+  for the **commit log** — three-dot in `git log` is the symmetric difference and
+  would fold in commits that landed on the base but not on this branch). Read the
+  diff and the commit subjects; do **not** load every changed file into context —
+  sample what you need.
 - **The linked issue / PR body** *(if any)* — for the title, scope, and the
   **acceptance criteria** that become the as-built success criteria.
 - **`context/foundation/roadmap.md`** *(if present)* — to map the work to a
@@ -85,9 +87,12 @@ code-review workflow commits it to the PR head branch).
 
 1. **Explicit argument** → use it (after kebab-case + uniqueness validation).
 2. **Already recorded** — the diff already contains `context/changes/<id>/`, or
-   the PR body has a `Change: <id>` line → that folder already exists; this skill
-   is a **no-op**, print `NO_ACTION_NEEDED — change record already exists at
-   context/changes/<id>/` and STOP.
+   the PR body has a `Change: <id>` line → reuse that id. If that folder already
+   holds a `plan.md`, the record is complete: this skill is a **no-op**, print
+   `NO_ACTION_NEEDED — change record already exists at context/changes/<id>/`
+   and STOP. If the folder exists **without** a `plan.md` (e.g. `rs-change` ran
+   but `rs-plan` never did), do **not** no-op — continue and write only the
+   missing `plan.md`, leaving the existing `change.md` untouched.
 3. **Roadmap slice** — the issue/PR title carries a slice tag (`[S-NN]` /
    `[F-NN]`), or the work clearly maps to one roadmap slice → reuse that slice's
    `Change ID` from `roadmap.md`'s `## Backlog Handoff` table. **Preferred** —
@@ -97,9 +102,9 @@ code-review workflow commits it to the PR head branch).
 
 Validate the result: kebab-case `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, and unique
 across `context/changes/` and `context/archive/`. If the folder already exists →
-no-op (step 2). In an interactive session, confirm a derived id with
-`AskUserQuestion` before writing; non-interactively, take the first match and
-print it.
+apply step 2 (no-op only when it already holds a `plan.md`). In an interactive
+session, confirm a derived id with `AskUserQuestion` before writing;
+non-interactively, take the first match and print it.
 
 ## Process
 
@@ -107,8 +112,9 @@ print it.
 
 Resolve the change-id (above). Resolve the diff source: `--pr N` → `gh pr diff N`
 + `gh pr view N --json title,body,headRefName,baseRefName`; else the range
-(default `origin/main...HEAD`). Read the diff, the commit subjects
-(`git log --oneline <range>`), and the linked issue body. If there is **no diff
+(default `origin/main...HEAD`). Read the diff, then the commit subjects with the
+**two-dot** form of the same range (`git log --oneline origin/main..HEAD`), and
+the linked issue body. If there is **no diff
 at all** (empty range / no PR), STOP with `error: nothing to reconstruct — no
 changes found`.
 
@@ -165,7 +171,7 @@ criterion against the real diff and reports pass/fail.
 Print a one-line summary (change-id, files written, provenance) and point to the
 next step: `rs-impl_review <change-id>` (review the as-built code against the
 record you just wrote). End with `Status: ready` on its own line, or
-`NO_ACTION_NEEDED` if the folder already existed.
+`NO_ACTION_NEEDED` if the folder already held a `plan.md`.
 
 ## Critical guardrails
 
@@ -175,9 +181,11 @@ record you just wrote). End with `Status: ready` on its own line, or
 2. **As-built is honest.** The plan is reconstructed from the code, so its
    `## Progress` boxes stay unchecked and the file carries the `AS-BUILT` marker.
    Do not present it as a forward plan or claim verified criteria.
-3. **Idempotent.** If `context/changes/<id>/` (or an `archive/*-<id>/`) already
-   exists, it is a no-op (`NO_ACTION_NEEDED`) — never overwrite an existing
-   record.
+3. **Idempotent.** Never overwrite a file that already exists. A folder holding
+   a `plan.md` (or an `archive/*-<id>/`) is a complete record → no-op
+   (`NO_ACTION_NEEDED`). A folder without a `plan.md` is an incomplete record →
+   write the missing `plan.md` only, and report that as a completion, not a
+   no-op.
 4. **Prefer the roadmap Change ID.** When the work maps to a roadmap slice, reuse
    that slice's `Change ID` so `rs-archive` closes the slice later.
 5. **English title.** `change.md` `title` is always English (translate the source
