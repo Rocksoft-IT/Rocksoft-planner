@@ -31,7 +31,7 @@ each rollout phase out into the change chain
 invocation re-derives where you are by checking which artifacts exist on disk and
 resumes from the next pending rollout phase.
 
-The output contract lives in `references/test-plan-schema.md` (§1–§8). Read it
+The output contract lives in `references/test-plan-schema.md` (§1–§8, relative to this SKILL.md). Read it
 before writing the file and re-check at every write.
 
 **Signal, not knowledge.** This skill reads the codebase only for churn, the test

@@ -2,9 +2,9 @@
 
 This document is the single source of truth for the shape of
 `context/prd/prd.md` produced by `rs-prd`. `rs-prd` loads this file by relative
-path and conforms to it. Its companion, `rs-shape`, produces the input
+path and conforms to it. Its companion, `rs-discovery`, produces the input
 (`context/discovery/discovery-notes.md`) whose structure is defined in
-`../../rs-shape/references/discovery-notes-template.md`.
+`../../rs-discovery/references/discovery-notes-template.md`.
 
 The PRD captures only **product-level identity** — what the product is, who it's
 for, what it must do. Fields and sections that depend on framework, runtime, or
@@ -18,7 +18,7 @@ Renames or restructurings of this contract are load-bearing. Update this doc
 ## Frontmatter fields
 
 Every PRD declares this YAML frontmatter block. Key names are load-bearing;
-field order is suggested. These fields mirror the `rs-shape` discovery-notes
+field order is suggested. These fields mirror the `rs-discovery` discovery-notes
 frontmatter exactly — `rs-prd` copies them across, it does not invent them.
 
 ```yaml
@@ -183,7 +183,7 @@ gap.
 thin input before generating. Timeline is deliberately NOT a signal.
 
 1. **`checkpoint:` block present in frontmatter** — strongest signal the input
-   came from `rs-shape`.
+   came from `rs-discovery`.
 2. **At least one `FR-NNN` requirement** — matches `^- FR-\d{3}: `.
 3. **At least one Given/When/Then block** — `**Given**` and `**When**` and
    `**Then**` present.
@@ -192,7 +192,7 @@ thin input before generating. Timeline is deliberately NOT a signal.
    not a `# TODO` placeholder).
 
 Score ≥ 2: input is shaped enough; generate. Score < 2: warn, naming each
-missing signal and its consequence, then let the user proceed, run `rs-shape`
+missing signal and its consequence, then let the user proceed, run `rs-discovery`
 first, or cancel.
 
 ## Drift detection

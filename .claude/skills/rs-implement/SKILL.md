@@ -36,7 +36,7 @@ goes.
 The `## Progress` section in `plan.md` is the **single source of truth** for
 execution state; state is *inferred from it, not stored elsewhere*. Its contract
 (step format, parsing, mutation surface) lives in
-`../rs-plan/references/progress-format.md` — read it before touching Progress.
+`../rs-plan/references/progress-format.md` (relative to this SKILL.md — in the sibling `rs-plan` skill) — read it before touching Progress.
 **This skill mutates ONLY the `## Progress` section** of the plan; every other
 part of the plan is read-only.
 

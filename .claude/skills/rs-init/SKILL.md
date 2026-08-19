@@ -54,12 +54,12 @@ re-run just reports status. To change the menu itself, edit
 
 ## Relationship to other skills
 
-- `rs-shape` → writes `context/discovery/` (discovery-notes, glossary, decisions).
+- `rs-discovery` → writes `context/discovery/` (discovery-notes, glossary, decisions).
 - `rs-prd` → writes `context/prd/prd.md` (stack-open).
 - `rs-init` → scaffolds the skeleton and writes `context/foundation/tech-stack.md`.
 
 `rs-init` is the explicit setup entry point; it is not a hard prerequisite —
-`rs-shape` and `rs-prd` lazily create their own subfolders. Run `rs-init` when
+`rs-discovery` and `rs-prd` lazily create their own subfolders. Run `rs-init` when
 you like to set the skeleton and stack up front.
 
 ## Process
@@ -82,7 +82,7 @@ README contents (write only if the file is absent):
 - `context/discovery/README.md`:
   ```
   # Discovery
-  Shaping artifacts from rs-shape: discovery-notes.md (the shape document),
+  Shaping artifacts from rs-discovery: discovery-notes.md (the shape document),
   glossary.md (ubiquitous language), and decisions/ (ADRs).
   ```
 - `context/prd/README.md`:
@@ -109,7 +109,7 @@ README contents (write only if the file is absent):
 ### Step 2: Detect context type
 
 Determine greenfield vs brownfield using the same multi-signal detection as
-`rs-shape` (Tier 1 git history, Tier 2 lockfiles, Tier 3 manifests; any Tier 1/2
+`rs-discovery` (Tier 1 git history, Tier 2 lockfiles, Tier 3 manifests; any Tier 1/2
 hit → brownfield; Tier 3 only → brownfield with an ambiguity flag; no signals →
 greenfield). This drives how `tech-stack.md` is built. Confirm with the user.
 
@@ -126,7 +126,7 @@ update-in-place (edit specific lines, bump `updated:`) / leave as-is / archive a
 regenerate. Then act on the choice.
 
 If CLEAR, read `references/tech-palette.md` and build the file per
-`references/tech-stack-template.md`:
+`references/tech-stack-template.md` (both paths relative to this SKILL.md):
 
 **Greenfield — pick a subset from the palette.** Ask the user which palette items
 this project uses, one category at a time (frontend framework, styling, backend

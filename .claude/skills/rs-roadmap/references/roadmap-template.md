@@ -38,12 +38,29 @@ top_blocker: <enum>          # skills | capacity | time | decisions | external |
 6. `## Foundations` — `F-NN` entries (cross-cutting enablers).
 7. `## Slices` — `S-NN` entries (vertical, user-visible capabilities).
 8. `## Backlog Handoff` — table: `Roadmap ID | Change ID | Suggested issue title |
-   Ready for rs-plan | Notes`. A clean export to the project's declared issue
-   tracker (see `context/foundation/tech-stack.md`). When a row is exported to an
-   issue, prefix the title with its **Roadmap ID** — e.g. `[S-07] Filter
+   Depends on | Ready for rs-plan | Notes`. A clean export to the project's declared
+   issue tracker (see `context/foundation/tech-stack.md`). When a row is exported to
+   an issue, prefix the title with its **Roadmap ID** — e.g. `[S-07] Filter
    draft/private posts from public feed`. That `[S-NN]` / `[F-NN]` tag is the
    slice's stable visual key; downstream PRs re-use it so an issue and all its
    PRs stay grouped at a glance (and in issue-tracker search).
+
+   The **`Depends on`** column is the machine-readable dependency gate: a
+   comma-separated list of the `F-NN`/`S-NN` Roadmap IDs this row's
+   `Prerequisites` reference (Roadmap IDs ONLY — concrete external state stays in
+   `Notes`), or `—` when there are none. It is the language-independent mirror of
+   `Prerequisites` that issue automation parses to decide what may start: a slice
+   must NOT begin planning until every ID listed here has landed. Keep it in sync
+   with the entry's `Prerequisites` field.
+
+   **`Ready for rs-plan`** is therefore a dependency gate, not a "spec is complete"
+   flag: it is `Yes` only when **`Depends on`** is `—` (no prerequisite slice or
+   foundation) AND the entry's `Status` is not `blocked`. Every row with a
+   prerequisite is `No` — it becomes ready only once its prerequisites are
+   delivered (downstream automation flips it then). This is what stops the whole
+   backlog from being planned at once the moment it is exported: only the roots
+   (typically the first foundation, or a slice with no `F-NN`/`S-NN` prerequisite)
+   are `Yes` on day one.
 9. `## Open Roadmap Questions` — PRD Open Questions verbatim + new cross-slice
    questions surfaced during the interview. Each: question, owner, Block yes/no.
 10. `## Parked` — PRD Non-Goals + items deferred during the interview.
@@ -105,3 +122,8 @@ Ids: `F-01…`, `S-01…` (two-digit, leading zero).
 9. Baseline ↔ Foundations consistency: no foundation rebuilds a `present` layer.
 10. Change IDs unique, kebab-case, each appears once in `## Backlog Handoff`.
 11. No estimates / time units / framework-level detail anywhere.
+12. Backlog Handoff dependency gate: each row's `Depends on` lists exactly the
+    `F-NN`/`S-NN` ids from that entry's `Prerequisites` (or `—`); and
+    `Ready for rs-plan = Yes` ⟺ `Depends on` is `—` AND `Status` ≠ `blocked`. At
+    least one row must be `Yes` (a graph with no ready root is a cycle — already
+    caught by item 5, but re-assert here).

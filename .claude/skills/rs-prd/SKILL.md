@@ -5,11 +5,11 @@ description: >
   the locked PRD schema. Auto-routes to a greenfield (10-section) or brownfield
   (11-section) template based on context_type in the input or cwd auto-detection.
   This is a document GENERATOR, not an interviewer — it synthesizes what was
-  already captured during rs-shape and never invents domain content. Use when the
+  already captured during rs-discovery and never invents domain content. Use when the
   user has discovery notes ready and wants a schema-conformant PRD written to
   disk. Trigger phrases: "write the PRD", "generate the PRD", "create a PRD from
   notes", "turn discovery notes into a PRD", "PRD from discovery-notes". Use
-  AFTER rs-shape, not in place of it.
+  AFTER rs-discovery, not in place of it.
 argument-hint: "[path-to-notes-file]"
 allowed-tools:
   - Read
@@ -24,14 +24,14 @@ allowed-tools:
 # rs-prd: Generate context/prd/prd.md from discovery notes
 
 This skill is the second link in the discovery chain:
-`rs-shape → rs-prd → build`. Its only job is to take a shaped notes file and
+`rs-discovery → rs-prd → build`. Its only job is to take a shaped notes file and
 generate `context/prd/prd.md` conforming to the locked PRD schema, routing every
 gap to `## Open Questions` instead of inventing content.
 
 It is a **document generator, not a facilitator.** It never invents domain
 decisions, business rules, success criteria, or user stories. Anything missing
 from the input goes verbatim into `## Open Questions` for a human to resolve. The
-grilling already happened in `rs-shape`; this step is pure synthesis.
+grilling already happened in `rs-discovery`; this step is pure synthesis.
 
 The locked schema this skill conforms to lives in `references/prd-schema.md`
 (relative to this SKILL.md). Read it before generating anything and re-verify the
@@ -39,12 +39,12 @@ generated file against it before writing to disk.
 
 ## When to use, when to skip
 
-**Use when** the user has run `rs-shape` (and
+**Use when** the user has run `rs-discovery` (and
 `context/discovery/discovery-notes.md` exists), OR has a raw notes file to turn
 into a draft PRD, OR explicitly asks to (re)generate `context/prd/prd.md`.
 
 **Skip when** the user is still forming the idea and has no notes — point them to
-`rs-shape` first. Also skip when they want to hand-edit an existing PRD — this
+`rs-discovery` first. Also skip when they want to hand-edit an existing PRD — this
 skill writes whole files; surgical edits are out of scope.
 
 ## Relationship to other skills
@@ -52,7 +52,7 @@ skill writes whole files; surgical edits are out of scope.
 - `rs-init` — declares the stack up front in `context/foundation/tech-stack.md`.
   The PRD stays stack-open precisely because the stack lives there, not in the
   PRD.
-- `rs-shape` — produces `discovery-notes.md`, `glossary.md`, and ADRs under
+- `rs-discovery` — produces `discovery-notes.md`, `glossary.md`, and ADRs under
   `context/discovery/`. The canonical input. Always preferred before this skill.
 - `rs-roadmap` — the next step: consumes `prd.md` (+ `tech-stack.md`) and
   sequences it into vertical slices for `rs-plan`.
@@ -90,15 +90,15 @@ AskUserQuestion:
 - question: "No input file found at `<resolved-path>`. How do you want to proceed?"
   header: "Input?"
   options:
-  - label: "Run rs-shape first (Recommended)"
-    description: "Stop here. Run rs-shape to produce discovery-notes.md, then call rs-prd again."
+  - label: "Run rs-discovery first (Recommended)"
+    description: "Stop here. Run rs-discovery to produce discovery-notes.md, then call rs-prd again."
   - label: "Paste raw notes"
     description: "I'll wait for you to paste whatever notes you have. A thin-input check will warn about missing signals."
   - label: "Cancel"
     description: "Exit without changes."
   multiSelect: false
 
-On "Run rs-shape first": print the redirect and STOP. On "Paste raw notes":
+On "Run rs-discovery first": print the redirect and STOP. On "Paste raw notes":
 capture the pasted text as in-memory input and go to Step 1.5. On "Cancel": STOP.
 
 ### Step 1.5: Determine context type
@@ -106,7 +106,7 @@ capture the pasted text as in-memory input and go to Step 1.5. On "Cancel": STOP
 1. **If the input has `context_type:` in frontmatter** — use it directly; no
    confirmation needed.
 2. **If absent** (raw/pasted notes) — auto-detect from cwd using the same
-   multi-signal tiers as `rs-shape` (git history = Tier 1, lockfiles = Tier 2,
+   multi-signal tiers as `rs-discovery` (git history = Tier 1, lockfiles = Tier 2,
    manifests = Tier 3). Any Tier 1/2 hit → propose brownfield; Tier 3 only →
    propose brownfield, flag ambiguity; no signals → propose greenfield. Then
    confirm with the user via AskUserQuestion.
@@ -145,10 +145,10 @@ This input scored <N>/4 on the shape heuristic. Missing signals:
 
 A PRD generated from thin input will have many `# TODO` placeholders and a long
 `## Open Questions` section. That's a valid intermediate state, but if you have
-time to run rs-shape first, the resulting PRD will be much stronger.
+time to run rs-discovery first, the resulting PRD will be much stronger.
 ```
 
-Then offer: run rs-shape first (stop) / proceed anyway (generate, gaps go to
+Then offer: run rs-discovery first (stop) / proceed anyway (generate, gaps go to
 Open Questions verbatim) / cancel.
 
 ### Step 3: Generate the PRD
@@ -196,7 +196,7 @@ Per-section content rules:
   `# TODO: <section name> — see Open Questions` and a matching Open Question.
 
 Preserve any `> Challenge:` blockquotes under FRs verbatim. If the input had a
-`## Quality cross-check` block (from rs-shape's soft gate), mirror each gap into
+`## Quality cross-check` block (from rs-discovery's soft gate), mirror each gap into
 `## Open Questions`. Reference relevant ADRs from `context/discovery/decisions/`
 by number and title in the section they bear on (most often brownfield
 `## Constraints & Compatibility`).

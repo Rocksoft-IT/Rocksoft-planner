@@ -1,7 +1,7 @@
 # discovery-notes.md template
 
 This is the single source of truth for the structure of
-`context/discovery/discovery-notes.md`. The `rs-shape` skill writes and
+`context/discovery/discovery-notes.md`. The `rs-discovery` skill writes and
 re-checks against this file at every checkpoint. Greenfield and brownfield share
 the same section names; brownfield adds `## Current System` and `## Constraints &
 Preserved Behavior`.
