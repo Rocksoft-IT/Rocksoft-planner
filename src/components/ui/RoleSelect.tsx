@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils'
 export const ROLES = [
   'Backend Developer',
   'Frontend Developer',
+  'Mobile Developer',
   'Wordpress Developer',
   'UI/UX',
   'Graphic Designer',
   'Marketing',
+  'Administration Support',
   'Management',
 ] as const
 
@@ -70,7 +72,7 @@ export default function RoleSelect({ value, onChange }: RoleSelectProps) {
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto">
           {ROLES.map((role) => {
             const selected = value.includes(role)
             return (
