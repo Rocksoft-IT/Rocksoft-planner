@@ -63,7 +63,7 @@ Never write the document with placeholder values.
    findings; use prior changes/archive as supplementary historical context;
    connect cross-component findings with `file:line` references.
 6. **Resolve the change folder & gather metadata.** Use an existing folder for
-   `rs-research <change-id>`, else create it + `change.md` (like `rs-new`). Update
+   `rs-research <change-id>`, else create it + `change.md` (like `rs-change`). Update
    `change.md` (`updated`; `new → preparing`). Gather git metadata
    (`git_commit`, `branch`, `repository`).
 7. **Write `research.md`:**

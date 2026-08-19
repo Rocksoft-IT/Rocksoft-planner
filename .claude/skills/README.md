@@ -57,56 +57,64 @@ environment.
 ## The chain
 
 ```
-rs-init ──▶ rs-shape ──▶ rs-prd ──▶ rs-roadmap ──▶ rs-plan ──▶ rs-implement ──▶ rs-impl_review ──▶ rs-archive
+rs-init ──▶ rs-discovery ──▶ rs-prd ──▶ rs-roadmap ──▶ rs-plan ──▶ rs-implement ──▶ rs-impl_review ──▶ rs-archive
   stack      discovery     PRD        slices         plan        build            review            close
 ```
 
 | Skill | Reads | Writes | Role |
 |---|---|---|---|
 | **rs-init** | tech palette | `context/foundation/tech-stack.md` + `context/` skeleton | Scaffold context dirs; declare the stack from a fixed house palette (no interactive selector). |
-| **rs-shape** | the idea, the codebase | `context/discovery/` (discovery-notes.md, glossary.md, decisions/) | Facilitated discovery conversation; captures problem, persona, success criteria, FRs, constraints, glossary, ADRs. |
+| **rs-discovery** | the idea, the codebase | `context/discovery/` (discovery-notes.md, glossary.md, decisions/) | Facilitated discovery conversation; captures problem, persona, success criteria, FRs, constraints, glossary, ADRs. |
 | **rs-prd** | `discovery-notes.md` (+ glossary, ADRs) | `context/prd/prd.md` | Generate a stack-open PRD; gaps → Open Questions, never invented. |
 | **rs-roadmap** | `prd.md` (+ tech-stack, glossary, ADRs) | `context/foundation/roadmap.md` | Sequence the PRD into vertical slices + minimal foundations as a dependency graph. |
-| **rs-new** | a change-id + intent | `context/changes/<id>/change.md` | Open a change folder with an identity file. Optional explicit entry point per change. |
+| **rs-change** | a change-id + intent | `context/changes/<id>/change.md` | Open a change folder with an identity file. Optional explicit entry point per change. |
 | **rs-research** | a research question, the codebase | `context/changes/<id>/research.md` | Parallel-subagent codebase research; grounds a plan. Optional, before rs-plan. |
 | **rs-frame** | an observation / bug+fix | `context/changes/<id>/frame.md` | Challenge the framing before planning; separate observation from cause. Optional, before rs-plan. |
 | **rs-plan** | a roadmap slice / change-id (+ frame/research) | `context/changes/<id>/plan.md` + `plan-brief.md` | Complexity-scaled research and a phased, intent-not-implementation plan. |
 | **rs-implement** | `plan.md` (`## Progress`) | mutates `## Progress`, `change.md`, code/commits | Build the plan phase by phase, standard or test-first (TDD); commit per phase. |
-| **rs-impl_review** | `plan.md`, the git diff | `context/changes/<id>/reviews/impl-review*.md` | Review implementation vs plan for drift, safety, and pattern compliance. |
+| **rs-impl_review** | `plan.md`, the git diff | `context/changes/<id>/reviews/impl-review*.md` | Review implementation vs plan for drift, safety, and pattern compliance. If the change has no record, backfills one via `rs-change-from-pr` first. |
+| **rs-change-from-pr** | a PR / local diff (+ linked issue, roadmap) | `context/changes/<id>/change.md` + as-built `plan.md` | Reconstruct an **as-built** change record when planning was skipped — the inverse of rs-plan. SDD catch-up so review/archive have something to stand on. |
 | **rs-archive** | `change.md`, `roadmap.md` | moves folder to `context/archive/`; closes the roadmap slice | Close out a completed change and flip its roadmap slice to done. |
 | **rs-test-plan** | `prd.md`, `roadmap.md`, archive, tech-stack, git churn | `context/foundation/test-plan.md` | Risk-driven, phased test rollout; a stateful QA orchestrator that drives each phase through the change chain. Runs alongside the build chain. |
 
 ## Two ways to start
 
-The chain has two entry points — pick by the size of what you're doing.
+The chain has two entry points — pick by the size of what you're doing. For
+ordering *across time* — successive ideas on one repo, re-running a skill, the
+foundational-vs-per-change split — see
+[ORDERING-AND-CASES.md](./ORDERING-AND-CASES.md).
 
 **1. New project / big picture** — when you're shaping *what* to build:
 
 ```
-rs-init → rs-shape → rs-prd → rs-roadmap → rs-plan → rs-implement → rs-impl_review → rs-archive
+rs-init → rs-discovery → rs-prd → rs-roadmap → rs-plan → rs-implement → rs-impl_review → rs-archive
 ```
 
 **2. A single change to an existing project** — when the goal is already clear
 and you just need to build one thing. Skip discovery entirely:
 
 ```
-rs-new <id> → [rs-research] → [rs-frame] → rs-plan → rs-implement → rs-impl_review → rs-archive
+rs-change <id> → [rs-research] → [rs-frame] → rs-plan → rs-implement → rs-impl_review → rs-archive
 ```
 
 Notes on the light path:
 
-- `rs-new`, `rs-research`, and `rs-frame` are **independent of** `rs-shape` /
+- `rs-change`, `rs-research`, and `rs-frame` are **independent of** `rs-discovery` /
   `rs-prd` / `rs-roadmap` — they read none of those artifacts.
-- The only prerequisite for `rs-new` is that `context/changes/` exists — run
-  `rs-init` once (or just create the dir). `rs-new` will not create its parent.
-- For a quick change you can **skip `rs-new` too** and start straight at
+- The only prerequisite for `rs-change` is that `context/changes/` exists — run
+  `rs-init` once (or just create the dir). `rs-change` will not create its parent.
+- For a quick change you can **skip `rs-change` too** and start straight at
   `rs-plan <id>` — it creates the change folder and `change.md` itself (at status
   `planned`, bypassing `new`).
-- For a trivial cosmetic/frontend tweak, `rs-shape`'s scope-triage bails out and
+- For a trivial cosmetic/frontend tweak, `rs-discovery`'s scope-triage bails out and
   `rs-plan` runs in its TRIVIAL tier (0–2 questions) — or just edit the file
   directly.
 - `rs-archive` closes a matching roadmap slice if a roadmap exists; with no
   roadmap it simply skips that step (non-blocking).
+- If code already landed **without** a plan (a hotfix, or a PR that skipped
+  `rs-plan`), `rs-change-from-pr` reconstructs an as-built `change.md` + `plan.md`
+  from the diff so the SDD trail exists — `rs-impl_review` runs it automatically
+  when the change under review has no record.
 
 ## On-disk layout
 
@@ -117,17 +125,17 @@ context/
 │   ├── roadmap.md           ← rs-roadmap
 │   └── test-plan.md         ← rs-test-plan
 ├── discovery/
-│   ├── discovery-notes.md   ← rs-shape
-│   ├── glossary.md          ← rs-shape (ubiquitous language)
-│   └── decisions/0001-*.md  ← rs-shape (ADRs)
+│   ├── discovery-notes.md   ← rs-discovery
+│   ├── glossary.md          ← rs-discovery (ubiquitous language)
+│   └── decisions/0001-*.md  ← rs-discovery (ADRs)
 ├── prd/
 │   └── prd.md               ← rs-prd
 ├── changes/
 │   └── <change-id>/
-│       ├── change.md        ← rs-new / rs-frame / rs-research / rs-plan / rs-implement / rs-archive (status lifecycle)
+│       ├── change.md        ← rs-change / rs-frame / rs-research / rs-plan / rs-implement / rs-change-from-pr / rs-archive (status lifecycle)
 │       ├── research.md      ← rs-research (optional)
 │       ├── frame.md         ← rs-frame (optional)
-│       ├── plan.md          ← rs-plan (incl. the canonical ## Progress)
+│       ├── plan.md          ← rs-plan (incl. the canonical ## Progress); or rs-change-from-pr (as-built, when planning was skipped)
 │       ├── plan-brief.md    ← rs-plan
 │       └── reviews/         ← rs-impl_review
 └── archive/                 ← rs-archive (read-only)
@@ -137,11 +145,11 @@ context/
 
 ```
 new ──▶ preparing ──────▶ planned ──▶ implementing ──▶ implemented ──▶ impl_reviewed ──▶ archived
-rs-new   rs-frame /        rs-plan     rs-implement      rs-implement     rs-impl_review     rs-archive
+rs-change rs-frame /        rs-plan     rs-implement      rs-implement     rs-impl_review     rs-archive
          rs-research
 ```
 
-`new` and `preparing` only appear when the optional rs-new / rs-frame /
+`new` and `preparing` only appear when the optional rs-change / rs-frame /
 rs-research front-matter steps are used; otherwise rs-plan creates the change
 folder directly at `planned`.
 
@@ -163,7 +171,7 @@ The matching roadmap slice flips to `done` when its change is archived.
 
 Each skill owns its contract under `references/`:
 
-- `rs-shape/references/` — discovery-notes template, glossary format, ADR format.
+- `rs-discovery/references/` — discovery-notes template, glossary format, ADR format.
 - `rs-prd/references/prd-schema.md` — the PRD contract.
 - `rs-roadmap/references/roadmap-template.md` — the roadmap contract.
 - `rs-plan/references/` — plan template + the shared `progress-format.md`.
@@ -181,7 +189,7 @@ Each skill owns its contract under `references/`:
 Before planning a change, three optional steps can enrich it; `rs-plan` (and
 `rs-test-plan`'s rollout) scale their questioning down when these artifacts exist:
 
-- **rs-new** — open a change folder with a `change.md` identity file.
+- **rs-change** — open a change folder with a `change.md` identity file.
 - **rs-research** — parallel-subagent codebase research → `research.md`.
 - **rs-frame** — challenge the framing (separate observation from cause) →
   `frame.md`. Use before planning a bug or a scope/design question.

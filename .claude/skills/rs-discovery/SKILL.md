@@ -1,5 +1,5 @@
 ---
-name: rs-shape
+name: rs-discovery
 description: >
   Run a structured discovery conversation that turns a raw idea — greenfield or
   brownfield — into a small set of shared-context artifacts under
@@ -26,7 +26,7 @@ allowed-tools:
   - TaskUpdate
 ---
 
-# rs-shape: Discovery conversation for greenfield and brownfield
+# rs-discovery: Discovery conversation for greenfield and brownfield
 
 This skill turns "I have an idea" (greenfield) or "I want to change this system"
 (brownfield) into a small, durable set of context artifacts a team — human or
@@ -120,10 +120,10 @@ instead of asking a wall of questions.
 
 When this skill is invoked:
 
-1. **If a freeform idea is given as an argument** (e.g. `rs-shape a recipe app
+1. **If a freeform idea is given as an argument** (e.g. `rs-discovery a recipe app
    that suggests meals from what's in your fridge`), record it verbatim as the
    **initial idea**. Do not paraphrase. Go to Step 0.
-2. **If a file path is given** (e.g. `rs-shape @notes/idea.md`), read it in full
+2. **If a file path is given** (e.g. `rs-discovery @notes/idea.md`), read it in full
    and use its contents as the initial idea. Go to Step 0.
 3. **If nothing is given**, respond:
 
@@ -136,8 +136,8 @@ Please share:
 1. The initial idea — what do you want to build or change, in your own words?
 2. (Optional) Any rough notes, sketches, or links I should read first.
 
-Tip: pass the idea inline — `rs-shape a recipe app that uses what's in your
-fridge` — or for brownfield — `rs-shape add a recommendation engine to my
+Tip: pass the idea inline — `rs-discovery a recipe app that uses what's in your
+fridge` — or for brownfield — `rs-discovery add a recommendation engine to my
 recipe app`.
 ```
 
@@ -147,7 +147,7 @@ Then wait.
 
 ### Step 0: Scope triage — run this FIRST, before anything else
 
-Judge the size of the request before touching discovery. rs-shape is for shaping
+Judge the size of the request before touching discovery. rs-discovery is for shaping
 a new project or a *meaningful* change (a new module, a significant feature, an
 architectural change). It is the wrong tool for a small, localized tweak, and its
 six phases would only generate noise.
@@ -160,7 +160,7 @@ STOP:
 ```
 This looks like a small, localized change — shaping it through full discovery
 would be overkill. For a change this size, skip straight to:
-  • rs-new <change-id> → rs-plan <change-id>   — a tracked change with a quick plan
+  • rs-change <change-id> → rs-plan <change-id>   — a tracked change with a quick plan
   • a direct edit                              — for a truly trivial tweak (e.g. one color value)
 ```
 

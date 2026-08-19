@@ -111,7 +111,7 @@ plausible alternative, STOP and re-run Step 3 with the new hypothesis.
 ### Step 6: Synthesize the Frame Brief
 
 Resolve the change folder (use an existing one for `rs-frame <change-id>`, else
-create it + `change.md` like `rs-new`). Update `change.md` (`updated`; `new →
+create it + `change.md` like `rs-change`). Update `change.md` (`updated`; `new →
 preparing`). Write `frame.md`:
 
 ```md

@@ -30,7 +30,7 @@ This skill sequences a finished PRD into a build order:
 
 The PRD is the source of truth. The roadmap only sequences what the PRD already
 contains; it never invents scope. The output contract (frontmatter, sections,
-per-entry fields, self-check) lives in `references/roadmap-template.md` — read it
+per-entry fields, self-check) lives in `references/roadmap-template.md` (relative to this SKILL.md) — read it
 before generating and re-check at the self-check step.
 
 ## Inputs
@@ -144,6 +144,14 @@ Write the content per `references/roadmap-template.md` — exact section names,
 full per-entry fields, glossary vocabulary. Define any strategic term
 (north star, wedge, riskiest assumption, …) in prose at first use.
 
+In `## Backlog Handoff`, fill the **`Depends on`** column from each entry's
+`Prerequisites` (the `F-NN`/`S-NN` ids only; `—` if none) and set
+**`Ready for rs-plan`** as a dependency gate — `Yes` ONLY when `Depends on` is `—`
+and `Status` ≠ `blocked`, else `No`. This is the machine-readable contract
+downstream issue automation reads so a slice is not planned before the
+prerequisites it depends on have landed; do NOT mark a row `Yes` just because its
+spec is complete.
+
 ### Step 8: Self-check
 
 Run every test in the template's self-check list. On any failure, **abort the
@@ -186,6 +194,10 @@ STOP. Never auto-chain.
    those belong to `rs-plan`.
 5. **Surface unknowns; don't paper over them.** Block:yes unknowns mark a slice
    `blocked` and push resolution to where a human decides.
+5a. **Dependency gate is machine-readable.** Every Backlog Handoff row carries a
+   `Depends on` list (its `Prerequisites` ids) and `Ready for rs-plan` is `Yes`
+   only with no unmet dependency — so issue automation starts the roots, not the
+   whole backlog at once. Keep `Depends on` in sync with `Prerequisites`.
 6. **Baseline is surveyed, not asked.** Step 4 probes the codebase; the user only
    confirms.
 7. **Self-check aborts on drift.** A missing section/field or a graph cycle aborts

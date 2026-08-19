@@ -34,7 +34,7 @@ phased implementation plan a programmer or agent can execute:
 
 The plan describes **intent, not implementation** — what changes and why, not how
 to write the code. The output shape lives in `references/plan-template.md`; the
-`## Progress` contract in `references/progress-format.md`. Read both before
+`## Progress` contract in `references/progress-format.md` (both paths relative to this SKILL.md). Read both before
 writing.
 
 ## Inputs
@@ -115,9 +115,11 @@ good / needs adjustment / too detailed / too coarse). Iterate before writing.
 
 Resolve the change folder. If `rs-plan <change-id>` names an existing folder,
 reuse it; otherwise create a kebab-case `<change-id>`, the folder, and
-`change.md`. **Refuse if the resolved path starts with `context/archive/`** —
-print "This change is archived; open a new change instead" and STOP. Update
-`change.md`: `status: planned`, `updated: <today>`.
+`change.md` (write its `title` frontmatter **in English** per the rs-change
+convention — translate the slice / issue / roadmap title if it is in another
+language; `change_id` is already English). **Refuse if the resolved path starts
+with `context/archive/`** — print "This change is archived; open a new change
+instead" and STOP. Update `change.md`: `status: planned`, `updated: <today>`.
 
 Write `context/changes/<change-id>/plan.md` per `references/plan-template.md`:
 phases with plain bullets, Goal separated from Contract, success criteria split
