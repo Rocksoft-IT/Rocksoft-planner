@@ -85,7 +85,7 @@ create table if not exists public.project_experience_tags (
 -- lookup guards the FK (valid profile id or NULL, never a dangling id).
 -- Reused across all three audited competency tables.
 create or replace function public.set_competency_actor()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 declare
   actor uuid := (select id from public.profiles where id = auth.uid());
 begin
@@ -223,8 +223,12 @@ as $$
     group by pe.team_member_id
   ),
   combined as (
+    -- score = (# matching skill/tech tags) + (weighted full-text rank).
+    -- ts_rank returns tiny values (~0.05–0.1), so without a weight a text match
+    -- would be dwarfed by a single tag. The 10× weight makes a strong experience
+    -- match worth roughly one matching tag.
     select tm.id as team_member_id, tm.full_name, tm.email, tm.role,
-           coalesce(at.tag_count, 0) + coalesce(eh.rank, 0) as score,
+           coalesce(at.tag_count, 0) + coalesce(eh.rank, 0) * 10 as score,
            jsonb_build_object(
              'skills_technologies', coalesce(at.tags, '[]'::jsonb),
              'experience',          coalesce(eh.experiences, '[]'::jsonb)

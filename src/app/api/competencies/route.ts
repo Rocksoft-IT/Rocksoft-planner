@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     .order('name')
 
   if (kind === 'skill' || kind === 'technology') query = query.eq('kind', kind)
-  if (q) query = query.ilike('name', `%${q}%`)
+  // Escape LIKE metacharacters so a caller's `%`/`_` are matched literally, not as wildcards.
+  if (q) query = query.ilike('name', `%${q.replace(/[\\%_]/g, '\\$&')}%`)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

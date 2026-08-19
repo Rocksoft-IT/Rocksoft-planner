@@ -28,19 +28,26 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
   const [text, setText] = useState('')
   const [results, setResults] = useState<ExpertSearchResult[] | null>(null)
   const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
 
   // Edit state — admins can edit anyone; everyone else edits their own record.
   const [editMemberId, setEditMemberId] = useState<string | null>(myMemberId)
 
   async function runSearch() {
     setSearching(true)
+    setSearchError(null)
     const supabase = createClient()
-    const { data } = await supabase.rpc('search_experts', {
+    const { data, error } = await supabase.rpc('search_experts', {
       p_skill_slugs: skillSlugs,
       p_tech_slugs: techSlugs,
       p_query: text.trim() || null,
     })
-    setResults((data ?? []) as ExpertSearchResult[])
+    if (error) {
+      setSearchError('Nie udało się wyszukać ekspertów. Spróbuj ponownie.')
+      setResults(null)
+    } else {
+      setResults((data ?? []) as ExpertSearchResult[])
+    }
     setSearching(false)
   }
 
@@ -81,6 +88,10 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
           >
             {searching ? 'Szukam…' : 'Szukaj ekspertów'}
           </button>
+
+          {searchError && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{searchError}</div>
+          )}
 
           {results !== null && (
             <div className="pt-2">

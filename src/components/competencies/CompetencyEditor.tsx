@@ -68,7 +68,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
     return data as CompetencyTag
   }
 
-  async function addCompetency(kind: CompetencyKind, name: string, proficiency: number | null) {
+  async function addCompetency(kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null) {
     const tag = await ensureTag(kind, name)
     if (!tag) return
     if (competencies.some((c) => c.competency_tag_id === tag.id)) return
@@ -77,6 +77,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
       team_member_id: memberId,
       competency_tag_id: tag.id,
       proficiency,
+      years_experience: yearsExperience,
     })
     await load()
   }
@@ -150,13 +151,14 @@ interface CompetencySectionProps {
   title: string
   competencies: TeamMemberCompetency[]
   allTags: CompetencyTag[]
-  onAdd: (kind: CompetencyKind, name: string, proficiency: number | null) => void
+  onAdd: (kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null) => void
   onRemove: (rowId: string) => void
 }
 
 function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove }: CompetencySectionProps) {
   const [name, setName] = useState('')
   const [proficiency, setProficiency] = useState('')
+  const [years, setYears] = useState('')
 
   const mine = competencies.filter((c) => c.tag?.kind === kind)
   const listId = `datalist-${kind}`
@@ -164,8 +166,14 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    onAdd(kind, name, proficiency ? parseInt(proficiency, 10) : null)
-    setName(''); setProficiency('')
+    const parsedYears = years ? parseFloat(years) : NaN
+    onAdd(
+      kind,
+      name,
+      proficiency ? parseInt(proficiency, 10) : null,
+      Number.isFinite(parsedYears) ? parsedYears : null
+    )
+    setName(''); setProficiency(''); setYears('')
   }
 
   return (
@@ -177,6 +185,7 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
           <span key={c.id} className="group inline-flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 text-xs px-2.5 py-1 rounded-full">
             {c.tag?.name}
             {c.proficiency ? <span className="text-indigo-400/80">· {c.proficiency}/5</span> : null}
+            {c.years_experience != null ? <span className="text-indigo-400/80">· {c.years_experience} l.</span> : null}
             <button onClick={() => onRemove(c.id)} className="text-indigo-400 hover:text-white" title="Usuń">×</button>
           </span>
         ))}
@@ -201,6 +210,17 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
           <option value="">Poziom</option>
           {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}/5</option>)}
         </select>
+        <input
+          value={years}
+          onChange={(e) => setYears(e.target.value)}
+          type="number"
+          min="0"
+          max="50"
+          step="0.5"
+          placeholder="Lata"
+          title="Lata doświadczenia (opcjonalnie)"
+          className="w-20 bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500"
+        />
         <button type="submit" className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition">Dodaj</button>
       </form>
     </section>

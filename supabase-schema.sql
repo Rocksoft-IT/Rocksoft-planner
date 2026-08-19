@@ -216,7 +216,7 @@ create table if not exists public.project_experience_tags (
 );
 
 create or replace function public.set_competency_actor()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 declare
   actor uuid := (select id from public.profiles where id = auth.uid());
 begin
@@ -260,29 +260,47 @@ alter table public.team_member_competencies  enable row level security;
 alter table public.project_experience         enable row level security;
 alter table public.project_experience_tags    enable row level security;
 
+-- Policies use drop-if-exists guards so this file stays idempotent (re-runnable),
+-- matching the create-if-not-exists posture of the tables above.
+drop policy if exists "competency_tags: read" on public.competency_tags;
 create policy "competency_tags: read"
   on public.competency_tags for select to authenticated using (true);
+drop policy if exists "competency_tags: insert" on public.competency_tags;
 create policy "competency_tags: insert"
   on public.competency_tags for insert to authenticated with check (true);
+drop policy if exists "competency_tags: admin update" on public.competency_tags;
 create policy "competency_tags: admin update"
   on public.competency_tags for update to authenticated
   using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+drop policy if exists "competency_tags: admin delete" on public.competency_tags;
 create policy "competency_tags: admin delete"
   on public.competency_tags for delete to authenticated
   using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
 
 -- Broad authenticated CRUD for the join/experience tables (see migration for the DO-block form).
+drop policy if exists "team_member_competencies: read"   on public.team_member_competencies;
 create policy "team_member_competencies: read"   on public.team_member_competencies for select to authenticated using (true);
+drop policy if exists "team_member_competencies: insert" on public.team_member_competencies;
 create policy "team_member_competencies: insert" on public.team_member_competencies for insert to authenticated with check (true);
+drop policy if exists "team_member_competencies: update" on public.team_member_competencies;
 create policy "team_member_competencies: update" on public.team_member_competencies for update to authenticated using (true);
+drop policy if exists "team_member_competencies: delete" on public.team_member_competencies;
 create policy "team_member_competencies: delete" on public.team_member_competencies for delete to authenticated using (true);
+drop policy if exists "project_experience: read"   on public.project_experience;
 create policy "project_experience: read"   on public.project_experience for select to authenticated using (true);
+drop policy if exists "project_experience: insert" on public.project_experience;
 create policy "project_experience: insert" on public.project_experience for insert to authenticated with check (true);
+drop policy if exists "project_experience: update" on public.project_experience;
 create policy "project_experience: update" on public.project_experience for update to authenticated using (true);
+drop policy if exists "project_experience: delete" on public.project_experience;
 create policy "project_experience: delete" on public.project_experience for delete to authenticated using (true);
+drop policy if exists "project_experience_tags: read"   on public.project_experience_tags;
 create policy "project_experience_tags: read"   on public.project_experience_tags for select to authenticated using (true);
+drop policy if exists "project_experience_tags: insert" on public.project_experience_tags;
 create policy "project_experience_tags: insert" on public.project_experience_tags for insert to authenticated with check (true);
+drop policy if exists "project_experience_tags: update" on public.project_experience_tags;
 create policy "project_experience_tags: update" on public.project_experience_tags for update to authenticated using (true);
+drop policy if exists "project_experience_tags: delete" on public.project_experience_tags;
 create policy "project_experience_tags: delete" on public.project_experience_tags for delete to authenticated using (true);
 
 create or replace function public.search_experts(
@@ -321,8 +339,10 @@ as $$
     group by pe.team_member_id
   ),
   combined as (
+    -- score = (# matching tags) + (full-text rank × 10). ts_rank is tiny (~0.05–0.1),
+    -- so the weight keeps a strong experience match on par with one matching tag.
     select tm.id as team_member_id, tm.full_name, tm.email, tm.role,
-           coalesce(at.tag_count, 0) + coalesce(eh.rank, 0) as score,
+           coalesce(at.tag_count, 0) + coalesce(eh.rank, 0) * 10 as score,
            jsonb_build_object('skills_technologies', coalesce(at.tags, '[]'::jsonb),
                               'experience', coalesce(eh.experiences, '[]'::jsonb)) as matched
     from public.team_members tm
