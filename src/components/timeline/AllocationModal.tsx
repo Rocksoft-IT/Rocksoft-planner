@@ -80,12 +80,17 @@ export default function AllocationModal({
     setError('')
     if (!personId) { setError('Wybierz osobę.'); return }
     if (startDate > endDate) { setError('Data końca musi być po dacie startu.'); return }
+    // Validate before setLoading(true): an early return past that point would leave
+    // the submit button disabled with no way back except a page reload, because this
+    // component stays mounted when the modal closes (only Modal itself unmounts).
+    const isTimeOffEntry = kind === 'timeoff' && !allocation
+    if (!isTimeOffEntry && !projectId) { setError('Wybierz projekt.'); return }
 
     setLoading(true)
     const supabase = createClient()
 
     // ── Time off (urlop / L4 / nieobecność) → time_off table ──
-    if (kind === 'timeoff' && !allocation) {
+    if (isTimeOffEntry) {
       const { error: dbError } = await supabase.from('time_off').insert({
         person_id: personId,
         type: timeOffType,
@@ -101,8 +106,6 @@ export default function AllocationModal({
     }
 
     // ── Project allocation → allocations table ──
-    if (!projectId) { setError('Wybierz projekt.'); return }
-
     const payload = {
       person_id: personId,
       project_id: projectId,
