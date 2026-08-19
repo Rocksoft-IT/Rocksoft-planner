@@ -126,6 +126,75 @@ export function formatDate(date: Date | string): string {
   return format(new Date(date), 'yyyy-MM-dd')
 }
 
+// Forward-looking availability window: today through today + 13 (the next 2 weeks).
+// Weekends are dropped downstream by calcUtilization.
+export function getAvailabilityWindow(): Date[] {
+  const today = new Date()
+  return eachDayOfInterval({ start: today, end: addDays(today, 13) })
+}
+
+// Turn a calcUtilization result into a free-resources-focused label + color, so
+// the People page and the Timeline present availability identically.
+//
+// Status (isUnavailable/isOver/isFull) is derived from the raw hours, not the
+// rounded percentages — otherwise a person with a fraction of an hour free could
+// be labelled "pełny", or a tiny overallocation could round down to "pełny".
+// The percentage is presentation only.
+export function formatAvailability(util: {
+  allocated: number
+  free: number
+  allocatedHours: number
+  capacityHours: number
+}): {
+  freeHours: number
+  freePct: number
+  barPct: number
+  isFull: boolean
+  isOver: boolean
+  isUnavailable: boolean
+  color: string
+  label: string
+} {
+  const { allocatedHours, capacityHours } = util
+  const rawFreeHours = capacityHours - allocatedHours
+
+  // No available capacity in the window (e.g. fully on time-off, or 0h/day) —
+  // this is "not available", not "fully booked".
+  const isUnavailable = capacityHours <= 0
+  const isOver = !isUnavailable && rawFreeHours < 0
+  const isFull = !isUnavailable && !isOver && rawFreeHours <= 0
+
+  const freeHours = Math.max(0, Math.round(rawFreeHours * 10) / 10)
+  // Percentage is presentation only. Keep it the exact complement of the rounded
+  // allocated% (util.free === 100 - util.allocated) so "% zajęty" + "% wolne" always
+  // sum to 100, and a person with any allocation never rounds up into 100% free.
+  const freePct = isUnavailable ? 0 : Math.max(0, util.free)
+
+  const color = isUnavailable
+    ? '#64748b'
+    : isOver
+      ? '#ef4444'
+      : freePct <= 15
+        ? '#f59e0b'
+        : '#10b981'
+
+  const label = isUnavailable
+    ? 'Niedostępny'
+    : isOver
+      ? 'Przeciążony'
+      : isFull
+        ? 'Brak wolnych godzin'
+        : `Wolne: ${freeHours}h z ${capacityHours}h (${freePct}%)`
+
+  // Bar width: a partial-availability person shows their free fraction (green/amber).
+  // The no-availability states (over / full / unavailable) fill the whole bar in the
+  // status color, so the most important cases are the most visible — not an invisible
+  // 0%-wide bar.
+  const barPct = isUnavailable || isOver || isFull ? 100 : freePct
+
+  return { freeHours, freePct, barPct, isFull, isOver, isUnavailable, color, label }
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
