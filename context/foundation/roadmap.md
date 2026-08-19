@@ -3,7 +3,7 @@ project: Drag and drop reallocation on the timeline
 version: 1
 status: active
 created: 2026-06-16
-updated: 2026-07-15
+updated: 2026-08-19
 prd_version: 1
 main_goal: speed
 top_blocker: none
@@ -37,8 +37,8 @@ Success Criterion.
 | ID   | Change ID                  | Outcome                                                             | Prerequisites | PRD refs                        | Status  |
 |------|----------------------------|---------------------------------------------------------------------|---------------|---------------------------------|---------|
 | F-01 | dnd-context-wiring         | Drag context wired; gesture arbitration established                 | —             | FR-006                          | done    |
-| S-01 | drag-allocation-move       | Planner can drag an Allocation block to shift its dates (move)      | F-01          | FR-001, FR-004, FR-005, US-01   | ready   |
-| S-02 | drag-allocation-resize     | Planner can drag an Allocation edge to change its duration (resize) | F-01          | FR-002, FR-004, FR-005          | ready   |
+| S-01 | drag-allocation-move       | Planner can drag an Allocation block to shift its dates (move)      | F-01          | FR-001, FR-004, FR-005, US-01   | in-progress |
+| S-02 | drag-allocation-resize     | Planner can drag an Allocation edge to change its duration (resize) | F-01          | FR-002, FR-004, FR-005          | in-progress |
 | S-03 | drag-live-preview          | Planner sees a live ghost preview while dragging                    | S-01, S-02    | FR-003                          | done    |
 
 ## Baseline
@@ -93,7 +93,7 @@ AllocationModal (gestures remain distinguishable via F-01's activation threshold
 - **Blockers:** none
 - **Unknowns:** Whether to use optimistic update or post-drop refetch for the displayed state — Owner: implementer — Block: no (both approaches satisfy the constraint; decision belongs to rs-plan).
 - **Risk:** Duration-invariant date math must handle month/year boundaries correctly; existing date utilities cover this.
-- **Status:** ready
+- **Status:** in-progress
 
 ### S-02 — drag-allocation-resize
 
@@ -110,7 +110,7 @@ and the person's utilization recomputes.
 - **Blockers:** none
 - **Unknowns:** Edge hit-target size (how many pixels constitute the "edge zone") — Owner: implementer — Block: no (a reasonable default can be chosen and tuned).
 - **Risk:** Edge zones must be discoverable (narrow enough not to swallow the block body click, wide enough to grab reliably); may need visual affordance.
-- **Status:** ready
+- **Status:** in-progress
 
 ### S-03 — drag-live-preview
 
@@ -134,12 +134,18 @@ solid.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID              | Suggested issue title                                              | Ready for rs-plan | Notes                                      |
-|------------|------------------------|--------------------------------------------------------------------|-------------------|--------------------------------------------|
-| F-01       | dnd-context-wiring     | Wire @dnd-kit DndContext into Timeline with gesture arbitration    | yes               | First; unlocks both gesture slices         |
-| S-01       | drag-allocation-move   | Drag-to-move: shift Allocation dates by dragging block body        | yes (after F-01)  | North star — highest value, first gesture  |
-| S-02       | drag-allocation-resize | Drag-to-resize: change Allocation duration by dragging block edge  | yes (after F-01)  | Parallel with S-01 once F-01 is merged     |
-| S-03       | drag-live-preview      | Live ghost preview during drag (move and resize)                   | yes (after S-01+S-02) | Nice-to-have polish; defer until core works |
+| Roadmap ID | Change ID              | Suggested issue title                                             | Depends on | Ready for rs-plan | Notes                                                          |
+|------------|------------------------|-------------------------------------------------------------------|------------|-------------------|----------------------------------------------------------------|
+| F-01       | dnd-context-wiring     | Wire @dnd-kit DndContext into Timeline with gesture arbitration   | —          | no                | Delivered — archived, closed by PR #32                          |
+| S-01       | drag-allocation-move   | Drag-to-move: shift Allocation dates by dragging block body       | F-01       | no                | North star. F-01 landed, so no unmet dependency; already under way (`implementing`) |
+| S-02       | drag-allocation-resize | Drag-to-resize: change Allocation duration by dragging block edge | F-01       | no                | Parallel with S-01. F-01 landed; implemented, awaiting review + archive |
+| S-03       | drag-live-preview      | Live ghost preview during drag (move and resize)                  | S-01, S-02 | no                | Delivered — archived, closed by PR #41                          |
+
+No row is `Ready for rs-plan = Yes`, and that is the correct state rather than a
+gap: the root (F-01) is delivered, S-03 is delivered, and S-01/S-02 are already
+under way. Nothing here is waiting to be handed to `rs-plan`. `Depends on` is the
+static prerequisite graph and does not shrink as slices land — readiness is
+derived from whether those ids have reached `done`.
 
 ## Open Roadmap Questions
 
