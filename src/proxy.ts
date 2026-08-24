@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const isAuthRoute = pathname.startsWith('/auth')
-  const isPublicRoute = isAuthRoute || pathname === '/'
+  const isPublicRoute = isAuthRoute || pathname === '/' || pathname.startsWith('/openapi/')
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()

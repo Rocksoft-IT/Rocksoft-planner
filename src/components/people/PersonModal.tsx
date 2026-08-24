@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
@@ -15,30 +15,13 @@ interface PersonModalProps {
 }
 
 export default function PersonModal({ open, onClose, onSaved, person }: PersonModalProps) {
-  const [fullName, setFullName] = useState('')
-  const [roles, setRoles] = useState<string[]>([])
-  const [email, setEmail] = useState('')
-  const [capacity, setCapacity] = useState('8')
-  const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0])
+  const [fullName, setFullName] = useState(person?.full_name ?? '')
+  const [roles, setRoles] = useState<string[]>(person?.role ? person.role.split(',').map((role) => role.trim()).filter(Boolean) : [])
+  const [email, setEmail] = useState(person?.email ?? '')
+  const [capacity, setCapacity] = useState(person ? String(person.capacity_hours_per_day) : '8')
+  const [avatarColor, setAvatarColor] = useState(person?.avatar_color ?? AVATAR_COLORS[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (person) {
-      setFullName(person.full_name)
-      setRoles(person.role ? person.role.split(',').map((r) => r.trim()).filter(Boolean) : [])
-      setEmail(person.email)
-      setCapacity(String(person.capacity_hours_per_day))
-      setAvatarColor(person.avatar_color)
-    } else {
-      setFullName('')
-      setRoles([])
-      setEmail('')
-      setCapacity('8')
-      setAvatarColor(AVATAR_COLORS[0])
-    }
-    setError('')
-  }, [person, open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

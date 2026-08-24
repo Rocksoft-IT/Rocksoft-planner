@@ -9,7 +9,6 @@ import {
   useSensors,
   type DragEndEvent,
   type DragMoveEvent,
-  type DragCancelEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -46,17 +45,6 @@ const ROW_PADDING = 3    // px top + bottom
 // into the row above/below (869e5gwa8).
 function calcRowHeight(numLanes: number) {
   return Math.max(50, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
-}
-
-function assignLanes(allocs: AllocationWithProject[]): (AllocationWithProject & { lane: number })[] {
-  const sorted = [...allocs].sort((a, b) => a.start_date.localeCompare(b.start_date))
-  const laneEnds: string[] = []
-  return sorted.map((alloc) => {
-    let lane = laneEnds.findIndex((end) => alloc.start_date > end)
-    if (lane === -1) lane = laneEnds.length
-    laneEnds[lane] = alloc.end_date
-    return { ...alloc, lane }
-  })
 }
 
 // Combined item for lane assignment (allocation or time-off)
@@ -445,13 +433,14 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     onRefresh()
   }
 
-  function handleDragCancel(_event: DragCancelEvent) {
+  function handleDragCancel() {
     clearDragActive()
     setResizePreview(null)
   }
 
   // Drag-to-scroll state
   const isDragging = useRef(false)
+  const [isPanning, setIsPanning] = useState(false)
   const dragStartX = useRef(0)
   const dragStartScrollLeft = useRef(0)
   const didDrag = useRef(false)
@@ -479,6 +468,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   function handleMouseDown(e: React.MouseEvent) {
     if ((e.target as HTMLElement).closest('[data-block]')) return
     isDragging.current = true
+    setIsPanning(true)
     didDrag.current = false
     dragStartX.current = e.pageX
     dragStartScrollLeft.current = scrollRef.current?.scrollLeft ?? 0
@@ -494,6 +484,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
   function handleMouseUp() {
     isDragging.current = false
+    setIsPanning(false)
   }
 
   const filteredPeople = people.filter((p) => {
@@ -649,7 +640,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
       <div
         ref={scrollRef}
         className="flex-1 overflow-auto"
-        style={{ cursor: isDragging.current ? 'grabbing' : 'grab' }}
+        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
         onScroll={handleScroll}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -864,26 +855,32 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         </div>{/* end inner content */}
       </div>{/* end single scroll container */}
 
-      <AllocationModal
-        open={modal.open}
-        onClose={() => setModal({ open: false })}
-        onSaved={onRefresh}
-        allocation={modal.allocation}
-        defaultPersonId={modal.defaultPersonId}
-        defaultStartDate={modal.defaultStartDate}
-        people={people}
-        projects={projects}
-      />
+      {modal.open && (
+        <AllocationModal
+          key={modal.allocation?.id ?? `${modal.defaultPersonId ?? 'any'}:${modal.defaultStartDate ?? 'today'}`}
+          open
+          onClose={() => setModal({ open: false })}
+          onSaved={onRefresh}
+          allocation={modal.allocation}
+          defaultPersonId={modal.defaultPersonId}
+          defaultStartDate={modal.defaultStartDate}
+          people={people}
+          projects={projects}
+        />
+      )}
 
-      <TimeOffModal
-        open={oooModal.open}
-        onClose={() => setOooModal({ open: false })}
-        onSaved={onRefresh}
-        timeOff={oooModal.timeOff}
-        defaultPersonId={oooModal.defaultPersonId}
-        defaultStartDate={oooModal.defaultStartDate}
-        people={people}
-      />
+      {oooModal.open && (
+        <TimeOffModal
+          key={oooModal.timeOff?.id ?? `${oooModal.defaultPersonId ?? 'any'}:${oooModal.defaultStartDate ?? 'today'}`}
+          open
+          onClose={() => setOooModal({ open: false })}
+          onSaved={onRefresh}
+          timeOff={oooModal.timeOff}
+          defaultPersonId={oooModal.defaultPersonId}
+          defaultStartDate={oooModal.defaultStartDate}
+          people={people}
+        />
+      )}
     </div>
     </DndContext>
   )

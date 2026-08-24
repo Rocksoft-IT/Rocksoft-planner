@@ -85,6 +85,30 @@ export async function POST(request: NextRequest) {
   }
   const b = body as Record<string, unknown>
 
+  for (const field of ['skills', 'technologies'] as const) {
+    const value = b[field]
+    if (value !== undefined && (
+      !Array.isArray(value)
+      || value.some((item) => typeof item !== 'string')
+      || value.length > MAX_SLUGS
+      || value.some((item) => item.length > MAX_SLUG_LEN)
+    )) {
+      return NextResponse.json(
+        { error: `${field} must be an array of at most ${MAX_SLUGS} strings, each at most ${MAX_SLUG_LEN} characters.` },
+        { status: 400 }
+      )
+    }
+  }
+  for (const field of ['description', 'query'] as const) {
+    const value = b[field]
+    if (value !== undefined && (typeof value !== 'string' || value.length > MAX_TEXT_LEN)) {
+      return NextResponse.json(
+        { error: `${field} must be a string of at most ${MAX_TEXT_LEN} characters.` },
+        { status: 400 }
+      )
+    }
+  }
+
   const asStringArray = (v: unknown): string[] =>
     Array.isArray(v) ? cleanSlugs(v.filter((x): x is string => typeof x === 'string')) : []
 

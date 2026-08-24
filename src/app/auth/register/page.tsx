@@ -19,8 +19,9 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    const normalizedEmail = email.trim().toLowerCase()
 
-    if (!email.endsWith('@rocksoft.pl')) {
+    if (!/^[^@]+@rocksoft\.pl$/.test(normalizedEmail)) {
       setError('Only @rocksoft.pl email addresses are allowed.')
       return
     }
@@ -36,7 +37,7 @@ export default function RegisterPage() {
     const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]
 
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         data: {
@@ -74,7 +75,7 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Check your email</h2>
           <p className="text-slate-400 text-sm">
-            We sent a confirmation link to <span className="text-white">{email}</span>.
+            We sent a confirmation link to <span className="text-white">{email.trim().toLowerCase()}</span>.
             Click it to activate your account.
           </p>
           <Link

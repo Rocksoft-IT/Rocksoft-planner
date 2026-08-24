@@ -19,19 +19,54 @@ create table if not exists public.profiles (
   updated_at             timestamptz not null default now()
 );
 
+-- Directory records are independent from login accounts so contractors or
+-- future hires can exist without access. profile_id is the immutable ownership
+-- link used by competency RLS; email is only used to establish that link.
+create table if not exists public.team_members (
+  id                     uuid primary key default gen_random_uuid(),
+  profile_id             uuid references public.profiles(id) on delete set null,
+  full_name              text not null,
+  role                   text not null default '',
+  email                  text not null default '',
+  capacity_hours_per_day numeric(4,1) not null default 8
+                           check (capacity_hours_per_day > 0 and capacity_hours_per_day <= 24),
+  avatar_color           text not null default '#6366f1',
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+
+create unique index if not exists team_members_profile_id_unique_idx
+  on public.team_members(profile_id)
+  where profile_id is not null;
+
 -- Trigger: auto-create profile on signup
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public
 as $$
 begin
+  if new.email is null or lower(trim(new.email)) !~ '^[^@]+@rocksoft\.pl$' then
+    raise exception 'Only @rocksoft.pl accounts are allowed.';
+  end if;
+
   insert into public.profiles (id, email, full_name, role, avatar_color)
   values (
     new.id,
-    new.email,
+    lower(trim(new.email)),
     coalesce(new.raw_user_meta_data->>'full_name', ''),
     coalesce(new.raw_user_meta_data->>'role', ''),
     coalesce(new.raw_user_meta_data->>'avatar_color', '#6366f1')
   );
+
+  update public.team_members
+  set profile_id = new.id
+  where profile_id is null
+    and lower(trim(email)) = lower(trim(new.email))
+    and 1 = (
+      select count(*)
+      from public.team_members same_email
+      where lower(trim(same_email.email)) = lower(trim(new.email))
+    );
+
   return new;
 end;
 $$;
@@ -59,17 +94,30 @@ create table if not exists public.projects (
 
 create table if not exists public.allocations (
   id            uuid primary key default gen_random_uuid(),
-  person_id     uuid not null references public.profiles(id) on delete cascade,
+  person_id     uuid not null references public.team_members(id) on delete cascade,
   project_id    uuid not null references public.projects(id) on delete cascade,
   start_date    date not null,
   end_date      date not null,
   hours_per_day numeric(4,1) not null default 8,
+  status        text not null default 'confirmed' check (status in ('confirmed','tentative')),
   notes         text,
   created_by    uuid references public.profiles(id) on delete set null,
   updated_by    uuid references public.profiles(id) on delete set null,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   constraint valid_date_range check (end_date >= start_date)
+);
+
+create table if not exists public.time_off (
+  id         uuid primary key default gen_random_uuid(),
+  person_id  uuid not null references public.team_members(id) on delete cascade,
+  start_date date not null,
+  end_date   date not null,
+  type       text not null check (type in ('vacation','sick_leave','other')),
+  notes      text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint time_off_valid_date_range check (end_date >= start_date)
 );
 
 -- Trigger: stamp created_by / updated_by from the authenticated user (auth.uid()),
@@ -82,8 +130,8 @@ declare
   actor uuid := (select id from public.profiles where id = auth.uid());
 begin
   if (tg_op = 'INSERT') then
-    new.created_by := coalesce(new.created_by, actor);
-    new.updated_by := coalesce(new.updated_by, actor);
+    new.created_by := actor;
+    new.updated_by := actor;
   elsif (tg_op = 'UPDATE') then
     new.updated_by := actor;
     new.updated_at := now();
@@ -97,49 +145,135 @@ create trigger allocations_set_actor
   before insert or update on public.allocations
   for each row execute function public.set_allocation_actor();
 
+-- Authorization helpers use SECURITY DEFINER to avoid recursive profile-policy
+-- evaluation. They return booleans only and run with a fixed search_path.
+create or replace function public.is_current_user_admin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select p.is_admin from public.profiles p where p.id = auth.uid()), false);
+$$;
+
+create or replace function public.is_organization_user()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select lower(trim(p.email)) ~ '^[^@]+@rocksoft\.pl$'
+    from public.profiles p where p.id = auth.uid()
+  ), false);
+$$;
+
+revoke execute on function public.is_current_user_admin() from public;
+revoke execute on function public.is_organization_user() from public;
+grant execute on function public.is_current_user_admin() to authenticated, service_role;
+grant execute on function public.is_organization_user() to authenticated, service_role;
+
+-- Identity and authorization fields cannot be changed through an authenticated
+-- browser session. Service-role and SQL maintenance remain available.
+create or replace function public.protect_profile_security_fields()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if auth.uid() is not null and (
+    new.id is distinct from old.id
+    or new.email is distinct from old.email
+    or new.is_admin is distinct from old.is_admin
+  ) then
+    raise exception 'Profile identity and admin fields can only be changed by the service role.';
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_protect_security_fields on public.profiles;
+create trigger profiles_protect_security_fields
+  before update on public.profiles
+  for each row execute function public.protect_profile_security_fields();
+
+-- Admin directory edits keep the immutable login ownership link synchronized.
+create or replace function public.link_team_member_profile()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  select p.id into new.profile_id
+  from public.profiles p
+  where lower(trim(p.email)) = lower(trim(new.email))
+  limit 1;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists team_members_link_profile on public.team_members;
+create trigger team_members_link_profile
+  before insert or update of email on public.team_members
+  for each row execute function public.link_team_member_profile();
+
 -- 4. ROW LEVEL SECURITY
 
 alter table public.profiles  enable row level security;
+alter table public.team_members enable row level security;
 alter table public.projects   enable row level security;
 alter table public.allocations enable row level security;
+alter table public.time_off enable row level security;
 
--- Profiles: authenticated users can read all, update own
-create policy "profiles: authenticated read all"
-  on public.profiles for select to authenticated using (true);
+-- Profiles: organization users read all; users update their non-security fields.
+create policy "profiles: organization read"
+  on public.profiles for select to authenticated using (public.is_organization_user());
 
 create policy "profiles: update own"
-  on public.profiles for update to authenticated using (auth.uid() = id);
+  on public.profiles for update to authenticated
+  using (auth.uid() = id) with check (auth.uid() = id);
 
 -- Admins can update any profile
 create policy "profiles: admin update all"
   on public.profiles for update to authenticated
-  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+  using (public.is_current_user_admin()) with check (public.is_current_user_admin());
 
--- Projects: authenticated users can read/write all
+-- Team directory: internal read, admin-only maintenance.
+create policy "team_members: organization read"
+  on public.team_members for select to authenticated using (public.is_organization_user());
+create policy "team_members: admin insert"
+  on public.team_members for insert to authenticated with check (public.is_current_user_admin());
+create policy "team_members: admin update"
+  on public.team_members for update to authenticated
+  using (public.is_current_user_admin()) with check (public.is_current_user_admin());
+create policy "team_members: admin delete"
+  on public.team_members for delete to authenticated using (public.is_current_user_admin());
+
+-- Projects: organization users can read/write all.
 create policy "projects: authenticated read"
-  on public.projects for select to authenticated using (true);
+  on public.projects for select to authenticated using (public.is_organization_user());
 
 create policy "projects: authenticated insert"
-  on public.projects for insert to authenticated with check (true);
+  on public.projects for insert to authenticated with check (public.is_organization_user());
 
 create policy "projects: authenticated update"
-  on public.projects for update to authenticated using (true);
+  on public.projects for update to authenticated
+  using (public.is_organization_user()) with check (public.is_organization_user());
 
 create policy "projects: authenticated delete"
-  on public.projects for delete to authenticated using (true);
+  on public.projects for delete to authenticated using (public.is_organization_user());
 
--- Allocations: authenticated users can read/write all
+-- Allocations: organization users can read/write all.
 create policy "allocations: authenticated read"
-  on public.allocations for select to authenticated using (true);
+  on public.allocations for select to authenticated using (public.is_organization_user());
 
 create policy "allocations: authenticated insert"
-  on public.allocations for insert to authenticated with check (true);
+  on public.allocations for insert to authenticated with check (public.is_organization_user());
 
 create policy "allocations: authenticated update"
-  on public.allocations for update to authenticated using (true);
+  on public.allocations for update to authenticated
+  using (public.is_organization_user()) with check (public.is_organization_user());
 
 create policy "allocations: authenticated delete"
-  on public.allocations for delete to authenticated using (true);
+  on public.allocations for delete to authenticated using (public.is_organization_user());
+
+create policy "time_off: authenticated read"
+  on public.time_off for select to authenticated using (public.is_organization_user());
+create policy "time_off: authenticated insert"
+  on public.time_off for insert to authenticated with check (public.is_organization_user());
+create policy "time_off: authenticated update"
+  on public.time_off for update to authenticated
+  using (public.is_organization_user()) with check (public.is_organization_user());
+create policy "time_off: authenticated delete"
+  on public.time_off for delete to authenticated using (public.is_organization_user());
 
 -- 5. INDEXES
 
@@ -221,8 +355,8 @@ declare
   actor uuid := (select id from public.profiles where id = auth.uid());
 begin
   if (tg_op = 'INSERT') then
-    new.created_by := coalesce(new.created_by, actor);
-    new.updated_by := coalesce(new.updated_by, actor);
+    new.created_by := actor;
+    new.updated_by := actor;
   elsif (tg_op = 'UPDATE') then
     new.updated_by := actor;
     new.updated_at := now();
@@ -269,37 +403,38 @@ alter table public.project_experience_tags    enable row level security;
 -- matching the create-if-not-exists posture of the tables above.
 drop policy if exists "competency_tags: read" on public.competency_tags;
 create policy "competency_tags: read"
-  on public.competency_tags for select to authenticated using (true);
+  on public.competency_tags for select to authenticated using (public.is_organization_user());
 drop policy if exists "competency_tags: insert" on public.competency_tags;
 create policy "competency_tags: insert"
   on public.competency_tags for insert to authenticated
   -- Only admins may mint curated tags (otherwise a user could self-elevate is_curated).
   with check (
-    is_curated = false
-    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+    public.is_organization_user()
+    and (is_curated = false or public.is_current_user_admin())
   );
 drop policy if exists "competency_tags: admin update" on public.competency_tags;
 create policy "competency_tags: admin update"
   on public.competency_tags for update to authenticated
-  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+  using (public.is_current_user_admin()) with check (public.is_current_user_admin());
 drop policy if exists "competency_tags: admin delete" on public.competency_tags;
 create policy "competency_tags: admin delete"
   on public.competency_tags for delete to authenticated
-  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+  using (public.is_current_user_admin());
 
--- Ownership helpers: a profile owns a team_member by matching email; admins edit anyone.
+-- Ownership helpers: a profile owns a team_member through immutable profile_id;
+-- admins may edit anyone.
 -- security definer so the lookups aren't themselves gated by RLS. (See migration for rationale.)
 create or replace function public.can_edit_member(p_member_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1
     from public.team_members tm
-    join public.profiles pr on lower(pr.email) = lower(tm.email)
-    where tm.id = p_member_id and pr.id = auth.uid()
-  ) or exists (
-    select 1 from public.profiles where id = auth.uid() and is_admin = true
-  );
+    where tm.id = p_member_id and tm.profile_id = auth.uid()
+  ) or public.is_current_user_admin();
 $$;
+
+revoke execute on function public.can_edit_member(uuid) from public;
+grant execute on function public.can_edit_member(uuid) to authenticated, service_role;
 
 create or replace function public.can_edit_experience(p_experience_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
@@ -308,9 +443,9 @@ returns boolean language sql stable security definer set search_path = public as
   where pe.id = p_experience_id;
 $$;
 
--- Join/experience tables: anyone reads; only the owner (or an admin) writes.
+-- Join/experience tables: organization users read; only the owner/admin writes.
 drop policy if exists "team_member_competencies: read"   on public.team_member_competencies;
-create policy "team_member_competencies: read"   on public.team_member_competencies for select to authenticated using (true);
+create policy "team_member_competencies: read"   on public.team_member_competencies for select to authenticated using (public.is_organization_user());
 drop policy if exists "team_member_competencies: insert" on public.team_member_competencies;
 create policy "team_member_competencies: insert" on public.team_member_competencies for insert to authenticated with check (public.can_edit_member(team_member_id));
 drop policy if exists "team_member_competencies: update" on public.team_member_competencies;
@@ -318,7 +453,7 @@ create policy "team_member_competencies: update" on public.team_member_competenc
 drop policy if exists "team_member_competencies: delete" on public.team_member_competencies;
 create policy "team_member_competencies: delete" on public.team_member_competencies for delete to authenticated using (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience: read"   on public.project_experience;
-create policy "project_experience: read"   on public.project_experience for select to authenticated using (true);
+create policy "project_experience: read"   on public.project_experience for select to authenticated using (public.is_organization_user());
 drop policy if exists "project_experience: insert" on public.project_experience;
 create policy "project_experience: insert" on public.project_experience for insert to authenticated with check (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience: update" on public.project_experience;
@@ -326,7 +461,7 @@ create policy "project_experience: update" on public.project_experience for upda
 drop policy if exists "project_experience: delete" on public.project_experience;
 create policy "project_experience: delete" on public.project_experience for delete to authenticated using (public.can_edit_member(team_member_id));
 drop policy if exists "project_experience_tags: read"   on public.project_experience_tags;
-create policy "project_experience_tags: read"   on public.project_experience_tags for select to authenticated using (true);
+create policy "project_experience_tags: read"   on public.project_experience_tags for select to authenticated using (public.is_organization_user());
 drop policy if exists "project_experience_tags: insert" on public.project_experience_tags;
 create policy "project_experience_tags: insert" on public.project_experience_tags for insert to authenticated with check (public.can_edit_experience(experience_id));
 drop policy if exists "project_experience_tags: update" on public.project_experience_tags;

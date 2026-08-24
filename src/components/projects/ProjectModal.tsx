@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import ColorPicker from '@/components/ui/ColorPicker'
 import { createClient } from '@/lib/supabase/client'
@@ -15,30 +15,13 @@ interface ProjectModalProps {
 }
 
 export default function ProjectModal({ open, onClose, onSaved, project }: ProjectModalProps) {
-  const [name, setName] = useState('')
-  const [color, setColor] = useState(PROJECT_COLORS[0])
-  const [description, setDescription] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [name, setName] = useState(project?.name ?? '')
+  const [color, setColor] = useState(project?.color ?? PROJECT_COLORS[0])
+  const [description, setDescription] = useState(project?.description ?? '')
+  const [startDate, setStartDate] = useState(project?.start_date ?? '')
+  const [endDate, setEndDate] = useState(project?.end_date ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (project) {
-      setName(project.name)
-      setColor(project.color)
-      setDescription(project.description ?? '')
-      setStartDate(project.start_date ?? '')
-      setEndDate(project.end_date ?? '')
-    } else {
-      setName('')
-      setColor(PROJECT_COLORS[0])
-      setDescription('')
-      setStartDate('')
-      setEndDate('')
-    }
-    setError('')
-  }, [project, open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

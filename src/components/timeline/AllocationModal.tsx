@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, cn } from '@/lib/utils'
@@ -34,42 +34,17 @@ export default function AllocationModal({
   // What kind of entry is being created — project allocation or time off (urlop).
   // Mutually exclusive; only offered on create (editing is always a project alloc).
   const [kind, setKind] = useState<EntryKind>('project')
-  const [personId, setPersonId] = useState(defaultPersonId ?? '')
-  const [projectId, setProjectId] = useState('')
+  const [personId, setPersonId] = useState(allocation?.person_id ?? defaultPersonId ?? '')
+  const [projectId, setProjectId] = useState(allocation?.project_id ?? '')
   const [projectQuery, setProjectQuery] = useState('')
   const [timeOffType, setTimeOffType] = useState<TimeOff['type']>('vacation')
-  const [startDate, setStartDate] = useState(defaultStartDate ?? formatDate(new Date()))
-  const [endDate, setEndDate] = useState(defaultStartDate ?? formatDate(new Date()))
-  const [hoursPerDay, setHoursPerDay] = useState('8')
-  const [status, setStatus] = useState<'confirmed' | 'tentative'>('confirmed')
-  const [notes, setNotes] = useState('')
+  const [startDate, setStartDate] = useState(allocation?.start_date ?? defaultStartDate ?? formatDate(new Date()))
+  const [endDate, setEndDate] = useState(allocation?.end_date ?? defaultStartDate ?? formatDate(new Date()))
+  const [hoursPerDay, setHoursPerDay] = useState(allocation ? String(allocation.hours_per_day) : '8')
+  const [status, setStatus] = useState<'confirmed' | 'tentative'>(allocation?.status ?? 'confirmed')
+  const [notes, setNotes] = useState(allocation?.notes ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (allocation) {
-      setKind('project')
-      setPersonId(allocation.person_id)
-      setProjectId(allocation.project_id)
-      setStartDate(allocation.start_date)
-      setEndDate(allocation.end_date)
-      setHoursPerDay(String(allocation.hours_per_day))
-      setStatus(allocation.status ?? 'confirmed')
-      setNotes(allocation.notes ?? '')
-    } else {
-      setKind('project')
-      setPersonId(defaultPersonId ?? '')
-      setProjectId('')
-      setTimeOffType('vacation')
-      setStartDate(defaultStartDate ?? formatDate(new Date()))
-      setEndDate(defaultStartDate ?? formatDate(new Date()))
-      setHoursPerDay('8')
-      setStatus('confirmed')
-      setNotes('')
-    }
-    setProjectQuery('')
-    setError('')
-  }, [allocation, defaultPersonId, defaultStartDate, open])
 
   const filteredProjects = projects.filter((p) =>
     p.name.toLowerCase().includes(projectQuery.toLowerCase())

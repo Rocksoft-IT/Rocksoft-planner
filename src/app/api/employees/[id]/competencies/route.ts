@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 // GET /api/employees/:id/competencies
 // Full competency + project-experience detail for one team member.
 export async function GET(
@@ -14,6 +16,9 @@ export async function GET(
   if (denied) return denied
 
   const { id } = await params
+  if (!UUID_PATTERN.test(id)) {
+    return NextResponse.json({ error: 'Employee id must be a valid UUID.' }, { status: 400 })
+  }
   const supabase = createAdminClient()
 
   const { data, error } = await supabase

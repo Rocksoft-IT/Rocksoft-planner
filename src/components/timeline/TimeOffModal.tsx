@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, cn } from '@/lib/utils'
@@ -23,30 +23,13 @@ export default function TimeOffModal({
   open, onClose, onSaved,
   timeOff, defaultPersonId, defaultStartDate, people,
 }: TimeOffModalProps) {
-  const [personId, setPersonId] = useState(defaultPersonId ?? '')
-  const [type, setType] = useState<TimeOff['type']>('vacation')
-  const [startDate, setStartDate] = useState(defaultStartDate ?? formatDate(new Date()))
-  const [endDate, setEndDate] = useState(defaultStartDate ?? formatDate(new Date()))
-  const [notes, setNotes] = useState('')
+  const [personId, setPersonId] = useState(timeOff?.person_id ?? defaultPersonId ?? '')
+  const [type, setType] = useState<TimeOff['type']>(timeOff?.type ?? 'vacation')
+  const [startDate, setStartDate] = useState(timeOff?.start_date ?? defaultStartDate ?? formatDate(new Date()))
+  const [endDate, setEndDate] = useState(timeOff?.end_date ?? defaultStartDate ?? formatDate(new Date()))
+  const [notes, setNotes] = useState(timeOff?.notes ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (timeOff) {
-      setPersonId(timeOff.person_id)
-      setType(timeOff.type)
-      setStartDate(timeOff.start_date)
-      setEndDate(timeOff.end_date)
-      setNotes(timeOff.notes ?? '')
-    } else {
-      setPersonId(defaultPersonId ?? '')
-      setType('vacation')
-      setStartDate(defaultStartDate ?? formatDate(new Date()))
-      setEndDate(defaultStartDate ?? formatDate(new Date()))
-      setNotes('')
-    }
-    setError('')
-  }, [timeOff, defaultPersonId, defaultStartDate, open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

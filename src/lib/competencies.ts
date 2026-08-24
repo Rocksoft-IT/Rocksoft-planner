@@ -11,6 +11,13 @@ export function slugify(name: string): string {
     .replace(/\+\+/g, ' plus plus')
     .replace(/\+/g, ' plus')
     .replace(/#/g, ' sharp')
+    // Unicode normalization handles most diacritics; ł/đ/ð/þ do not decompose
+    // consistently, so transliterate them explicitly before the ASCII slug pass.
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .replace(/đ|ð/g, 'd')
+    .replace(/þ/g, 'th')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }

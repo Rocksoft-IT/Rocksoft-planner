@@ -91,12 +91,15 @@ export default function ProjectsClient({ initialProjects }: Props) {
         )}
       </div>
 
-      <ProjectModal
-        open={modal.open}
-        onClose={() => setModal({ open: false })}
-        onSaved={refresh}
-        project={modal.project}
-      />
+      {modal.open && (
+        <ProjectModal
+          key={modal.project?.id ?? 'new'}
+          open
+          onClose={() => setModal({ open: false })}
+          onSaved={refresh}
+          project={modal.project}
+        />
+      )}
     </div>
   )
 }

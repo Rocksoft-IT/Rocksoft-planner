@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: Rocksoft Competency API
+  version: 1.0.0
+  description: Read-only API for employee competencies, project experience, and expert search.
+servers:
+  - url: https://planner.example.com
+    description: Replace with the RunCloud application domain when different.
+security:
+  - bearerAuth: []
+paths:
+  /api/competencies:
+    get:
+      summary: List skills and technologies
+      parameters:
+        - in: query
+          name: kind
+          schema: { type: string, enum: [skill, technology] }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: Competency catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [competencies]
+                properties:
+                  competencies:
+                    type: array
+                    items: { $ref: '#/components/schemas/CompetencyTag' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/employees:
+    get:
+      summary: List employees with competency summaries
+      responses:
+        '200':
+          description: Employee list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [employees]
+                properties:
+                  employees:
+                    type: array
+                    items: { $ref: '#/components/schemas/EmployeeSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/employees/{id}/competencies:
+    get:
+      summary: Get one employee with competencies and project experience
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Employee competency profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [employee]
+                properties:
+                  employee: { $ref: '#/components/schemas/EmployeeDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Employee not found
+  /api/search/experts:
+    get:
+      summary: Search experts with query parameters
+      parameters:
+        - in: query
+          name: skills
+          description: Comma-separated competency slugs
+          schema: { type: string }
+        - in: query
+          name: technologies
+          description: Comma-separated technology slugs
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string, maxLength: 2000 }
+      responses:
+        '200': { $ref: '#/components/responses/ExpertSearch' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      summary: Search experts from a project description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skills:
+                  type: array
+                  maxItems: 50
+                  items: { type: string, maxLength: 100 }
+                technologies:
+                  type: array
+                  maxItems: 50
+                  items: { type: string, maxLength: 100 }
+                description: { type: string, maxLength: 2000 }
+                query: { type: string, maxLength: 2000 }
+      responses:
+        '200': { $ref: '#/components/responses/ExpertSearch' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/health:
+    get:
+      security: []
+      summary: Liveness or readiness check
+      parameters:
+        - in: query
+          name: ready
+          schema: { type: string, enum: ['1'] }
+      responses:
+        '200': { description: Process is alive or application is ready }
+        '503': { description: Readiness check failed }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+    BadRequest:
+      description: Invalid or empty search criteria
+    ExpertSearch:
+      description: Ranked expert matches
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [query, count, experts]
+            properties:
+              query: { type: object, additionalProperties: true }
+              count: { type: integer, minimum: 0 }
+              experts:
+                type: array
+                items: { $ref: '#/components/schemas/Expert' }
+  schemas:
+    CompetencyTag:
+      type: object
+      required: [id, kind, name, slug, is_curated]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [skill, technology] }
+        name: { type: string }
+        slug: { type: string }
+        is_curated: { type: boolean }
+    EmployeeSummary:
+      type: object
+      required: [id, full_name, email, role, competencies]
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string }
+        competencies: { type: array, items: { type: object, additionalProperties: true } }
+    EmployeeDetail:
+      allOf:
+        - $ref: '#/components/schemas/EmployeeSummary'
+        - type: object
+          required: [experience]
+          properties:
+            experience: { type: array, items: { type: object, additionalProperties: true } }
+    Expert:
+      type: object
+      required: [team_member_id, full_name, email, role, score, matched]
+      properties:
+        team_member_id: { type: string, format: uuid }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string }
+        score: { type: number }
+        matched: { type: object, additionalProperties: true }

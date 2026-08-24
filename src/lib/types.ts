@@ -12,6 +12,7 @@ export interface Profile {
 
 export interface TeamMember {
   id: string
+  profile_id: string | null
   full_name: string
   role: string
   email: string

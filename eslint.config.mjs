@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local agent/IDE worktrees are independent checkouts and must not be
+    // linted as part of this repository's validation gate.
+    ".claude/**",
+    ".worktrees/**",
+    ".idea/**",
   ]),
 ]);
 

@@ -14,6 +14,13 @@ export async function GET(request: NextRequest) {
   const kind = searchParams.get('kind')
   const q = searchParams.get('q')
 
+  if (kind && kind !== 'skill' && kind !== 'technology') {
+    return NextResponse.json({ error: 'kind must be skill or technology.' }, { status: 400 })
+  }
+  if (q && q.length > 200) {
+    return NextResponse.json({ error: 'q must not exceed 200 characters.' }, { status: 400 })
+  }
+
   const supabase = createAdminClient()
   let query = supabase
     .from('competency_tags')
@@ -21,7 +28,7 @@ export async function GET(request: NextRequest) {
     .order('kind')
     .order('name')
 
-  if (kind === 'skill' || kind === 'technology') query = query.eq('kind', kind)
+  if (kind) query = query.eq('kind', kind)
   // Escape LIKE metacharacters so a caller's `%`/`_` are matched literally, not as wildcards.
   if (q) query = query.ilike('name', `%${q.replace(/[\\%_]/g, '\\$&')}%`)
 

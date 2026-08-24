@@ -1,9 +1,12 @@
 # Competency API
 
-Public, agent-facing read API over the employee competency base. API-first by
-design: the web UI, external apps, and the MCP server (PR 2) all consume these
-endpoints. Backed by Supabase via a **service-role** client, guarded by an
-**API-key** check — it is not tied to a browser session.
+Public, agent-facing read API over the employee competency base. External apps
+and a future MCP server consume these endpoints; the internal web UI uses the
+same database functions through an authenticated Supabase session. The API is
+backed by a **service-role** client and guarded by an **API-key** check, so it is
+not tied to a browser session.
+
+The OpenAPI 3.1 contract is available at `/openapi/competency-api.yaml`.
 
 ## Auth
 
@@ -21,7 +24,7 @@ on the server → `503`.
 
 - **People** are `team_members` (the full directory). `id` is the employee id used below.
 - **Competencies** are tags of `kind` `"skill"` or `"technology"`, identified by a `slug`.
-- **Project experience** entries are free-text (title/role/description/dates), optionally tagged with technologies, and full-text searchable.
+- **Project experience** entries are free-text (title/role/description/dates), optionally tagged with skills and technologies, and full-text searchable.
 
 ## Endpoints
 
@@ -101,5 +104,10 @@ experience. Results are ordered by `score` descending. Slugs come from
 - `search_experts` is a Postgres function (`public.search_experts`) — the web app
   calls it via PostgREST RPC as the authenticated user; the API calls it via the
   service-role client. Same ranking logic in both paths.
-- The MCP server (PR 2) is a thin client over `POST /api/search/experts` and the
-  employee endpoints — this JSON contract is frozen once PR 1 merges.
+- A future MCP server can be a thin client over `POST /api/search/experts` and
+  the employee endpoints. MCP itself is not included in this repository yet.
+- `/api/health` is a public liveness check. `/api/health?ready=1` additionally
+  verifies server-side API configuration and database connectivity.
+- The endpoints are intended for server-to-server use. Configure rate limiting
+  and, when browser clients are needed, an explicit CORS allowlist at the
+  RunCloud/Nginx layer.

@@ -12,9 +12,10 @@ type GroupMode = 'none' | 'role' | 'capacity'
 interface Props {
   initialPeople: TeamMember[]
   initialAllocations: Allocation[]
+  isAdmin: boolean
 }
 
-export default function PeopleClient({ initialPeople, initialAllocations }: Props) {
+export default function PeopleClient({ initialPeople, initialAllocations, isAdmin }: Props) {
   const [people, setPeople] = useState<TeamMember[]>(initialPeople)
   const [allocations] = useState<Allocation[]>(initialAllocations)
   const [modal, setModal] = useState<{ open: boolean; person?: TeamMember | null }>({ open: false })
@@ -29,10 +30,10 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
     if (data) setPeople(data as TeamMember[])
   }, [])
 
-  function getPersonUtil(person: TeamMember) {
+  const getPersonUtil = useCallback((person: TeamMember) => {
     const personAllocs = allocations.filter((a) => a.person_id === person.id)
     return calcUtilization(personAllocs, days, person.capacity_hours_per_day)
-  }
+  }, [allocations, days])
 
   // Build grouped sections
   const groups = useMemo<{ label: string; sublabel?: string; color?: string; people: TeamMember[] }[]>(() => {
@@ -73,7 +74,7 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
     }
 
     return [{ label: '', people }]
-  }, [people, groupMode, allocations, days])
+  }, [people, groupMode, getPersonUtil])
 
   return (
     <div className="p-6">
@@ -83,15 +84,17 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
           <h1 className="text-lg font-semibold text-white">People</h1>
           <p className="text-sm text-slate-400 mt-0.5">{people.length} członków zespołu</p>
         </div>
-        <button
-          onClick={() => setModal({ open: true, person: null })}
-          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          Dodaj osobę
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setModal({ open: true, person: null })}
+            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Dodaj osobę
+          </button>
+        )}
       </div>
 
       {/* Group controls */}
@@ -149,8 +152,11 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
                 return (
                   <div
                     key={person.id}
-                    onClick={() => setModal({ open: true, person })}
-                    className="bg-slate-900 border border-slate-800 rounded-xl p-4 cursor-pointer hover:border-slate-600 transition"
+                    onClick={isAdmin ? () => setModal({ open: true, person }) : undefined}
+                    className={cn(
+                      'bg-slate-900 border border-slate-800 rounded-xl p-4 transition',
+                      isAdmin && 'cursor-pointer hover:border-slate-600'
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       <div
@@ -225,12 +231,15 @@ export default function PeopleClient({ initialPeople, initialAllocations }: Prop
         )}
       </div>
 
-      <PersonModal
-        open={modal.open}
-        onClose={() => setModal({ open: false })}
-        onSaved={refresh}
-        person={modal.person}
-      />
+      {isAdmin && modal.open && (
+        <PersonModal
+          key={modal.person?.id ?? 'new'}
+          open={modal.open}
+          onClose={() => setModal({ open: false })}
+          onSaved={refresh}
+          person={modal.person}
+        />
+      )}
     </div>
   )
 }

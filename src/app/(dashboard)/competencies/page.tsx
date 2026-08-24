@@ -19,10 +19,10 @@ export default async function CompetenciesPage() {
   const profile = (profileRes?.data ?? null) as Profile | null
   const memberList = (members ?? []) as TeamMember[]
 
-  // The only link between an auth user and their team_members row is email.
-  const myEmail = (profile?.email ?? user?.email ?? '').toLowerCase()
-  const myMember = myEmail
-    ? memberList.find((m) => (m.email ?? '').toLowerCase() === myEmail) ?? null
+  // Ownership is an immutable database link. Email is only used by the database
+  // trigger when the account/directory record is first connected.
+  const myMember = user
+    ? memberList.find((m) => m.profile_id === user.id) ?? null
     : null
 
   return (

@@ -16,6 +16,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
   const [competencies, setCompetencies] = useState<TeamMemberCompetency[]>([])
   const [experiences, setExperiences] = useState<ProjectExperience[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [expModalOpen, setExpModalOpen] = useState(false)
   const [editingExp, setEditingExp] = useState<ProjectExperience | null>(null)
 
@@ -24,7 +25,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
     // only calls this async loader, which sets state after awaiting — keeps the
     // effect free of synchronous state updates.
     const supabase = createClient()
-    const [{ data: comps }, { data: exps }] = await Promise.all([
+    const [{ data: comps, error: compsError }, { data: exps, error: expsError }] = await Promise.all([
       supabase
         .from('team_member_competencies')
         .select('*, tag:competency_tags(*)')
@@ -35,6 +36,12 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
         .eq('team_member_id', memberId)
         .order('start_date', { ascending: false, nullsFirst: false }),
     ])
+    if (compsError || expsError) {
+      setError('Nie udało się pobrać kompetencji. Odśwież stronę i spróbuj ponownie.')
+      setLoading(false)
+      return
+    }
+    setError(null)
     setCompetencies((comps ?? []) as TeamMemberCompetency[])
     // Flatten nested tag join into ProjectExperience.tags
     const flat = (exps ?? []).map((e: Record<string, unknown>) => ({
@@ -73,34 +80,70 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
     return data as CompetencyTag
   }
 
-  async function addCompetency(kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null) {
+  async function addCompetency(kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null): Promise<boolean> {
+    setError(null)
     const tag = await ensureTag(kind, name)
-    if (!tag) return
-    if (competencies.some((c) => c.competency_tag_id === tag.id)) return
+    if (!tag) {
+      setError('Nie udało się utworzyć kompetencji. Sprawdź nazwę i spróbuj ponownie.')
+      return false
+    }
+    if (competencies.some((c) => c.competency_tag_id === tag.id)) {
+      setError('Ta kompetencja jest już przypisana.')
+      return false
+    }
     const supabase = createClient()
-    await supabase.from('team_member_competencies').insert({
+    const { error: insertError } = await supabase.from('team_member_competencies').insert({
       team_member_id: memberId,
       competency_tag_id: tag.id,
       proficiency,
       years_experience: yearsExperience,
     })
+    if (insertError) {
+      setError('Nie udało się przypisać kompetencji. Spróbuj ponownie.')
+      return false
+    }
     await load()
+    return true
   }
 
-  async function removeCompetency(rowId: string) {
+  async function updateCompetency(rowId: string, proficiency: number | null, yearsExperience: number | null): Promise<boolean> {
+    setError(null)
     const supabase = createClient()
-    await supabase.from('team_member_competencies').delete().eq('id', rowId)
+    const { error: updateError } = await supabase
+      .from('team_member_competencies')
+      .update({ proficiency, years_experience: yearsExperience })
+      .eq('id', rowId)
+    if (updateError) {
+      setError('Nie udało się zaktualizować kompetencji. Spróbuj ponownie.')
+      return false
+    }
     await load()
+    return true
+  }
+
+  async function removeCompetency(rowId: string): Promise<boolean> {
+    setError(null)
+    const supabase = createClient()
+    const { error: deleteError } = await supabase.from('team_member_competencies').delete().eq('id', rowId)
+    if (deleteError) {
+      setError('Nie udało się usunąć kompetencji. Spróbuj ponownie.')
+      return false
+    }
+    await load()
+    return true
   }
 
   if (loading) return <p className="text-slate-500 text-sm">Ładowanie…</p>
 
-  const techOptions = allTags.filter((t) => t.kind === 'technology')
-
   return (
     <div className="space-y-8">
-      <CompetencySection kind="skill" title="Umiejętności" competencies={competencies} allTags={allTags} onAdd={addCompetency} onRemove={removeCompetency} />
-      <CompetencySection kind="technology" title="Technologie" competencies={competencies} allTags={allTags} onAdd={addCompetency} onRemove={removeCompetency} />
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+      <CompetencySection kind="skill" title="Umiejętności" competencies={competencies} allTags={allTags} onAdd={addCompetency} onUpdate={updateCompetency} onRemove={removeCompetency} />
+      <CompetencySection kind="technology" title="Technologie" competencies={competencies} allTags={allTags} onAdd={addCompetency} onUpdate={updateCompetency} onRemove={removeCompetency} />
 
       <section>
         <div className="flex items-center justify-between mb-3">
@@ -147,7 +190,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
           onClose={() => setExpModalOpen(false)}
           onSaved={load}
           memberId={memberId}
-          techOptions={techOptions}
+          tagOptions={allTags}
           experience={editingExp}
         />
       )}
@@ -160,43 +203,44 @@ interface CompetencySectionProps {
   title: string
   competencies: TeamMemberCompetency[]
   allTags: CompetencyTag[]
-  onAdd: (kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null) => void
-  onRemove: (rowId: string) => void
+  onAdd: (kind: CompetencyKind, name: string, proficiency: number | null, yearsExperience: number | null) => Promise<boolean>
+  onUpdate: (rowId: string, proficiency: number | null, yearsExperience: number | null) => Promise<boolean>
+  onRemove: (rowId: string) => Promise<boolean>
 }
 
-function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove }: CompetencySectionProps) {
+function CompetencySection({ kind, title, competencies, allTags, onAdd, onUpdate, onRemove }: CompetencySectionProps) {
   const [name, setName] = useState('')
   const [proficiency, setProficiency] = useState('')
   const [years, setYears] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const mine = competencies.filter((c) => c.tag?.kind === kind)
   const listId = `datalist-${kind}`
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
     const parsedYears = years ? parseFloat(years) : NaN
-    onAdd(
+    setSubmitting(true)
+    const saved = await onAdd(
       kind,
       name,
       proficiency ? parseInt(proficiency, 10) : null,
       Number.isFinite(parsedYears) ? parsedYears : null
     )
-    setName(''); setProficiency(''); setYears('')
+    setSubmitting(false)
+    if (saved) {
+      setName(''); setProficiency(''); setYears('')
+    }
   }
 
   return (
     <section>
       <h3 className="text-sm font-semibold text-white mb-3">{title}</h3>
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="space-y-2 mb-3">
         {mine.length === 0 && <p className="text-slate-500 text-sm">Brak.</p>}
         {mine.map((c) => (
-          <span key={c.id} className="group inline-flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 text-xs px-2.5 py-1 rounded-full">
-            {c.tag?.name}
-            {c.proficiency ? <span className="text-indigo-400/80">· {c.proficiency}/5</span> : null}
-            {c.years_experience != null ? <span className="text-indigo-400/80">· {c.years_experience} l.</span> : null}
-            <button onClick={() => onRemove(c.id)} className="text-indigo-400 hover:text-white" title="Usuń">×</button>
-          </span>
+          <CompetencyRow key={c.id} competency={c} onUpdate={onUpdate} onRemove={onRemove} />
         ))}
       </div>
       <form onSubmit={submit} className="flex gap-2">
@@ -230,8 +274,80 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
           title="Lata doświadczenia (opcjonalnie)"
           className="w-20 bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500"
         />
-        <button type="submit" className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition">Dodaj</button>
+        <button type="submit" disabled={submitting} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-sm rounded-lg transition">
+          {submitting ? 'Dodaję…' : 'Dodaj'}
+        </button>
       </form>
     </section>
+  )
+}
+
+function CompetencyRow({
+  competency,
+  onUpdate,
+  onRemove,
+}: {
+  competency: TeamMemberCompetency
+  onUpdate: (rowId: string, proficiency: number | null, yearsExperience: number | null) => Promise<boolean>
+  onRemove: (rowId: string) => Promise<boolean>
+}) {
+  const initialProficiency = competency.proficiency?.toString() ?? ''
+  const initialYears = competency.years_experience?.toString() ?? ''
+  const [proficiency, setProficiency] = useState(initialProficiency)
+  const [years, setYears] = useState(initialYears)
+  const [saving, setSaving] = useState(false)
+  const dirty = proficiency !== initialProficiency || years !== initialYears
+
+  async function save() {
+    const parsedYears = years ? Number.parseFloat(years) : NaN
+    setSaving(true)
+    await onUpdate(
+      competency.id,
+      proficiency ? Number.parseInt(proficiency, 10) : null,
+      Number.isFinite(parsedYears) ? parsedYears : null
+    )
+    setSaving(false)
+  }
+
+  async function remove() {
+    setSaving(true)
+    await onRemove(competency.id)
+    setSaving(false)
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">
+      <span className="text-sm text-indigo-300 font-medium mr-auto">{competency.tag?.name}</span>
+      <select
+        value={proficiency}
+        onChange={(event) => setProficiency(event.target.value)}
+        disabled={saving}
+        aria-label={`Poziom: ${competency.tag?.name ?? 'kompetencja'}`}
+        className="bg-slate-800 border border-slate-600 rounded-md px-2 py-1.5 text-white text-xs focus:outline-none focus:border-indigo-500"
+      >
+        <option value="">Poziom</option>
+        {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}/5</option>)}
+      </select>
+      <input
+        value={years}
+        onChange={(event) => setYears(event.target.value)}
+        disabled={saving}
+        type="number"
+        min="0"
+        max="80"
+        step="0.5"
+        placeholder="Lata"
+        aria-label={`Lata doświadczenia: ${competency.tag?.name ?? 'kompetencja'}`}
+        className="w-20 bg-slate-800 border border-slate-600 rounded-md px-2 py-1.5 text-white text-xs focus:outline-none focus:border-indigo-500 placeholder-slate-500"
+      />
+      {dirty && (
+        <button type="button" onClick={save} disabled={saving} className="text-xs text-indigo-300 hover:text-white disabled:opacity-50">
+          {saving ? 'Zapisuję…' : 'Zapisz'}
+        </button>
+      )}
+      <button type="button" onClick={remove} disabled={saving} className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50">
+        Usuń
+      </button>
+    </div>
   )
 }

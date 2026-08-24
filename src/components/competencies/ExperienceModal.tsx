@@ -10,19 +10,22 @@ interface ExperienceModalProps {
   onClose: () => void
   onSaved: () => void
   memberId: string
-  techOptions: CompetencyTag[]
+  tagOptions: CompetencyTag[]
   experience?: ProjectExperience | null
 }
 
 // The parent mounts this fresh per open (keyed by experience id), so state is
 // initialized straight from props — no prop→state syncing effect needed.
-export default function ExperienceModal({ onClose, onSaved, memberId, techOptions, experience }: ExperienceModalProps) {
+export default function ExperienceModal({ onClose, onSaved, memberId, tagOptions, experience }: ExperienceModalProps) {
+  // The catalog allows the same slug in both kinds, so the selector uses a
+  // kind-qualified value while persistence still sends the real tag UUID.
+  const selectableTags = tagOptions.map((tag) => ({ ...tag, slug: `${tag.kind}:${tag.slug}` }))
   const [title, setTitle] = useState(experience?.title ?? '')
   const [role, setRole] = useState(experience?.role ?? '')
   const [description, setDescription] = useState(experience?.description ?? '')
   const [startDate, setStartDate] = useState(experience?.start_date ?? '')
   const [endDate, setEndDate] = useState(experience?.end_date ?? '')
-  const [techSlugs, setTechSlugs] = useState<string[]>((experience?.tags ?? []).map((t) => t.slug))
+  const [tagSlugs, setTagSlugs] = useState<string[]>((experience?.tags ?? []).map((t) => `${t.kind}:${t.slug}`))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,7 +37,9 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
 
     // Single transactional RPC: upsert the row and reconcile its tags atomically,
     // so a failure can't leave a saved experience with the wrong (or no) tags.
-    const tagIds = techOptions.filter((t) => techSlugs.includes(t.slug)).map((t) => t.id)
+    const tagIds = tagOptions
+      .filter((tag) => tagSlugs.includes(`${tag.kind}:${tag.slug}`))
+      .map((tag) => tag.id)
     const { error: err } = await supabase.rpc('save_project_experience', {
       p_experience_id: experience?.id ?? null,
       p_member_id: memberId,
@@ -98,8 +103,8 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Technologie</label>
-          <TagMultiSelect options={techOptions} value={techSlugs} onChange={setTechSlugs} placeholder="Wybierz technologie…" />
+          <label className="block text-sm font-medium text-slate-300 mb-1.5">Umiejętności i technologie</label>
+          <TagMultiSelect options={selectableTags} value={tagSlugs} onChange={setTagSlugs} placeholder="Wybierz kompetencje…" />
         </div>
 
         <div className="flex items-center gap-3 pt-2">
