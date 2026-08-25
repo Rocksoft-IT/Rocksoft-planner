@@ -1,0 +1,29 @@
+{
+  "name": "rockplanner-competency-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server exposing the RS Planner employee competency base to LLM agents (expert recommender). Thin client over the public competency API.",
+  "type": "module",
+  "bin": {
+    "rockplanner-competency-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
