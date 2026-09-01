@@ -66,10 +66,13 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
 
   async function handleDelete() {
     if (!person) return
+    if (!confirm(`Usunąć ${person.full_name}? Zniknie z listy wraz ze wszystkimi alokacjami i nieobecnościami. Tej operacji nie można cofnąć.`)) return
+    setError('')
     setLoading(true)
     const supabase = createClient()
-    await supabase.from('team_members').delete().eq('id', person.id)
+    const { error: dbError } = await supabase.rpc('delete_team_member', { p_id: person.id })
     setLoading(false)
+    if (dbError) { setError(dbError.message); return }
     onSaved()
     onClose()
   }
