@@ -66,7 +66,10 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
 
   async function handleDelete() {
     if (!person) return
-    if (!confirm(`Usunąć ${person.full_name}? Zniknie z listy wraz ze wszystkimi alokacjami i nieobecnościami. Tej operacji nie można cofnąć.`)) return
+    // Every table named here really is removed: allocations / time_off by the rpc,
+    // competencies + project experience by ON DELETE CASCADE on team_members(id).
+    // This dialog is the only guard on an irreversible delete, so it names all of them.
+    if (!confirm(`Usunąć ${person.full_name}? Zniknie z listy wraz ze wszystkimi alokacjami, nieobecnościami, kompetencjami i doświadczeniem projektowym. Tej operacji nie można cofnąć.`)) return
     setError('')
     setLoading(true)
     const supabase = createClient()

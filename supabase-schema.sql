@@ -458,3 +458,34 @@ $$;
 
 revoke execute on function public.save_project_experience(uuid, uuid, text, text, text, date, date, uuid[]) from public;
 grant execute on function public.save_project_experience(uuid, uuid, text, text, text, date, date, uuid[]) to authenticated;
+
+-- Cascade-delete a person from the /people directory. Mirrors
+-- migrations/2026-09-01-delete-team-member.sql — see that file for the full rationale,
+-- the blast radius (competencies + project experience go too, via ON DELETE CASCADE
+-- FKs on team_members(id)) and the id-space caveat on allocations.person_id.
+-- security definer because team_members has RLS enabled with no delete policy, which
+-- made the client-side .delete() a silent no-op; the admin check below replaces the
+-- authorization that RLS would otherwise have provided.
+create or replace function public.delete_team_member(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.profiles where id = auth.uid() and is_admin) then
+    raise exception 'insufficient_privilege: admin required to delete a team member';
+  end if;
+
+  delete from public.allocations   where person_id = p_id;
+  delete from public.time_off      where person_id = p_id;
+  delete from public.team_members  where id = p_id;
+
+  if not found then
+    raise exception 'team_member % not found', p_id;
+  end if;
+end;
+$$;
+
+revoke execute on function public.delete_team_member(uuid) from public;
+grant execute on function public.delete_team_member(uuid) to authenticated;
