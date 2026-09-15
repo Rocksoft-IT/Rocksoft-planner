@@ -6,6 +6,7 @@ export interface Profile {
   capacity_hours_per_day: number
   is_admin: boolean
   avatar_color: string
+  theme: 'light' | 'dark'
   created_at: string
   updated_at: string
 }

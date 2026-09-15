@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import TagMultiSelect from './TagMultiSelect'
 import { createClient } from '@/lib/supabase/client'
+import { cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
 import type { CompetencyTag, ProjectExperience } from '@/lib/types'
 
 interface ExperienceModalProps {
@@ -63,51 +64,50 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
     onClose()
   }
 
-  const inputCls =
-    'w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500'
+  const inputCls = cn(themedInputClass, themedPlaceholderClass)
 
   return (
     <Modal open onClose={onClose} title={experience ? 'Edytuj doświadczenie' : 'Dodaj doświadczenie'} className="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>}
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Projekt / tytuł</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Projekt / tytuł</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="np. Konfigurator 3D dla producenta mebli" className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Rola</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Rola</label>
           <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="np. Frontend Developer" className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Opis</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Opis</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Czym się zajmowałeś/aś, co powstało…" className={inputCls} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Od</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Od</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Do</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Do</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Technologie</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Technologie</label>
           <TagMultiSelect options={techOptions} value={techSlugs} onChange={setTechSlugs} placeholder="Wybierz technologie…" />
         </div>
 
         <div className="flex items-center gap-3 pt-2">
           {experience && (
-            <button type="button" onClick={handleDelete} disabled={loading} className="text-red-400 hover:text-red-300 text-sm transition">Usuń</button>
+            <button type="button" onClick={handleDelete} disabled={loading} className={dangerButtonClass}>Usuń</button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition">Anuluj</button>
+            <button type="button" onClick={onClose} className={secondaryButtonClass}>Anuluj</button>
             <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
               {loading ? 'Zapisuję…' : 'Zapisz'}
             </button>

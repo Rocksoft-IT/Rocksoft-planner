@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import ColorPicker from '@/components/ui/ColorPicker'
 import { createClient } from '@/lib/supabase/client'
-import { PROJECT_COLORS } from '@/lib/utils'
+import { PROJECT_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
 import type { Project } from '@/lib/types'
 
 interface ProjectModalProps {
@@ -78,53 +78,53 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     <Modal open={open} onClose={onClose} title={project ? 'Edit project' : 'New project'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Project name</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Project name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Acme Banking App"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500"
+            className={cn(themedInputClass, themedPlaceholderClass)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Color</label>
+          <label className={cn(themedLabelClass, 'mb-2')}>Color</label>
           <ColorPicker value={color} onChange={setColor} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="Optional description…"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none placeholder-slate-500"
+            className={cn(themedInputClass, 'resize-none', themedPlaceholderClass)}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Start date</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Start date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className={themedInputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">End date</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>End date</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className={themedInputClass}
             />
           </div>
         </div>
@@ -135,13 +135,13 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
               type="button"
               onClick={handleDelete}
               disabled={loading}
-              className="text-red-400 hover:text-red-300 text-sm transition"
+              className={dangerButtonClass}
             >
               Delete
             </button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition">Cancel</button>
+            <button type="button" onClick={onClose} className={secondaryButtonClass}>Cancel</button>
             <button
               type="submit"
               disabled={loading}

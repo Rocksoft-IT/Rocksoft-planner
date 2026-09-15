@@ -14,6 +14,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Shared dark/light-themed classes for form modals (PersonModal, ProjectModal,
+// AllocationModal, TimeOffModal, ExperienceModal) so the two themes stay in sync
+// from one place instead of drifting across five separate call sites.
+export const themedInputClass =
+  'w-full bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2.5 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+export const themedPlaceholderClass = 'placeholder-slate-500 light:placeholder-slate-400'
+export const themedLabelClass = 'block text-sm font-medium text-slate-300 light:text-slate-700'
+export const dangerButtonClass = 'text-red-400 light:text-red-600 hover:text-red-300 light:hover:text-red-700 text-sm transition'
+export const secondaryButtonClass = 'px-4 py-2 text-sm text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition'
+
 export function getViewDays(anchorDate: Date, mode: ViewMode): Date[] {
   const start = startOfWeek(anchorDate, { weekStartsOn: 1 })
   const count = mode === 'week' ? 7 : mode === '3weeks' ? 21 : mode === 'month' ? 35 : 91

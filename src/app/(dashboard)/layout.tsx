@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
+import ThemeProvider from '@/components/ThemeProvider'
 import type { Profile } from '@/lib/types'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -15,12 +16,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('id', user.id)
     .single()
 
+  const initialTheme = profile?.theme === 'light' ? 'light' : 'dark'
+
   return (
-    <div className="flex h-screen bg-slate-900 overflow-hidden">
+    <ThemeProvider
+      initialTheme={initialTheme}
+      profileId={user.id}
+      className="flex h-screen bg-slate-900 overflow-hidden"
+    >
       <Sidebar profile={profile as Profile | null} />
       <main className="flex-1 overflow-auto">
         {children}
       </main>
-    </div>
+    </ThemeProvider>
   )
 }
