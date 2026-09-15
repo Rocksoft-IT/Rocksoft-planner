@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -40,6 +40,13 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
   // serializing means whichever request goes out last is always the latest one.
   const saveInFlightRef = useRef(false)
   const queuedThemeRef = useRef<Theme | null>(null)
+  // Holds the latest persistTheme so the recursive retry below can call
+  // through the ref instead of the `const` binding it's declared with —
+  // the retry only ever fires from the async .then() callback, well after
+  // persistTheme has been assigned, but referencing the const directly
+  // inside its own initializer still trips exhaustive-deps/compiler lint
+  // rules that check for that shape regardless of the runtime ordering.
+  const persistThemeRef = useRef<(value: Theme, previous: Theme) => void>(() => {})
 
   const persistTheme = useCallback((value: Theme, previous: Theme) => {
     saveInFlightRef.current = true
@@ -64,7 +71,7 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
             // A newer choice already superseded this failed one — keep
             // chasing that instead of rolling the UI back to a value the
             // user has already moved past.
-            persistTheme(queued, previous)
+            persistThemeRef.current(queued, previous)
           } else {
             // Nothing superseded this write — roll back the optimistic
             // switch instead of leaving the UI showing a theme that isn't
@@ -75,9 +82,12 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
           return
         }
 
-        if (queued !== null && queued !== value) persistTheme(queued, value)
+        if (queued !== null && queued !== value) persistThemeRef.current(queued, value)
       })
   }, [profileId])
+  useEffect(() => {
+    persistThemeRef.current = persistTheme
+  }, [persistTheme])
 
   const setTheme = useCallback((next: Theme) => {
     if (next === theme) return
