@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -32,24 +32,58 @@ interface ThemeProviderProps {
 export default function ThemeProvider({ initialTheme, profileId, className, children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(initialTheme)
 
-  const setTheme = useCallback((next: Theme) => {
-    const previous = theme
-    setThemeState(next)
+  // Writes are serialized (never fired concurrently): if a save is already in
+  // flight when the user toggles again, the new value is queued and sent only
+  // once the in-flight write settles. Two concurrent update() calls can reach
+  // Postgres out of order and leave the DB holding the older choice even
+  // though the UI (and the user's actual last click) shows the newer one —
+  // serializing means whichever request goes out last is always the latest one.
+  const saveInFlightRef = useRef(false)
+  const queuedThemeRef = useRef<Theme | null>(null)
+
+  const persistTheme = useCallback((value: Theme, previous: Theme) => {
+    saveInFlightRef.current = true
     const supabase = createClient()
     supabase
       .from('profiles')
-      .update({ theme: next })
+      .update({ theme: value })
       .eq('id', profileId)
       .then(({ error }) => {
+        saveInFlightRef.current = false
+        const queued = queuedThemeRef.current
+        queuedThemeRef.current = null
+
         if (error) {
-          // Persistence failed — roll back the optimistic switch instead of
-          // leaving the UI showing a theme that isn't actually saved (it would
-          // otherwise silently revert on the next reload with no explanation).
           console.error('Failed to save theme preference:', error.message)
-          setThemeState(previous)
+          if (queued !== null && queued !== value) {
+            // A newer choice already superseded this failed one — keep
+            // chasing that instead of rolling the UI back to a value the
+            // user has already moved past.
+            persistTheme(queued, previous)
+          } else {
+            // Nothing superseded this write — roll back the optimistic
+            // switch instead of leaving the UI showing a theme that isn't
+            // actually saved (it would otherwise silently revert on the
+            // next reload with no explanation).
+            setThemeState(previous)
+          }
+          return
         }
+
+        if (queued !== null && queued !== value) persistTheme(queued, value)
       })
-  }, [profileId, theme])
+  }, [profileId])
+
+  const setTheme = useCallback((next: Theme) => {
+    if (next === theme) return
+    const previous = theme
+    setThemeState(next)
+    if (saveInFlightRef.current) {
+      queuedThemeRef.current = next
+    } else {
+      persistTheme(next, previous)
+    }
+  }, [theme, persistTheme])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
