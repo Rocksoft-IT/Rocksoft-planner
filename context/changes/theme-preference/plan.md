@@ -332,16 +332,16 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 3: Avatar menu + Sidebar theming
 #### Automated
-- [x] 3.1 npm run build succeeds
-- [x] 3.2 npm run lint passes with no new errors
+- [x] 3.1 npm run build succeeds — 1b87fca
+- [x] 3.2 npm run lint passes with no new errors — 1b87fca
 #### Manual
 - [ ] 3.3 clicking the avatar opens the menu; selecting light recolors the sidebar immediately, with no reload
 - [ ] 3.4 signing in again on a light-preference account shows light without re-selecting it
 
 ### Phase 4: Shared modal chrome theming
 #### Automated
-- [ ] 4.1 npm run build succeeds
-- [ ] 4.2 npm run lint passes with no new errors
+- [x] 4.1 npm run build succeeds
+- [x] 4.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 4.3 any modal opened in light mode shows no dark leftovers in the overlay, panel, header, or close icon
 
