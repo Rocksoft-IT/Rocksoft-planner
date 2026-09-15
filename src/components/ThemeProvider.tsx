@@ -33,6 +33,7 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
   const [theme, setThemeState] = useState<Theme>(initialTheme)
 
   const setTheme = useCallback((next: Theme) => {
+    const previous = theme
     setThemeState(next)
     const supabase = createClient()
     supabase
@@ -40,9 +41,15 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
       .update({ theme: next })
       .eq('id', profileId)
       .then(({ error }) => {
-        if (error) console.error('Failed to save theme preference:', error.message)
+        if (error) {
+          // Persistence failed — roll back the optimistic switch instead of
+          // leaving the UI showing a theme that isn't actually saved (it would
+          // otherwise silently revert on the next reload with no explanation).
+          console.error('Failed to save theme preference:', error.message)
+          setThemeState(previous)
+        }
       })
-  }, [profileId])
+  }, [profileId, theme])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
