@@ -15,6 +15,11 @@ create table if not exists public.profiles (
   capacity_hours_per_day numeric(4,1) not null default 8,
   is_admin               boolean not null default false,
   avatar_color           text not null default '#6366f1',
+  -- theme: per-account light/dark preference (issue #68). Mirrors
+  -- migrations/2026-09-15-profile-theme.sql — see that file for the
+  -- WHY/HOW rationale. Defaults to 'dark' so every existing account keeps
+  -- today's look unchanged.
+  theme                  text not null default 'dark' check (theme in ('light', 'dark')),
   created_at             timestamptz not null default now(),
   updated_at             timestamptz not null default now()
 );
