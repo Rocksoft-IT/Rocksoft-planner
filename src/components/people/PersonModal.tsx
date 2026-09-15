@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
-import { AVATAR_COLORS } from '@/lib/utils'
+import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
 import type { TeamMember } from '@/lib/types'
 
 interface PersonModalProps {
@@ -84,38 +84,38 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     <Modal open={open} onClose={onClose} title={person ? 'Edit person' : 'Add person'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Full name</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Full name</label>
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
             placeholder="Jan Kowalski"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500"
+            className={cn(themedInputClass, themedPlaceholderClass)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Stanowisko</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Stanowisko</label>
           <RoleSelect value={roles} onChange={setRoles} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="jan@rocksoft.pl"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500"
+            className={cn(themedInputClass, themedPlaceholderClass)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Dostępność (godziny/dzień)</label>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Dostępność (godziny/dzień)</label>
           <input
             type="number"
             value={capacity}
@@ -124,19 +124,19 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
             max="24"
             step="0.5"
             required
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className={themedInputClass}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Avatar color</label>
+          <label className={cn(themedLabelClass, 'mb-2')}>Avatar color</label>
           <div className="flex flex-wrap gap-2">
             {AVATAR_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setAvatarColor(c)}
-                className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${avatarColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110' : ''}`}
+                className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${avatarColor === c ? 'ring-2 ring-white light:ring-slate-900 ring-offset-2 ring-offset-slate-900 light:ring-offset-white scale-110' : ''}`}
                 style={{ backgroundColor: c }}
               />
             ))}
@@ -149,13 +149,13 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
               type="button"
               onClick={handleDelete}
               disabled={loading}
-              className="text-red-400 hover:text-red-300 text-sm transition"
+              className={dangerButtonClass}
             >
               Usuń
             </button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition">Anuluj</button>
+            <button type="button" onClick={onClose} className={secondaryButtonClass}>Anuluj</button>
             <button
               type="submit"
               disabled={loading}
