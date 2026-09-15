@@ -340,8 +340,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 4: Shared modal chrome theming
 #### Automated
-- [x] 4.1 npm run build succeeds
-- [x] 4.2 npm run lint passes with no new errors
+- [x] 4.1 npm run build succeeds — 1783471
+- [x] 4.2 npm run lint passes with no new errors — 1783471
 #### Manual
 - [ ] 4.3 any modal opened in light mode shows no dark leftovers in the overlay, panel, header, or close icon
 
