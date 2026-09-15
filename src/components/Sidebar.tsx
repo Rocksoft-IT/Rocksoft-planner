@@ -68,7 +68,7 @@ export default function Sidebar({ profile }: SidebarProps) {
     : '?'
 
   return (
-    <aside className="w-16 lg:w-56 bg-slate-950 light:bg-white border-r border-slate-800 light:border-slate-200 flex flex-col h-screen shrink-0 sticky top-0">
+    <aside className="w-16 lg:w-56 bg-slate-950 light:bg-white border-r border-slate-800 light:border-slate-200 flex flex-col h-screen shrink-0 sticky top-0 z-40">
       {/* Logo */}
       <div className="h-14 flex items-center px-3 lg:px-4 border-b border-slate-800 light:border-slate-200 shrink-0">
         <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shrink-0">
