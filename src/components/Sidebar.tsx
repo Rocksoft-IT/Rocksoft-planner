@@ -108,7 +108,6 @@ export default function Sidebar({ profile }: SidebarProps) {
             <DropdownMenu.Trigger asChild>
               <button
                 type="button"
-                title="Theme"
                 className="flex items-center gap-2.5 flex-1 min-w-0 -m-1 p-1 rounded-lg hover:bg-slate-800 light:hover:bg-slate-100 transition-colors text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <div
