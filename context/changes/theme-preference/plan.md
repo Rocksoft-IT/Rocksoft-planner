@@ -323,8 +323,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 2: Theme mechanism (no-flash SSR + instant client switch)
 #### Automated
-- [x] 2.1 npm run build succeeds
-- [x] 2.2 npm run lint passes with no new errors
+- [x] 2.1 npm run build succeeds — b49a7e4
+- [x] 2.2 npm run lint passes with no new errors — b49a7e4
 #### Manual
 - [ ] 2.3 with no theme set (new/never-chosen account), the dashboard renders identically to before this change
 - [ ] 2.4 a hard reload of a light-preference account shows the light theme on first paint, no dark flash
@@ -332,8 +332,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 3: Avatar menu + Sidebar theming
 #### Automated
-- [ ] 3.1 npm run build succeeds
-- [ ] 3.2 npm run lint passes with no new errors
+- [x] 3.1 npm run build succeeds
+- [x] 3.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 3.3 clicking the avatar opens the menu; selecting light recolors the sidebar immediately, with no reload
 - [ ] 3.4 signing in again on a light-preference account shows light without re-selecting it
