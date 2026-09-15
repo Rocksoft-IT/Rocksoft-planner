@@ -46,15 +46,20 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
     const supabase = createClient()
     supabase
       .from('profiles')
-      .update({ theme: value })
+      .update({ theme: value }, { count: 'exact' })
       .eq('id', profileId)
-      .then(({ error }) => {
+      .then(({ error, count }) => {
         saveInFlightRef.current = false
         const queued = queuedThemeRef.current
         queuedThemeRef.current = null
 
-        if (error) {
-          console.error('Failed to save theme preference:', error.message)
+        // A missing profiles row (failed signup trigger, manually deleted row)
+        // makes update() match 0 rows and still resolve with error: null — so
+        // count has to be checked explicitly, or a toggle would silently no-op
+        // forever with nothing ever logged.
+        const failed = error ? error.message : count === 0 ? 'no profile row matched' : null
+        if (failed) {
+          console.error('Failed to save theme preference:', failed)
           if (queued !== null && queued !== value) {
             // A newer choice already superseded this failed one — keep
             // chasing that instead of rolling the UI back to a value the
