@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * Theme: the app is dark by default (every existing class already *is* the
+ * dark appearance). `light:` is a class-scoped variant, not Tailwind's
+ * built-in `dark:` — it only activates inside an ancestor carrying the
+ * `.light` class (applied to the (dashboard) layout wrapper for a
+ * signed-in user with theme = 'light'; see ThemeProvider.tsx). Auth pages
+ * never render inside that wrapper, so they stay dark unconditionally.
+ */
+@custom-variant light (&:where(.light, .light *));
+
 :root {
   --font-sans: var(--font-inter);
 }
@@ -26,4 +36,15 @@ html, body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Light-mode scrollbar equivalents, scoped to the same .light ancestor. */
+.light ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

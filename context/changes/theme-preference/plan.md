@@ -316,15 +316,15 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 1: Profile theme column
 #### Automated
-- [x] 1.1 npm run lint passes with no new errors
-- [x] 1.2 the column/constraint text added to supabase-schema.sql matches the migration's column/constraint
+- [x] 1.1 npm run lint passes with no new errors — 5b09645
+- [x] 1.2 the column/constraint text added to supabase-schema.sql matches the migration's column/constraint — 5b09645
 #### Manual
 - [ ] 1.3 the migration applied via the Supabase Dashboard SQL editor on a dev/staging project leaves every existing profile row reading theme = 'dark', with no other column affected
 
 ### Phase 2: Theme mechanism (no-flash SSR + instant client switch)
 #### Automated
-- [ ] 2.1 npm run build succeeds
-- [ ] 2.2 npm run lint passes with no new errors
+- [x] 2.1 npm run build succeeds
+- [x] 2.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 2.3 with no theme set (new/never-chosen account), the dashboard renders identically to before this change
 - [ ] 2.4 a hard reload of a light-preference account shows the light theme on first paint, no dark flash
