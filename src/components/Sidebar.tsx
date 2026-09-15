@@ -47,6 +47,34 @@ const NAV = [
   },
 ]
 
+const THEME_OPTIONS: { value: 'dark' | 'light'; label: string; icon: React.ReactNode }[] = [
+  {
+    value: 'dark',
+    label: 'Dark',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+    ),
+  },
+  {
+    value: 'light',
+    label: 'Light',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <circle cx="12" cy="12" r="4"/>
+        <path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+    ),
+  },
+]
+
+const themeRadioItemClass = cn(
+  'flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer outline-none',
+  'text-slate-300 light:text-slate-700',
+  'hover:bg-slate-700 light:hover:bg-slate-100 data-[highlighted]:bg-slate-700 light:data-[highlighted]:bg-slate-100'
+)
+
 interface SidebarProps {
   profile: Profile | null
 }
@@ -138,47 +166,19 @@ export default function Sidebar({ profile }: SidebarProps) {
                 Theme
               </DropdownMenu.Label>
               <DropdownMenu.RadioGroup value={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark')}>
-                <DropdownMenu.RadioItem
-                  value="dark"
-                  className={cn(
-                    'flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer outline-none',
-                    'text-slate-300 light:text-slate-700',
-                    'hover:bg-slate-700 light:hover:bg-slate-100 data-[highlighted]:bg-slate-700 light:data-[highlighted]:bg-slate-100'
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                    </svg>
-                    Dark
-                  </span>
-                  <DropdownMenu.ItemIndicator>
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5"/>
-                    </svg>
-                  </DropdownMenu.ItemIndicator>
-                </DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem
-                  value="light"
-                  className={cn(
-                    'flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer outline-none',
-                    'text-slate-300 light:text-slate-700',
-                    'hover:bg-slate-700 light:hover:bg-slate-100 data-[highlighted]:bg-slate-700 light:data-[highlighted]:bg-slate-100'
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <circle cx="12" cy="12" r="4"/>
-                      <path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-                    </svg>
-                    Light
-                  </span>
-                  <DropdownMenu.ItemIndicator>
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5"/>
-                    </svg>
-                  </DropdownMenu.ItemIndicator>
-                </DropdownMenu.RadioItem>
+                {THEME_OPTIONS.map((option) => (
+                  <DropdownMenu.RadioItem key={option.value} value={option.value} className={themeRadioItemClass}>
+                    <span className="flex items-center gap-2">
+                      {option.icon}
+                      {option.label}
+                    </span>
+                    <DropdownMenu.ItemIndicator>
+                      <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    </DropdownMenu.ItemIndicator>
+                  </DropdownMenu.RadioItem>
+                ))}
               </DropdownMenu.RadioGroup>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
