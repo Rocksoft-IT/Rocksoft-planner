@@ -94,7 +94,7 @@ export default function Sidebar({ profile }: SidebarProps) {
                   : 'text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100'
               )}
             >
-              <span className={cn(active ? 'text-white' : 'text-slate-500 light:text-slate-400 group-hover:text-white light:group-hover:text-slate-900')}>{icon}</span>
+              <span className={cn(active ? 'text-white' : 'text-slate-500 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-900')}>{icon}</span>
               <span className="hidden lg:block">{label}</span>
             </Link>
           )
@@ -119,7 +119,7 @@ export default function Sidebar({ profile }: SidebarProps) {
                 </div>
                 <div className="flex-1 min-w-0 hidden lg:block">
                   <p className="text-sm font-medium text-white light:text-slate-900 truncate">{profile?.full_name ?? 'User'}</p>
-                  <p className="text-xs text-slate-500 light:text-slate-400 truncate">{profile?.role ?? ''}</p>
+                  <p className="text-xs text-slate-500 light:text-slate-600 truncate">{profile?.role ?? ''}</p>
                 </div>
               </button>
             </DropdownMenu.Trigger>
@@ -135,7 +135,7 @@ export default function Sidebar({ profile }: SidebarProps) {
               sideOffset={8}
               className="z-50 min-w-40 rounded-lg border border-slate-700 light:border-slate-200 bg-slate-800 light:bg-white p-1 shadow-2xl"
             >
-              <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-slate-500 light:text-slate-400">
+              <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-slate-500 light:text-slate-600">
                 Theme
               </DropdownMenu.Label>
               <DropdownMenu.RadioGroup value={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark')}>
@@ -186,7 +186,7 @@ export default function Sidebar({ profile }: SidebarProps) {
           <button
             onClick={handleSignOut}
             title="Sign out"
-            className="text-slate-500 light:text-slate-400 hover:text-white light:hover:text-slate-900 transition hidden lg:block shrink-0"
+            className="text-slate-500 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition hidden lg:block shrink-0"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

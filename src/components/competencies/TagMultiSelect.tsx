@@ -65,7 +65,7 @@ export default function TagMultiSelect({ options, value, onChange, placeholder }
             />
           </div>
           <div className="max-h-56 overflow-y-auto">
-            {visible.length === 0 && <p className="px-3 py-2.5 text-sm text-slate-500 light:text-slate-400">Brak wyników</p>}
+            {visible.length === 0 && <p className="px-3 py-2.5 text-sm text-slate-500 light:text-slate-600">Brak wyników</p>}
             {visible.map((o) => {
               const selected = value.includes(o.slug)
               return (

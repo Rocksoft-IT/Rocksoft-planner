@@ -238,7 +238,7 @@ export default function AllocationModal({
                   <p className={cn('text-sm font-semibold', status === 'confirmed' ? 'text-emerald-400 light:text-emerald-600' : 'text-slate-300 light:text-slate-600')}>
                     Confirmed
                   </p>
-                  <p className="text-[10px] text-slate-500 light:text-slate-400 leading-tight mt-0.5">Klient podpisał umowę</p>
+                  <p className="text-[10px] text-slate-500 light:text-slate-600 leading-tight mt-0.5">Klient podpisał umowę</p>
                 </div>
               </button>
 
@@ -266,7 +266,7 @@ export default function AllocationModal({
                   <p className={cn('text-sm font-semibold', status === 'tentative' ? 'text-amber-400 light:text-amber-600' : 'text-slate-300 light:text-slate-600')}>
                     Tentative
                   </p>
-                  <p className="text-[10px] text-slate-500 light:text-slate-400 leading-tight mt-0.5">Czekamy na decyzję</p>
+                  <p className="text-[10px] text-slate-500 light:text-slate-600 leading-tight mt-0.5">Czekamy na decyzję</p>
                 </div>
               </button>
             </div>
@@ -324,7 +324,7 @@ export default function AllocationModal({
             <label className={cn(themedLabelClass, 'mb-1.5')}>Projekt</label>
             <div className="bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg overflow-hidden focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
               <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700 light:border-slate-200">
-                <svg className="w-3.5 h-3.5 text-slate-500 light:text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5 text-slate-500 light:text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input
@@ -335,7 +335,7 @@ export default function AllocationModal({
                   className="flex-1 bg-transparent text-sm text-white light:text-slate-900 placeholder-slate-500 light:placeholder-slate-400 outline-none"
                 />
                 {projectQuery && (
-                  <button type="button" onClick={() => setProjectQuery('')} className="text-slate-500 light:text-slate-400 hover:text-white light:hover:text-slate-900">
+                  <button type="button" onClick={() => setProjectQuery('')} className="text-slate-500 light:text-slate-600 hover:text-white light:hover:text-slate-900">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -344,7 +344,7 @@ export default function AllocationModal({
               </div>
               <div className="max-h-44 overflow-y-auto py-1">
                 {filteredProjects.length === 0 ? (
-                  <p className="px-3 py-4 text-sm text-slate-500 light:text-slate-400 text-center">Brak wyników</p>
+                  <p className="px-3 py-4 text-sm text-slate-500 light:text-slate-600 text-center">Brak wyników</p>
                 ) : (
                   filteredProjects.map((p) => {
                     const isSelected = projectId === p.id
@@ -470,7 +470,7 @@ export default function AllocationModal({
               {updatedAtLabel && <> · {updatedAtLabel}</>}
             </p>
             {creatorName && (
-              <p className="text-[11px] text-slate-600 light:text-slate-500">
+              <p className="text-[11px] text-slate-600 light:text-slate-700">
                 Utworzone przez {creatorName}{createdAtLabel && <> · {createdAtLabel}</>}
               </p>
             )}
