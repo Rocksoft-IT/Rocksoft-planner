@@ -8,7 +8,7 @@ import {
   isWeekend,
   startOfWeek,
 } from 'date-fns'
-import type { Allocation, TimeOff, ViewMode } from './types'
+import { CONTRACT_TYPES, type Allocation, type TeamMember, type TimeOff, type ViewMode } from './types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -206,6 +206,21 @@ export function formatAvailability(util: {
   const barPct = isUnavailable || isOver || isFull ? 100 : freePct
 
   return { freeHours, freePct, barPct, isFull, isOver, isUnavailable, color, label }
+}
+
+// Index of a contract type in the Timeline's contract-type sort group order
+// (UoP → B2B → Freelance). Unset (null) sorts after every known type — FR-004.
+function contractTypeSortIndex(contractType: TeamMember['contract_type']): number {
+  const index = contractType ? CONTRACT_TYPES.indexOf(contractType) : -1
+  return index === -1 ? CONTRACT_TYPES.length : index
+}
+
+// Timeline "Contract type" sort: UoP → B2B → Freelance → unset, alphabetically
+// by full name within each group (FR-004). localeCompare matches this file's
+// existing date-string sort precedent (Timeline.tsx assignLanes/assignLanesAll).
+export function compareByContractType(a: TeamMember, b: TeamMember): number {
+  const diff = contractTypeSortIndex(a.contract_type) - contractTypeSortIndex(b.contract_type)
+  return diff !== 0 ? diff : a.full_name.localeCompare(b.full_name)
 }
 
 export function hexToRgba(hex: string, alpha: number): string {

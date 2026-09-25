@@ -368,8 +368,8 @@ default (FR-003, FR-005), leaving default behavior and existing filters untouche
 
 ### Phase 3: Sort comparator
 #### Automated
-- [ ] 3.1 npm run test passes, including the new utils.test.ts cases
-- [ ] 3.2 npm run lint passes with no new errors
+- [x] 3.1 npm run test passes, including the new utils.test.ts cases
+- [x] 3.2 npm run lint passes with no new errors
 
 ### Phase 4: Timeline sort control
 #### Automated
