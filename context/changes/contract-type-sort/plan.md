@@ -359,8 +359,8 @@ default (FR-003, FR-005), leaving default behavior and existing filters untouche
 
 ### Phase 2: Person modal field
 #### Automated
-- [x] 2.1 npm run lint passes with no new errors
-- [x] 2.2 npm run build succeeds
+- [x] 2.1 npm run lint passes with no new errors — b8cf8c7
+- [x] 2.2 npm run build succeeds — b8cf8c7
 #### Manual
 - [ ] 2.3 AC-01: opening a team member with no contract type, selecting "B2B", and saving, then reopening the profile, shows "B2B" selected
 - [ ] 2.4 AC-05: clearing a previously set contract type and saving leaves the field unset (empty) on reopen, and the member sorts in the "no type" group afterward
