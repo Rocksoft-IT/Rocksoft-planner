@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
-import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
-import type { TeamMember } from '@/lib/types'
+import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedOptionClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
+import { CONTRACT_TYPES, type ContractType, type TeamMember } from '@/lib/types'
 
 interface PersonModalProps {
   open: boolean
@@ -20,6 +20,7 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
   const [email, setEmail] = useState('')
   const [capacity, setCapacity] = useState('8')
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0])
+  const [contractType, setContractType] = useState<ContractType | ''>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -30,12 +31,14 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
       setEmail(person.email)
       setCapacity(String(person.capacity_hours_per_day))
       setAvatarColor(person.avatar_color)
+      setContractType(person.contract_type ?? '')
     } else {
       setFullName('')
       setRoles([])
       setEmail('')
       setCapacity('8')
       setAvatarColor(AVATAR_COLORS[0])
+      setContractType('')
     }
     setError('')
   }, [person, open])
@@ -46,17 +49,30 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     setLoading(true)
 
     const supabase = createClient()
-    const payload = {
+    const base = {
       full_name: fullName,
       role: roles.join(', '),
       email,
       capacity_hours_per_day: parseFloat(capacity),
       avatar_color: avatarColor,
     }
+    const payload = { ...base, contract_type: contractType || null }
 
-    const { error: dbError } = person
-      ? await supabase.from('team_members').update(payload).eq('id', person.id)
-      : await supabase.from('team_members').insert(payload)
+    const write = (body: Record<string, unknown>) =>
+      person
+        ? supabase.from('team_members').update(body).eq('id', person.id)
+        : supabase.from('team_members').insert(body)
+
+    let { error: dbError } = await write(payload)
+    // Deploy-order safety net: if this frontend ships before the contract_type
+    // migration (migrations/2026-09-25-team-member-contract-type.sql) has run,
+    // PostgREST rejects the whole write with a "schema cache" error (PGRST204).
+    // Retry without the new field so the rest of the profile still saves;
+    // contract_type starts persisting automatically once the column exists.
+    // Safe to drop once the column is guaranteed present in every environment.
+    if (dbError?.code === 'PGRST204' && dbError.message.includes('contract_type')) {
+      ;({ error: dbError } = await write(base))
+    }
 
     setLoading(false)
     if (dbError) { setError(dbError.message); return }
@@ -126,6 +142,20 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
             required
             className={themedInputClass}
           />
+        </div>
+
+        <div>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Typ umowy</label>
+          <select
+            value={contractType}
+            onChange={(e) => setContractType(e.target.value as ContractType | '')}
+            className={themedInputClass}
+          >
+            <option value="" className={themedOptionClass}>—</option>
+            {CONTRACT_TYPES.map((ct) => (
+              <option key={ct} value={ct} className={themedOptionClass}>{ct}</option>
+            ))}
+          </select>
         </div>
 
         <div>

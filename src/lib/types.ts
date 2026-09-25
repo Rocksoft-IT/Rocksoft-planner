@@ -11,6 +11,10 @@ export interface Profile {
   updated_at: string
 }
 
+export type ContractType = 'UoP' | 'B2B' | 'Freelance'
+
+export const CONTRACT_TYPES: ContractType[] = ['UoP', 'B2B', 'Freelance']
+
 export interface TeamMember {
   id: string
   full_name: string
@@ -18,6 +22,7 @@ export interface TeamMember {
   email: string
   capacity_hours_per_day: number
   avatar_color: string
+  contract_type: ContractType | null
   created_at: string
   updated_at: string
 }

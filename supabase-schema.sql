@@ -494,3 +494,15 @@ $$;
 
 revoke execute on function public.delete_team_member(uuid) from public;
 grant execute on function public.delete_team_member(uuid) to authenticated;
+
+-- team_members.contract_type — see migrations/2026-09-25-team-member-contract-type.sql
+-- for the WHY/HOW. Note: `team_members` has no `create table` statement in this
+-- script (it was created directly in the Supabase project), so this mirror is an
+-- `alter table` addition rather than an edit to a table definition, matching the
+-- tmc_years_experience_check pattern above.
+alter table public.team_members
+  add column if not exists contract_type text;
+
+alter table public.team_members drop constraint if exists team_members_contract_type_check;
+alter table public.team_members add constraint team_members_contract_type_check
+  check (contract_type is null or contract_type in ('UoP', 'B2B', 'Freelance'));
