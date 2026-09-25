@@ -75,7 +75,11 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     }
 
     setLoading(false)
-    if (dbError) { setError(dbError.message); return }
+    if (dbError) {
+      console.error('Person save failed:', dbError)
+      setError('Nie udało się zapisać danych osoby. Spróbuj ponownie.')
+      return
+    }
     onSaved()
     onClose()
   }
@@ -91,7 +95,11 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     const supabase = createClient()
     const { error: dbError } = await supabase.rpc('delete_team_member', { p_id: person.id })
     setLoading(false)
-    if (dbError) { setError(dbError.message); return }
+    if (dbError) {
+      console.error('Person delete failed:', dbError)
+      setError('Nie udało się usunąć osoby. Spróbuj ponownie.')
+      return
+    }
     onSaved()
     onClose()
   }

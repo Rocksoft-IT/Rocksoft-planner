@@ -59,7 +59,11 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
       : await supabase.from('projects').insert(payload)
 
     setLoading(false)
-    if (dbError) { setError(dbError.message); return }
+    if (dbError) {
+      console.error('Project save failed:', dbError)
+      setError('Could not save the project. Please try again.')
+      return
+    }
     onSaved()
     onClose()
   }

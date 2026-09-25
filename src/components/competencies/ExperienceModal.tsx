@@ -46,7 +46,12 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
       p_end_date: endDate || null,
       p_tag_ids: tagIds,
     })
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      console.error('Experience save failed:', err)
+      setError('Nie udało się zapisać doświadczenia. Spróbuj ponownie.')
+      setLoading(false)
+      return
+    }
 
     setLoading(false)
     onSaved()
@@ -58,7 +63,12 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
     setLoading(true)
     const supabase = createClient()
     const { error: err } = await supabase.from('project_experience').delete().eq('id', experience.id)
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      console.error('Experience delete failed:', err)
+      setError('Nie udało się usunąć doświadczenia. Spróbuj ponownie.')
+      setLoading(false)
+      return
+    }
     setLoading(false)
     onSaved()
     onClose()

@@ -99,7 +99,11 @@ export default function AllocationModal({
         notes: notes || null,
       })
       setLoading(false)
-      if (dbError) { setError(dbError.message); return }
+      if (dbError) {
+        console.error('Time-off save failed:', dbError)
+        setError('Nie udało się zapisać nieobecności. Spróbuj ponownie.')
+        return
+      }
       onSaved()
       onClose()
       return
