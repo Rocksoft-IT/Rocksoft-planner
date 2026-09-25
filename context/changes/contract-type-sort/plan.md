@@ -351,9 +351,9 @@ default (FR-003, FR-005), leaving default behavior and existing filters untouche
 
 ### Phase 1: Schema + type
 #### Automated
-- [ ] 1.1 npm run lint passes with no new errors
-- [ ] 1.2 npx tsc --noEmit passes
-- [ ] 1.3 the column/constraint text added to supabase-schema.sql matches the migration's column/constraint (agent-checkable diff)
+- [x] 1.1 npm run lint passes with no new errors
+- [x] 1.2 npx tsc --noEmit passes
+- [x] 1.3 the column/constraint text added to supabase-schema.sql matches the migration's column/constraint (agent-checkable diff)
 #### Manual
 - [ ] 1.4 the migration applied via the Supabase Dashboard SQL editor on a dev/staging project leaves every existing team_members row with contract_type = null, and a direct update to 'UoP' / 'B2B' / 'Freelance' / back to null all succeed while any other value is rejected by the constraint
 
