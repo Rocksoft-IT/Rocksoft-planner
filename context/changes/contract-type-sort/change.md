@@ -1,7 +1,7 @@
 ---
 change_id: contract-type-sort
 title: Team members have a contract type and the timeline can sort by it
-status: implementing
+status: implemented
 created: 2026-09-25
 updated: 2026-09-25
 archived_at: null

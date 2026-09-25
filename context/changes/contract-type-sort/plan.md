@@ -373,8 +373,8 @@ default (FR-003, FR-005), leaving default behavior and existing filters untouche
 
 ### Phase 4: Timeline sort control
 #### Automated
-- [x] 4.1 npm run build succeeds
-- [x] 4.2 npm run lint passes with no new errors
+- [x] 4.1 npm run build succeeds — d9702e4
+- [x] 4.2 npm run lint passes with no new errors — d9702e4
 #### Manual
 - [ ] 4.3 AC-02: with people Anna (Freelance), Bartek (UoP), Celina (B2B), Damian (UoP), Ewa (unset), switching the sort control to "Contract type" renders the rows in the order Bartek, Damian, Celina, Anna, Ewa
 - [ ] 4.4 AC-03: with the sort control left on "Name" (default), the Timeline lists people alphabetically by full name, exactly as before this change
