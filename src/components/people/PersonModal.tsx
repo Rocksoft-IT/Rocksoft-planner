@@ -49,18 +49,30 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     setLoading(true)
 
     const supabase = createClient()
-    const payload = {
+    const base = {
       full_name: fullName,
       role: roles.join(', '),
       email,
       capacity_hours_per_day: parseFloat(capacity),
       avatar_color: avatarColor,
-      contract_type: contractType || null,
     }
+    const payload = { ...base, contract_type: contractType || null }
 
-    const { error: dbError } = person
-      ? await supabase.from('team_members').update(payload).eq('id', person.id)
-      : await supabase.from('team_members').insert(payload)
+    const write = (body: Record<string, unknown>) =>
+      person
+        ? supabase.from('team_members').update(body).eq('id', person.id)
+        : supabase.from('team_members').insert(body)
+
+    let { error: dbError } = await write(payload)
+    // Deploy-order safety net: if this frontend ships before the contract_type
+    // migration (migrations/2026-09-25-team-member-contract-type.sql) has run,
+    // PostgREST rejects the whole write with a "schema cache" error (PGRST204).
+    // Retry without the new field so the rest of the profile still saves;
+    // contract_type starts persisting automatically once the column exists.
+    // Safe to drop once the column is guaranteed present in every environment.
+    if (dbError?.code === 'PGRST204' && dbError.message.includes('contract_type')) {
+      ;({ error: dbError } = await write(base))
+    }
 
     setLoading(false)
     if (dbError) { setError(dbError.message); return }
