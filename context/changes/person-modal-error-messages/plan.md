@@ -219,10 +219,10 @@ no automated coverage.
 
 ### Phase 1: Replace raw DB error text in all five shared-pattern modals
 #### Automated
-- [ ] 1.1 npm run build succeeds
-- [ ] 1.2 npm run lint passes with no new errors
-- [ ] 1.3 npm run test passes (existing suite stays green)
-- [ ] 1.4 git diff shows no changes outside the five files listed above
+- [x] 1.1 npm run build succeeds
+- [x] 1.2 npm run lint passes with no new errors
+- [x] 1.3 npm run test passes (existing suite stays green)
+- [x] 1.4 git diff shows no changes outside the five files listed above
 #### Manual
 - [ ] 1.5 forcing a save failure on each of the five modals shows the fixed message, not raw DB text, and the raw error appears in the browser console
 - [ ] 1.6 forcing a delete failure on PersonModal and ExperienceModal shows the fixed message, not raw DB text
