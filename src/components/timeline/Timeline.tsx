@@ -21,7 +21,7 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
+import { calcUtilization, compareByContractType, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
@@ -260,6 +260,10 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[]>([])
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
+  // People order — "Name" (default, no re-sort: `people` already arrives
+  // alphabetical from the server) or "Contract type" (FR-003). Not persisted
+  // across reloads, by design.
+  const [sortMode, setSortMode] = useState<'name' | 'contractType'>('name')
   const [visibleDate, setVisibleDate] = useState(new Date())
   // Horizontal scroll offset (px), used to keep a block's project label visible
   // when the block starts before the viewport's left edge (869e6rn52).
@@ -510,8 +514,15 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     return passRole && passPeople && passProject
   })
 
+  // Sort combines with the filters above (FR-005, AC-04). "Name" is a
+  // pass-through — filteredPeople is already alphabetical from the server
+  // query — so the default order is untouched (AC-03).
+  const sortedPeople = sortMode === 'contractType'
+    ? [...filteredPeople].sort(compareByContractType)
+    : filteredPeople
+
   // Precompute lanes + row heights for each person (allocations + time offs combined)
-  const rowData = filteredPeople.map((person) => {
+  const rowData = sortedPeople.map((person) => {
     const personAllocs = allocations.filter((a) => a.person_id === person.id)
     const personOffs = timeOffs.filter((t) => t.person_id === person.id)
     const laned = assignLanesAll(personAllocs, personOffs)
@@ -626,6 +637,24 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
             ROLES.map((r) => [r, people.filter((p) => p.role.split(',').map((x) => x.trim()).includes(r)).length])
           )}
         />
+
+        <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg">
+          {([
+            { value: 'name', label: 'Nazwa' },
+            { value: 'contractType', label: 'Typ umowy' },
+          ] as { value: 'name' | 'contractType'; label: string }[]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setSortMode(value)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md transition',
+                sortMode === value ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <div className="ml-auto flex items-center gap-2">
           <button
