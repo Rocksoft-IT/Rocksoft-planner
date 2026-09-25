@@ -144,8 +144,8 @@ order.
 
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | Contract type on the profile (schema + person modal) | 1-2 | — | yes | pending | — |
-| 2 | Timeline contract-type sort | 3-4 | 1 | yes | pending | — |
+| 1 | Contract type on the profile (schema + person modal) | 1-2 | — | yes | done | #72 |
+| 2 | Timeline contract-type sort | 3-4 | 1 | yes | in-progress | — |
 
 ## Phase 1: Schema + type
 
