@@ -169,7 +169,43 @@ create index if not exists allocations_dates_idx on public.allocations(start_dat
 --   ('Internal Tooling', '#f59e0b', 'Internal developer productivity tools');
 
 -- ============================================================
--- 7. COMPETENCY BASE  (change: competency-database)
+-- 7. TEAM MEMBERS
+-- Reconstructed from src/lib/types.ts's TeamMember shape, corroborated by the
+-- insert/update payload in src/components/people/PersonModal.tsx — this table
+-- was never once defined in any tracked SQL file, even though other tables'
+-- foreign keys reference it (see plan.md for the change that added this).
+--
+-- RLS is enabled below with NO policies: migrations/2026-09-01-delete-team-member.sql
+-- documents that the live project has this table under RLS with working
+-- select/insert/update policies and no delete policy, but that policy text was
+-- never captured in git anywhere. Fabricating replacement predicates here would
+-- create false confidence that this fresh-install schema matches production's
+-- real access rules, so this enables RLS fail-closed (all access denied) instead
+-- — copy the real policies from the live project's dashboard before this table
+-- serves real traffic.
+--
+-- `public.time_off` has the identical never-captured-in-git gap (referenced
+-- only inside the delete_team_member() function body below and in
+-- migrations/2026-09-01-delete-team-member.sql:49) but is deliberately not
+-- defined here — see README.md "Database migrations" for both caveats.
+-- ============================================================
+
+create table if not exists public.team_members (
+  id                     uuid primary key default gen_random_uuid(),
+  full_name              text not null default '',
+  role                   text not null default '',
+  email                  text not null default '',
+  capacity_hours_per_day numeric(4,1) not null default 8,
+  avatar_color           text not null default '#6366f1',
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+
+alter table public.team_members enable row level security;
+-- No `create policy` statements — see the comment block above.
+
+-- ============================================================
+-- 8. COMPETENCY BASE  (change: competency-database)
 -- Mirror of migrations/2026-07-28-competency-base.sql. See that file for the
 -- WHY/HOW rationale. People live in public.team_members; competencies reference
 -- team_members(id). "Who edited" is stamped into created_by/updated_by (→ profiles).

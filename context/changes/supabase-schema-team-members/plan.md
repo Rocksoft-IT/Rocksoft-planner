@@ -117,7 +117,7 @@ inventing RLS); see `plan-brief.md` Key decisions for the full reasoning.
 ## Increments
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | team_members table + doc caveat | 1 | — | no | pending | — |
+| 1 | team_members table + doc caveat | 1 | — | no | in-progress | — |
 
 ## Phase 1: Add team_members and document the RLS gap
 ### Overview
@@ -192,9 +192,9 @@ commit's two files.
 
 ### Phase 1: Add team_members and document the RLS gap
 #### Automated
-- [ ] 1.1 `create table if not exists public.team_members` appears in supabase-schema.sql before its referencing foreign keys
-- [ ] 1.2 `time_off` was not added as a table (documentation-only)
-- [ ] 1.3 `pnpm lint` passes
+- [x] 1.1 `create table if not exists public.team_members` appears in supabase-schema.sql before its referencing foreign keys
+- [x] 1.2 `time_off` was not added as a table (documentation-only)
+- [x] 1.3 `pnpm lint` passes
 #### Manual
 - [ ] 1.4 A fresh apply of supabase-schema.sql on an empty database runs to completion past the team_members FKs
 - [ ] 1.5 The new comment and README paragraph clearly convey the RLS gap
