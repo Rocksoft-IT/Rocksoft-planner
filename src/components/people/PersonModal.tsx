@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
-import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
+import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedOptionClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
 import { CONTRACT_TYPES, type ContractType, type TeamMember } from '@/lib/types'
 
 interface PersonModalProps {
@@ -139,9 +139,9 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
             onChange={(e) => setContractType(e.target.value as ContractType | '')}
             className={themedInputClass}
           >
-            <option value="">—</option>
+            <option value="" className={themedOptionClass}>—</option>
             {CONTRACT_TYPES.map((ct) => (
-              <option key={ct} value={ct}>{ct}</option>
+              <option key={ct} value={ct} className={themedOptionClass}>{ct}</option>
             ))}
           </select>
         </div>

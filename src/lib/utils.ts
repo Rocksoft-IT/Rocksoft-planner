@@ -20,6 +20,9 @@ export function cn(...inputs: ClassValue[]) {
 export const themedInputClass =
   'w-full bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2.5 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
 export const themedPlaceholderClass = 'placeholder-slate-500 light:placeholder-slate-400'
+// Native <option> elements ignore the parent <select>'s theme classes for the open
+// dropdown list on most platforms, so they need their own themed background/text.
+export const themedOptionClass = 'bg-slate-800 light:bg-white text-white light:text-slate-900'
 export const themedLabelClass = 'block text-sm font-medium text-slate-300 light:text-slate-700'
 export const dangerButtonClass = 'text-red-400 light:text-red-600 hover:text-red-300 light:hover:text-red-700 text-sm transition'
 export const secondaryButtonClass = 'px-4 py-2 text-sm text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition'
