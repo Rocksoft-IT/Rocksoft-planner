@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareByContractType } from './utils'
+import { compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE } from './utils'
 import type { ContractType, TeamMember } from './types'
 
 function makePerson(full_name: string, contract_type: ContractType | null): TeamMember {
@@ -46,5 +46,27 @@ describe('compareByContractType', () => {
     const sorted = [zack, amy, bartek].sort(compareByContractType)
 
     expect(sorted.map((p) => p.full_name)).toEqual(['Bartek', 'Amy', 'Zack'])
+  })
+})
+
+describe('matchesContractTypeFilter', () => {
+  const bartek = makePerson('Bartek', 'UoP')
+  const celina = makePerson('Celina', 'B2B')
+  const anna = makePerson('Anna', 'Freelance')
+  const ewa = makePerson('Ewa', null)
+  const everyone = [bartek, celina, anna, ewa]
+
+  it('passes everyone when nothing is selected', () => {
+    expect(everyone.filter((p) => matchesContractTypeFilter(p, []))).toEqual(everyone)
+  })
+
+  it('keeps only people with a selected contract type', () => {
+    const shown = everyone.filter((p) => matchesContractTypeFilter(p, ['B2B', 'Freelance']))
+    expect(shown.map((p) => p.full_name)).toEqual(['Celina', 'Anna'])
+  })
+
+  it('matches people with no contract type via NO_CONTRACT_TYPE', () => {
+    const shown = everyone.filter((p) => matchesContractTypeFilter(p, [NO_CONTRACT_TYPE]))
+    expect(shown.map((p) => p.full_name)).toEqual(['Ewa'])
   })
 })

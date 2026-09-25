@@ -223,6 +223,16 @@ export function compareByContractType(a: TeamMember, b: TeamMember): number {
   return diff !== 0 ? diff : a.full_name.localeCompare(b.full_name)
 }
 
+// Filter key for people whose contract type is unset — lets the Timeline
+// contract-type filter find people still missing one.
+export const NO_CONTRACT_TYPE = 'none'
+
+// Timeline contract-type filter: an empty selection passes everyone; otherwise
+// the person's type (or NO_CONTRACT_TYPE when unset) must be selected.
+export function matchesContractTypeFilter(person: TeamMember, selected: string[]): boolean {
+  return selected.length === 0 || selected.includes(person.contract_type ?? NO_CONTRACT_TYPE)
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
