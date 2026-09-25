@@ -1,7 +1,7 @@
 ---
 change_id: person-modal-error-messages
 title: PersonModal shows raw Supabase/PostgREST error text to end users
-status: implemented
+status: impl_reviewed
 created: 2026-09-25
 updated: 2026-09-25
 archived_at: null
