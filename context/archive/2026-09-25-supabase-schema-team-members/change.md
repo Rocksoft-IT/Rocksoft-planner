@@ -1,10 +1,10 @@
 ---
 change_id: supabase-schema-team-members
 title: Add the missing team_members table to supabase-schema.sql
-status: impl_reviewed
+status: archived
 created: 2026-09-25
 updated: 2026-09-25
-archived_at: null
+archived_at: 2026-09-25T10:37:52Z
 ---
 
 ## Notes
