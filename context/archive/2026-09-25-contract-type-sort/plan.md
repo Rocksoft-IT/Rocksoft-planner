@@ -144,8 +144,8 @@ order.
 
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | Contract type on the profile (schema + person modal) | 1-2 | — | yes | pending | — |
-| 2 | Timeline contract-type sort | 3-4 | 1 | yes | pending | — |
+| 1 | Contract type on the profile (schema + person modal) | 1-2 | — | yes | done | #72 |
+| 2 | Timeline contract-type sort | 3-4 | 1 | yes | in-progress | — |
 
 ## Phase 1: Schema + type
 
@@ -368,13 +368,13 @@ default (FR-003, FR-005), leaving default behavior and existing filters untouche
 
 ### Phase 3: Sort comparator
 #### Automated
-- [ ] 3.1 npm run test passes, including the new utils.test.ts cases
-- [ ] 3.2 npm run lint passes with no new errors
+- [x] 3.1 npm run test passes, including the new utils.test.ts cases — 34ef1ce
+- [x] 3.2 npm run lint passes with no new errors — 34ef1ce
 
 ### Phase 4: Timeline sort control
 #### Automated
-- [ ] 4.1 npm run build succeeds
-- [ ] 4.2 npm run lint passes with no new errors
+- [x] 4.1 npm run build succeeds — d9702e4
+- [x] 4.2 npm run lint passes with no new errors — d9702e4
 #### Manual
 - [ ] 4.3 AC-02: with people Anna (Freelance), Bartek (UoP), Celina (B2B), Damian (UoP), Ewa (unset), switching the sort control to "Contract type" renders the rows in the order Bartek, Damian, Celina, Anna, Ewa
 - [ ] 4.4 AC-03: with the sort control left on "Name" (default), the Timeline lists people alphabetically by full name, exactly as before this change

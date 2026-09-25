@@ -8,9 +8,24 @@ interface SkillsFilterProps {
   selected: string[]
   onChange: (roles: string[]) => void
   peopleCounts: Record<string, number>
+  // Copy overrides so the same counted multi-select can filter by other
+  // attributes (e.g. contract type); defaults keep the skills wording.
+  placeholder?: string
+  activeLabel?: string
+  countLabel?: (n: number) => string
+  optionLabels?: Record<string, string>
 }
 
-export default function SkillsFilter({ roles, selected, onChange, peopleCounts }: SkillsFilterProps) {
+export default function SkillsFilter({
+  roles,
+  selected,
+  onChange,
+  peopleCounts,
+  placeholder = 'Filtruj umiejętności',
+  activeLabel = 'Umiejętności',
+  countLabel = (n) => `${n} umiejętności`,
+  optionLabels = {},
+}: SkillsFilterProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -49,7 +64,7 @@ export default function SkillsFilter({ roles, selected, onChange, peopleCounts }
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
         </svg>
-        {hasFilter ? `Umiejętności (${selected.length})` : 'Filtruj umiejętności'}
+        {hasFilter ? `${activeLabel} (${selected.length})` : placeholder}
         <svg className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -58,7 +73,7 @@ export default function SkillsFilter({ roles, selected, onChange, peopleCounts }
       {open && (
         <div className="absolute z-50 top-full mt-1.5 left-0 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800">
-            <span className="text-[11px] text-slate-500">{availableRoles.length} umiejętności</span>
+            <span className="text-[11px] text-slate-500">{countLabel(availableRoles.length)}</span>
             {hasFilter && (
               <button onClick={clear} className="text-[11px] text-slate-500 hover:text-slate-300 transition">
                 Wyczyść
@@ -89,7 +104,7 @@ export default function SkillsFilter({ roles, selected, onChange, peopleCounts }
                       </svg>
                     )}
                   </span>
-                  <span className="text-sm flex-1 truncate">{role}</span>
+                  <span className="text-sm flex-1 truncate">{optionLabels[role] ?? role}</span>
                   <span className="text-[11px] text-slate-500 shrink-0">{count}</span>
                 </button>
               )

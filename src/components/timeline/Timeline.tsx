@@ -21,14 +21,15 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
+import { calcUtilization, compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
 import ProjectFilter from '@/components/ui/ProjectFilter'
 import SkillsFilter from '@/components/ui/SkillsFilter'
+import ContractTypeBadge from '@/components/ui/ContractTypeBadge'
 import type { AllocationWithProject, TeamMember, Project, TimeOff } from '@/lib/types'
-import { TIME_OFF_LABELS } from '@/lib/types'
+import { CONTRACT_TYPES, TIME_OFF_LABELS } from '@/lib/types'
 import AllocationModal from './AllocationModal'
 import TimeOffModal from './TimeOffModal'
 import { createClient } from '@/lib/supabase/client'
@@ -41,9 +42,10 @@ const LANE_HEIGHT = 24   // px per allocation block — compact stacking (869e6v
 const LANE_GAP = 2       // px between lanes (minimal gap between a person's projects)
 const ROW_PADDING = 3    // px top + bottom
 
-// Floor is driven by the frozen left cell (avatar + name + utilization stats),
-// not by the lanes — keep it tall enough that the name and stats don't blend
-// into the row above/below (869e5gwa8).
+// Minimum row height needed by the allocation lanes. It is applied as a
+// min-height: the frozen left cell (avatar, name, badge, utilization stats,
+// OOO line) grows the row past it when its content is taller, so the cell
+// never spills into the row below (869e5gwa8 — a fixed height here did).
 function calcRowHeight(numLanes: number) {
   return Math.max(50, ROW_PADDING * 2 + numLanes * LANE_HEIGHT + (numLanes - 1) * LANE_GAP)
 }
@@ -174,22 +176,23 @@ function DraggableAllocBlock({
           opacity: isTentative ? 0.85 : 1,
         }}
       />
-      {/* Label — always visible, follows the viewport's left edge */}
+      {/* Label — always visible, follows the viewport's left edge. Hours lead
+          so the allocation size stays readable while scrolling a long block. */}
       <div
-        className="absolute inset-0 flex items-center pr-2 gap-1 overflow-hidden"
+        className="absolute inset-0 flex items-center pr-2 gap-1.5 overflow-hidden"
         style={{ paddingLeft: 8 + labelOffset }}
       >
-        <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
-          {projectName}
-        </span>
-        <div className="ml-auto flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
+          <span className="text-[10px] font-semibold opacity-80 leading-none" style={{ color: bg }}>
+            {hoursPerDay}h
+          </span>
           {isTentative && (
             <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
           )}
-          <span className="text-[10px] opacity-70 leading-none" style={{ color: bg }}>
-            {hoursPerDay}h
-          </span>
         </div>
+        <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
+          {projectName}
+        </span>
       </div>
       <ResizeHandle id={`resize-left-${id}`} side="left" />
       <ResizeHandle id={`resize-right-${id}`} side="right" />
@@ -260,6 +263,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[]>([])
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
+  // Contract types to show (CONTRACT_TYPES values or NO_CONTRACT_TYPE); empty = all.
+  const [selectedContractTypes, setSelectedContractTypes] = useState<string[]>([])
+  // People order — "Name" (default, no re-sort: `people` already arrives
+  // alphabetical from the server) or "Contract type" (FR-003). Not persisted
+  // across reloads, by design.
+  const [sortMode, setSortMode] = useState<'name' | 'contractType'>('name')
   const [visibleDate, setVisibleDate] = useState(new Date())
   // Horizontal scroll offset (px), used to keep a block's project label visible
   // when the block starts before the viewport's left edge (869e6rn52).
@@ -507,11 +516,21 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     const passProject = selectedProjectIds.length === 0 || allocations.some(
       (a) => a.person_id === p.id && selectedProjectIds.includes(a.project_id)
     )
-    return passRole && passPeople && passProject
+    const passContractType = matchesContractTypeFilter(p, selectedContractTypes)
+    return passRole && passPeople && passProject && passContractType
   })
+  const hasActiveFilter = selectedRoles.length > 0 || selectedPeopleIds.length > 0
+    || selectedProjectIds.length > 0 || selectedContractTypes.length > 0
+
+  // Sort combines with the filters above (FR-005, AC-04). "Name" is a
+  // pass-through — filteredPeople is already alphabetical from the server
+  // query — so the default order is untouched (AC-03).
+  const sortedPeople = sortMode === 'contractType'
+    ? [...filteredPeople].sort(compareByContractType)
+    : filteredPeople
 
   // Precompute lanes + row heights for each person (allocations + time offs combined)
-  const rowData = filteredPeople.map((person) => {
+  const rowData = sortedPeople.map((person) => {
     const personAllocs = allocations.filter((a) => a.person_id === person.id)
     const personOffs = timeOffs.filter((t) => t.person_id === person.id)
     const laned = assignLanesAll(personAllocs, personOffs)
@@ -627,6 +646,37 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           )}
         />
 
+        <SkillsFilter
+          roles={[...CONTRACT_TYPES, NO_CONTRACT_TYPE]}
+          selected={selectedContractTypes}
+          onChange={setSelectedContractTypes}
+          peopleCounts={Object.fromEntries(
+            [...CONTRACT_TYPES, NO_CONTRACT_TYPE].map((t) => [t, people.filter((p) => (p.contract_type ?? NO_CONTRACT_TYPE) === t).length])
+          )}
+          placeholder="Filtruj typ umowy"
+          activeLabel="Typ umowy"
+          countLabel={(n) => `${n} ${n === 1 ? 'typ' : n >= 2 && n <= 4 ? 'typy' : 'typów'} umowy`}
+          optionLabels={{ [NO_CONTRACT_TYPE]: 'Bez typu' }}
+        />
+
+        <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg">
+          {([
+            { value: 'name', label: 'Nazwa' },
+            { value: 'contractType', label: 'Typ umowy' },
+          ] as { value: 'name' | 'contractType'; label: string }[]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setSortMode(value)}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md transition',
+                sortMode === value ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setOooModal({ open: true })}
@@ -671,7 +721,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               style={{ width: 224, height: 56 }}
             >
               <span className="text-xs text-slate-500 font-medium">
-                ZESPÓŁ {(selectedRoles.length > 0 || selectedPeopleIds.length > 0 || selectedProjectIds.length > 0) && `· ${filteredPeople.length}`}
+                ZESPÓŁ {hasActiveFilter && `· ${filteredPeople.length}`}
               </span>
             </div>
             {/* Month + day header */}
@@ -726,11 +776,11 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
             const av = formatAvailability(util)
 
             return (
-            <div key={person.id} className="flex border-b border-slate-800" style={{ height: rowHeight }}>
+            <div key={person.id} className="flex border-b border-slate-800" style={{ minHeight: rowHeight }}>
 
-              {/* Frozen left cell */}
+              {/* Frozen left cell — its content can grow the row (see calcRowHeight) */}
               <div
-                className="shrink-0 sticky left-0 z-10 bg-slate-950 border-r border-slate-800 flex items-center px-4 gap-3"
+                className="shrink-0 sticky left-0 z-10 bg-slate-950 border-r border-slate-800 flex items-center px-4 py-2 gap-3"
                 style={{ width: 224 }}
               >
                 <div
@@ -740,7 +790,13 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   {person.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate leading-tight mb-1.5">{person.full_name}</p>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {/* Wraps to a second line only when the name doesn't fit next to the badge */}
+                    <p className="min-w-0 text-sm font-medium text-white leading-tight line-clamp-2 break-words" title={person.full_name}>
+                      {person.full_name}
+                    </p>
+                    <ContractTypeBadge type={person.contract_type} />
+                  </div>
                   <div className="mt-1.5">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-[10px] text-slate-500">Wolne {av.freeHours}h / {capacityHours}h</span>
@@ -763,7 +819,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               {/* Timeline cells */}
               <div
                 className="relative flex"
-                style={{ width: days.length * DAY_WIDTH, height: rowHeight }}
+                style={{ width: days.length * DAY_WIDTH }}
               >
               {/* Clickable day cells */}
               {days.map((day) => {
