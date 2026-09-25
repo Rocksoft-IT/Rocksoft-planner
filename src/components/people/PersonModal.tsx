@@ -5,7 +5,7 @@ import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
 import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
-import type { TeamMember } from '@/lib/types'
+import { CONTRACT_TYPES, type ContractType, type TeamMember } from '@/lib/types'
 
 interface PersonModalProps {
   open: boolean
@@ -20,6 +20,7 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
   const [email, setEmail] = useState('')
   const [capacity, setCapacity] = useState('8')
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0])
+  const [contractType, setContractType] = useState<ContractType | ''>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -30,12 +31,14 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
       setEmail(person.email)
       setCapacity(String(person.capacity_hours_per_day))
       setAvatarColor(person.avatar_color)
+      setContractType(person.contract_type ?? '')
     } else {
       setFullName('')
       setRoles([])
       setEmail('')
       setCapacity('8')
       setAvatarColor(AVATAR_COLORS[0])
+      setContractType('')
     }
     setError('')
   }, [person, open])
@@ -52,6 +55,7 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
       email,
       capacity_hours_per_day: parseFloat(capacity),
       avatar_color: avatarColor,
+      contract_type: contractType || null,
     }
 
     const { error: dbError } = person
@@ -126,6 +130,20 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
             required
             className={themedInputClass}
           />
+        </div>
+
+        <div>
+          <label className={cn(themedLabelClass, 'mb-1.5')}>Typ umowy</label>
+          <select
+            value={contractType}
+            onChange={(e) => setContractType(e.target.value as ContractType | '')}
+            className={themedInputClass}
+          >
+            <option value="">—</option>
+            {CONTRACT_TYPES.map((ct) => (
+              <option key={ct} value={ct}>{ct}</option>
+            ))}
+          </select>
         </div>
 
         <div>
