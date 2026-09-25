@@ -42,6 +42,15 @@ so it's safe to re-run. When you add a migration, also apply the same
 change to `supabase-schema.sql` so fresh installs stay in sync — there's no
 automated tool enforcing this, so keep the two in lockstep by hand.
 
+One caveat to "always reflects the current state": `public.team_members`'
+and `public.time_off`'s real row-level-security policies were never captured
+in any tracked file, in this repo's entire history. `supabase-schema.sql`
+creates `team_members` with RLS enabled and no policies (fail-closed) so a
+fresh apply succeeds without guessing at production's real access rules;
+`time_off` isn't created at all. Copy both tables' real policies (and, for
+`time_off`, its table definition) from the live Supabase project before a
+fresh install serves real traffic.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
