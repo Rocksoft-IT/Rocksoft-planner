@@ -1,0 +1,32 @@
+// Views — rs-arch-map keeps `index` and `boundaries`; add more freely.
+
+views {
+  view index {
+    title 'System landscape'
+    include *
+    style element.tag = #planned {
+      opacity 40%
+      border dashed
+    }
+  }
+
+  view boundaries {
+    title 'Business boundaries and hotspots'
+    description 'Core capabilities, domains, and the metric overlay from metrics.generated.c4'
+    autoLayout TopBottom 40 30
+    include
+      element.kind = capability,
+      element.kind = domain,
+      element.kind = external
+    style element.tag = #planned {
+      opacity 40%
+      border dashed
+    }
+    style element.tag = #untested {
+      border dashed
+    }
+    style element.tag = #hot {
+      color red
+    }
+  }
+}

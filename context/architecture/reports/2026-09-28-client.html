@@ -1,0 +1,652 @@
+<title>Architecture review RS Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2F4F1; --surface: #FFFFFF; --surface-2: #E7ECE8; --ink: #18201C; --muted: #56625C; --line: #B9C3BD;
+    --core: #2D6A52; --core-tint: #E0EEE6; --dom: #B34E28; --dom-tint: #F7E5DB; --ext: #3B5B85; --ext-tint: #E1E8F2;
+    --viol: #C0392B; --high: #A3321F; --high-tint: #F8E1DC; --mid: #9A5A08; --mid-tint: #FBEBCF; --low: #4F6158; --low-tint: #E4EAE6;
+    --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg: #101412; --surface: #171D1A; --surface-2: #1F2723; --ink: #E3EAE6; --muted: #97A69E; --line: #3A4741; --core: #74BE9C; --core-tint: #1A2E25; --dom: #EC8A5F; --dom-tint: #33201A; --ext: #93AED6; --ext-tint: #1B2433; --viol: #F0725F; --high: #F08A74; --high-tint: #3A1C16; --mid: #E6AA45; --mid-tint: #33280F; --low: #A8B8AF; --low-tint: #232C28; } }
+  :root[data-theme="dark"] { color-scheme: dark; --bg: #101412; --surface: #171D1A; --surface-2: #1F2723; --ink: #E3EAE6; --muted: #97A69E; --line: #3A4741; --core: #74BE9C; --core-tint: #1A2E25; --dom: #EC8A5F; --dom-tint: #33201A; --ext: #93AED6; --ext-tint: #1B2433; --viol: #F0725F; --high: #F08A74; --high-tint: #3A1C16; --mid: #E6AA45; --mid-tint: #33280F; --low: #A8B8AF; --low-tint: #232C28; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: grid; gap: 48px; }
+  header { display: grid; gap: 12px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: clamp(30px, 4.4vw, 44px); line-height: 1.08; margin: 0; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+  h2 { font-size: 22px; margin: 0 0 6px; font-weight: 650; text-wrap: balance; }
+  h3 { font-size: 16px; margin: 0; font-weight: 650; text-wrap: balance; }
+  p { margin: 0; } code { font-family: var(--mono); font-size: .86em; }
+  .lede { font-size: 17px; color: var(--muted); max-width: 66ch; }
+  .sub { color: var(--muted); max-width: 72ch; margin-bottom: 18px; }
+  .ids { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .tally { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 8px; font-size: 14px; color: var(--muted); }
+  .tally b { font-size: 26px; color: var(--ink); font-weight: 700; margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .tally .h b { color: var(--high); } .tally .m b { color: var(--mid); }
+  .decide { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--high); box-shadow: inset 4px 0 0 var(--high); border-radius: 10px; padding: 18px 18px 16px; display: grid; gap: 8px; align-content: start; }
+  .card p { font-size: 14.5px; }
+  .card .rec { padding-top: 8px; border-top: 1px dashed var(--line); font-size: 14px; }
+  .card .rec b { font-weight: 600; }
+  .figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: grid; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+  .sw.core { background: var(--core-tint); border-color: var(--core); } .sw.dom { background: var(--dom-tint); border-color: var(--dom); }
+  .sw.ext { background: var(--ext-tint); border-color: var(--ext); } .sw.unt { background: var(--surface); border: 2px dashed var(--muted); }
+  .sw.pl { background: var(--surface); border-color: var(--line); opacity: .6; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--viol); display: inline-block; }
+  .ln { width: 26px; border-top: 2px solid var(--muted); display: inline-block; } .ln.v { border-top: 2.5px dashed var(--viol); }
+  .zoombar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 18px; border-bottom: 1px solid var(--line); }
+  .zoombar button { font: inherit; font-size: 14px; min-width: 36px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .zoombar button:hover { background: var(--surface-2); }
+  .zoombar button:focus-visible, .viewport:focus-visible { outline: 2px solid var(--core); outline-offset: 2px; }
+  .zoombar .level { font-family: var(--mono); font-size: 12.5px; color: var(--muted); min-width: 4ch; font-variant-numeric: tabular-nums; }
+  .zoombar .hint { font-size: 12.5px; color: var(--muted); margin-left: auto; }
+  .viewport { overflow: hidden; padding: 12px; cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .viewport.zoomed { touch-action: none; }
+  .viewport.dragging { cursor: grabbing; }
+  svg.arch { display: block; width: 100%; height: auto; }
+  svg .node { cursor: move; } svg .node:focus { outline: none; } svg .node:focus-visible rect { stroke: var(--ink); stroke-width: 4; }
+  svg .node.moving { opacity: .92; }
+  svg .node, svg .edge, svg g[data-eid], svg .group { transition: opacity .12s ease; }
+  svg.hl .node:not(.on) { opacity: .25; } svg.hl .edge:not(.on) { opacity: .08; } svg.hl g[data-eid]:not(.on) { opacity: .1; }
+  svg.hl .edge.on { opacity: 1; stroke: var(--ink); stroke-width: 2; } svg.hl .edge.viol.on { stroke: var(--viol); stroke-width: 2.4; }
+  svg.hl .node.focus rect { stroke: var(--ink); stroke-width: 2.4; } svg.hl .group.on rect { stroke-width: 2; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  svg text { font-family: var(--sans); fill: var(--ink); }
+  svg .t-kind { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; fill: var(--muted); }
+  svg .t-title { font-size: 15px; font-weight: 650; }
+  svg .t-sub { font-size: 11.5px; fill: var(--muted); }
+  svg .t-mono { font-family: var(--mono); font-size: 11.5px; }
+  svg .t-group { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; font-weight: 500; fill: var(--muted); }
+  svg .t-edge { font-size: 10.5px; fill: var(--muted); }
+  svg .t-viol { font-size: 10.5px; font-weight: 600; fill: var(--viol); }
+  svg .lbl-bg { fill: var(--surface); stroke: var(--viol); stroke-width: 1; }
+  svg .rule { stroke: var(--line); stroke-width: 1; }
+  svg .group rect { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 5 4; }
+  svg .group.dom rect { fill: var(--dom-tint); fill-opacity: .35; stroke: var(--dom); }
+  svg .group.core rect { fill: var(--core-tint); fill-opacity: .35; stroke: var(--core); }
+  svg .group.dom .t-group { fill: var(--dom); } svg .group.core .t-group { fill: var(--core); }
+  svg .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.25; }
+  svg .node.core rect { fill: var(--core-tint); stroke: var(--core); }
+  svg .node.dom rect { fill: var(--dom-tint); stroke: var(--dom); }
+  svg .node.ext rect { fill: var(--ext-tint); stroke: var(--ext); }
+  svg .node.data rect { fill: var(--surface-2); stroke: var(--ink); }
+  svg .node.actor rect { fill: var(--surface-2); }
+  svg .node.untested rect { stroke-dasharray: 6 4; }
+  svg .node.hot rect { stroke-width: 2.2; }
+  svg .node.planned { opacity: .55; } svg .node.planned rect { stroke-dasharray: 4 4; fill: var(--surface); }
+  svg .hot-dot { fill: var(--viol); }
+  svg .edge { fill: none; stroke: var(--muted); stroke-width: 1.4; opacity: .8; } svg .edge.internal { stroke-dasharray: 2 3; }
+  svg .edge.viol { stroke: var(--viol); stroke-width: 1.8; stroke-dasharray: 6 4; opacity: 1; }
+  svg .ah { fill: var(--muted); } svg .ahv { fill: var(--viol); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.h { background: var(--high-tint); color: var(--high); } .pill.m { background: var(--mid-tint); color: var(--mid); } .pill.l { background: var(--low-tint); color: var(--low); }
+  .pill.done { background: var(--core-tint); color: var(--core); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .filters button { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .filters button:focus-visible { outline: 2px solid var(--core); outline-offset: 2px; }
+  .list { display: grid; gap: 10px; }
+  .item { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; grid-template-columns: 96px 1fr; gap: 6px 14px; }
+  .item.closed { opacity: .65; }
+  .item .meta { display: grid; gap: 6px; align-content: start; justify-items: start; }
+  .item p { font-size: 14px; color: var(--muted); margin-top: 4px; } .item p.fix { color: var(--ink); } .item p.ev { font-size: 12.5px; }
+  @media (max-width: 560px) { .item { grid-template-columns: 1fr; } .item .meta { display: flex; gap: 10px; align-items: center; } }
+  .method { font-size: 14px; color: var(--muted); max-width: 76ch; display: grid; gap: 8px; }
+  .method ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+</style>
+<!-- Generated by rs-arch-map/scripts/report.mjs (client, en) from snapshot 2026-09-28; do not edit by hand. -->
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Architecture review · 28 September 2026 · 851ef8e</div>
+    <h1>RS Planner</h1>
+    <p class="lede">RS Planner is a small internal tool for scheduling projects, tracking the team's availability and matching people to work by skill. The architecture is in good shape overall — there are no rule-breaking dependencies between areas of the app — but two testing gaps and one code-organisation issue are worth a decision.</p>
+    <div class="tally"><span><b>3</b>findings</span><span class="h"><b>0</b>high</span><span class="m"><b>1</b>medium</span><span><b>2</b>low</span></div>
+  </header>
+  
+  <section>
+    <h2>System map</h2>
+    <p class="sub">Core capabilities and business domains, each with its share of code commits in the last 90 days and its line coverage. Red dashed lines are boundary violations found in the code.</p>
+    <div class="figure">
+      <div class="legend">
+        <span><i class="sw core"></i>core capability</span><span><i class="sw dom"></i>business domain</span>
+        <span><i class="sw ext"></i>external service</span><span><i class="sw pl"></i>planned</span>
+        <span><i class="dot"></i>hotspot</span><span><i class="sw unt"></i>under-tested</span>
+        <span><i class="ln"></i>modelled dependency</span><span><i class="ln v"></i>boundary violation</span>
+      </div>
+      <div class="zoombar" role="toolbar" aria-label="System map">
+        <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+        <span class="level" id="zoom-level" aria-live="polite">100%</span>
+        <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+        <button type="button" id="zoom-fit">Fit</button>
+        <button type="button" id="layout-reset" hidden>Reset layout</button>
+        <label class="toggle"><input type="checkbox" id="show-internal"> Show dependencies inside the core</label>
+        <span class="hint">Ctrl or ⌘ + wheel or the buttons to zoom; drag the background to pan, a box to move it (remembered in this browser).</span>
+      </div>
+      <div class="viewport" id="arch-viewport" tabindex="0" aria-label="System map">
+<svg class="arch" id="arch-svg" viewBox="0 0 1136 366" preserveAspectRatio="xMidYMid meet" role="img" aria-label="System map">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahv" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <g class="group core" data-gid="core"><rect x="206" y="16" width="668" height="334" rx="12"/><text class="t-group" x="222" y="37">CORE CAPABILITIES</text></g>
+  <path class="edge internal" data-eid="0" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="1" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="2" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="3" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="4" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="5" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="6" d="" hidden marker-end="url(#ah)" marker-start="url(#ah)"/>
+  <path class="edge internal" data-eid="7" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="8" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="9" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="10" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="11" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="12" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="13" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="14" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="15" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge internal" data-eid="16" d="" hidden marker-end="url(#ah)"/>
+  <path class="edge" data-eid="17" d="M874,183 L890,183 Q896,183 896,189 L896,230 Q896,236 902,236 L914,236" marker-end="url(#ah)"/>
+  <g class="node core" data-id="publicApi" tabindex="0" aria-label="Public data API"><rect x="222" y="62" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="234" y="80">CORE CAPABILITY</text>
+  <text class="t-title" x="234" y="102">Public data API</text>
+  <text class="t-sub" x="234" y="122">churn 9% · no coverage</text>
+  </g>
+  <g class="node core hot" data-id="shell" tabindex="0" aria-label="App navigation &amp; shared design"><rect x="442" y="62" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="454" y="80">CORE CAPABILITY</text>
+  <text class="t-title" x="454" y="102">App navigation &amp; shared design</text>
+  <text class="t-sub" x="454" y="122">churn 47% · no coverage</text>
+  <circle class="hot-dot" cx="624" cy="76" r="5"/>
+  </g>
+  <g class="node core hot" data-id="team" tabindex="0" aria-label="Team roster"><rect x="662" y="62" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="674" y="80">CORE CAPABILITY</text>
+  <text class="t-title" x="674" y="102">Team roster</text>
+  <text class="t-sub" x="674" y="122">churn 21% · no coverage</text>
+  <circle class="hot-dot" cx="844" cy="76" r="5"/>
+  </g>
+  <g class="node core" data-id="projects" tabindex="0" aria-label="Projects"><rect x="222" y="166" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="234" y="184">CORE CAPABILITY</text>
+  <text class="t-title" x="234" y="206">Projects</text>
+  <text class="t-sub" x="234" y="226">churn 2% · no coverage</text>
+  </g>
+  <g class="node core hot" data-id="timeline" tabindex="0" aria-label="Scheduling &amp; workload"><rect x="442" y="166" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="454" y="184">CORE CAPABILITY</text>
+  <text class="t-title" x="454" y="206">Scheduling &amp; workload</text>
+  <text class="t-sub" x="454" y="226">churn 31% · no coverage</text>
+  <circle class="hot-dot" cx="624" cy="180" r="5"/>
+  </g>
+  <g class="node core" data-id="competencies" tabindex="0" aria-label="Skills &amp; expertise"><rect x="662" y="166" width="196" height="80" rx="8"/>
+  <text class="t-kind" x="674" y="184">CORE CAPABILITY</text>
+  <text class="t-title" x="674" y="206">Skills &amp; expertise</text>
+  <text class="t-sub" x="674" y="226">churn 10% · no coverage</text>
+  </g>
+  <g class="node core base" data-id="identity" tabindex="0" aria-label="Sign-in &amp; accounts"><rect x="222" y="270" width="636" height="64" rx="8"/>
+  <text class="t-title" x="234" y="298">Sign-in &amp; accounts</text>
+  <text class="t-sub" x="234" y="318">churn 3% · no coverage</text>
+  </g>
+  <g class="node data" data-id="db" tabindex="0" aria-label="Supabase Postgres"><rect x="914" y="122" width="206" height="228" rx="8"/>
+  <text class="t-kind" x="926" y="140">DATASTORE</text>
+  <text class="t-title" x="926" y="162">Supabase Postgres</text>
+  <line class="rule" x1="926" y1="166" x2="1108" y2="166"/>
+  <text class="t-mono" x="926" y="180">profiles</text><text class="t-sub" x="1108" y="180" text-anchor="end">Sign-in &amp; accounts</text>
+  <text class="t-mono" x="926" y="198">team_members</text><text class="t-sub" x="1108" y="198" text-anchor="end">Team roster</text>
+  <text class="t-mono" x="926" y="216">time_off</text><text class="t-sub" x="1108" y="216" text-anchor="end">Team roster</text>
+  <text class="t-mono" x="926" y="234">projects</text><text class="t-sub" x="1108" y="234" text-anchor="end">Projects</text>
+  <text class="t-mono" x="926" y="252">allocations</text><text class="t-sub" x="1108" y="252" text-anchor="end">Scheduling &amp; workload</text>
+  <text class="t-mono" x="926" y="270">competency_tags</text><text class="t-sub" x="1108" y="270" text-anchor="end">Skills &amp; expertise</text>
+  <text class="t-mono" x="926" y="288">team_member_competencies</text><text class="t-sub" x="1108" y="288" text-anchor="end">Skills &amp; expertise</text>
+  <text class="t-mono" x="926" y="306">project_experience</text><text class="t-sub" x="1108" y="306" text-anchor="end">Skills &amp; expertise</text>
+  <text class="t-mono" x="926" y="324">project_experience_tags</text><text class="t-sub" x="1108" y="324" text-anchor="end">Skills &amp; expertise</text>
+  </g>
+  <g class="node actor" data-id="teamMember" tabindex="0" aria-label="Team member"><rect x="16" y="16" width="150" height="72" rx="8"/>
+  <text class="t-kind" x="28" y="34">ACTOR</text>
+  <text class="t-title" x="28" y="56">Team member</text>
+  </g>
+  <g class="node actor" data-id="llmAgent" tabindex="0" aria-label="AI agent"><rect x="16" y="108" width="150" height="72" rx="8"/>
+  <text class="t-kind" x="28" y="126">ACTOR</text>
+  <text class="t-title" x="28" y="148">AI agent</text>
+  </g>
+</svg>
+<script type="application/json" id="arch-graph">{"boxes":{"publicApi":{"x":222,"y":62,"w":196,"h":80},"shell":{"x":442,"y":62,"w":196,"h":80},"team":{"x":662,"y":62,"w":196,"h":80},"projects":{"x":222,"y":166,"w":196,"h":80},"timeline":{"x":442,"y":166,"w":196,"h":80},"competencies":{"x":662,"y":166,"w":196,"h":80},"identity":{"x":222,"y":270,"w":636,"h":64,"base":true},"db":{"x":914,"y":122,"w":206,"h":228,"lines":[["profiles","identity"],["team_members","team"],["time_off","team"],["projects","projects"],["allocations","timeline"],["competency_tags","competencies"],["team_member_competencies","competencies"],["project_experience","competencies"],["project_experience_tags","competencies"]]},"teamMember":{"x":16,"y":16,"w":150,"h":72},"llmAgent":{"x":16,"y":108,"w":150,"h":72}},"groups":{"core":["publicApi","shell","team","projects","timeline","competencies","identity"]},"edges":[{"s":"shell","t":"identity","internal":true},{"s":"identity","t":"timeline","internal":true},{"s":"shell","t":"timeline","internal":true},{"s":"shell","t":"team","internal":true},{"s":"shell","t":"projects","internal":true},{"s":"shell","t":"competencies","internal":true},{"s":"team","t":"timeline","internal":true},{"s":"team","t":"identity","internal":true},{"s":"projects","t":"identity","internal":true},{"s":"timeline","t":"projects","internal":true},{"s":"timeline","t":"competencies","internal":true},{"s":"competencies","t":"team","internal":true},{"s":"competencies","t":"projects","internal":true},{"s":"competencies","t":"identity","internal":true},{"s":"publicApi","t":"team","internal":true},{"s":"publicApi","t":"competencies","internal":true},{"s":"publicApi","t":"identity","internal":true},{"s":"core","t":"db","internal":false}],"L":{"PAD":16,"HEAD":30,"M":18}}</script>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h2>Where the risk is</h2>
+    <p class="sub">Test-gap score = criticality weight × churn share × (1 − line coverage), from the latest snapshot.</p>
+    <div class="tablebox"><table>
+      <thead><tr><th>Element</th><th>Criticality</th><th>Churn (90 d)</th><th>Coverage</th><th>Test-gap</th></tr></thead>
+      <tbody>
+          <tr><td>Sign-in &amp; accounts</td><td>high</td><td class="num">3%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>App navigation &amp; shared design</td><td>medium</td><td class="num">47%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>Team roster</td><td>high</td><td class="num">21%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>Projects</td><td>medium</td><td class="num">2%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>Scheduling &amp; workload</td><td>high</td><td class="num">31%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>Skills &amp; expertise</td><td>medium</td><td class="num">10%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+          <tr><td>Public data API</td><td>medium</td><td class="num">9%</td><td class="num">no coverage</td><td><span class="pill m">unknown</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>All findings</h2>
+    <p class="sub">From context/architecture/findings.md, with evidence.</p>
+    <div class="filters" role="group" aria-label="Filter findings by severity">
+      <button type="button" id="f-all" data-f="all" aria-pressed="true">All (3)</button>
+      <button type="button" id="f-h" data-f="h" aria-pressed="false">high (0)</button>
+      <button type="button" id="f-m" data-f="m" aria-pressed="false">medium (1)</button>
+      <button type="button" id="f-l" data-f="l" aria-pressed="false">low (2)</button>
+    </div>
+    <div class="list" id="list">
+      <article class="item" data-s="m">
+        <div class="meta"><span class="pill m">medium</span><span class="ids">AR-001</span></div>
+        <div><h3>No automated tests protect the planner's scheduling and roster features</h3><p>The tool that checks how much of the app is covered by automated tests isn't set up yet, so we can't measure test coverage for the scheduling calendar or the team roster — the two areas that change most often.</p><p class="fix">Add an automated test-coverage check, then write tests for the workload/utilization calculations and the scheduling logic first, since those change the most and matter the most.</p></div>
+      </article>
+      <article class="item" data-s="l">
+        <div class="meta"><span class="pill l">low</span><span class="ids">AR-002</span></div>
+        <div><h3>No automatic check for unused code</h3><p>There's no tool installed that flags files or dependencies nobody uses anymore. Nothing unused was found this time, but leftover code could go unnoticed until one is added.</p><p class="fix">Add a dead-code checker (a one-time setup task) so unused files and dependencies get flagged automatically going forward.</p></div>
+      </article>
+      <article class="item" data-s="l">
+        <div class="meta"><span class="pill l">low</span><span class="ids">AR-003</span></div>
+        <div><h3>Shared helper code is tangled up with scheduling logic</h3><p>A shared code file mixes generic, app-wide helpers with logic that really belongs to the scheduling calendar. This makes it look like the whole app changes every time someone tweaks scheduling, which makes it harder to see where the real risk and activity is.</p><p class="fix">Split that file into a generic part and a scheduling-specific part, so future reports show accurately which feature is actually changing.</p></div>
+      </article>
+    </div>
+  </section>
+  <section class="method">
+    <h2>Method</h2>
+    <ul><li>Model: context/architecture/*.c4 (LikeC4), ownership per capability and domain.</li><li>Churn: 58 non-noise code commits in 90 days (merges, koda autosaves, lockfiles and docs excluded).</li><li>Coverage: V8 json-summary per package; boundaries: rs-arch-audit facts over the whole repo.</li></ul>
+  </section>
+</div>
+<script>(function () {
+  var buttons = document.querySelectorAll('.filters button');
+  var items = document.querySelectorAll('#list .item');
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = b.getAttribute('data-f');
+      buttons.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      items.forEach(function (it) { it.hidden = f !== 'all' && it.getAttribute('data-s') !== f; });
+    });
+  });
+})();</script>
+<script>(function () {
+  var svg = document.getElementById('arch-svg');
+  var vp = document.getElementById('arch-viewport');
+  if (!svg || !vp) return;
+  var base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  var vb = base.slice();
+  var MAX = 8;
+  var level = document.getElementById('zoom-level');
+  function scale() { return base[2] / vb[2]; }
+  function clamp() {
+    var s = Math.min(MAX, Math.max(1, scale()));
+    vb[2] = base[2] / s; vb[3] = base[3] / s;
+    vb[0] = Math.min(base[0] + base[2] - vb[2], Math.max(base[0], vb[0]));
+    vb[1] = Math.min(base[1] + base[3] - vb[3], Math.max(base[1], vb[1]));
+  }
+  function apply() {
+    clamp();
+    svg.setAttribute('viewBox', vb.join(' '));
+    level.textContent = Math.round(scale() * 100) + '%';
+    vp.classList.toggle('zoomed', scale() > 1.001);
+  }
+  function toSvg(clientX, clientY) {
+    var r = svg.getBoundingClientRect();
+    return [vb[0] + (clientX - r.left) / r.width * vb[2], vb[1] + (clientY - r.top) / r.height * vb[3]];
+  }
+  function zoomAt(factor, p) {
+    var s = Math.min(MAX, Math.max(1, scale() * factor));
+    var nw = base[2] / s, nh = base[3] / s;
+    vb[0] = p[0] - (p[0] - vb[0]) * nw / vb[2];
+    vb[1] = p[1] - (p[1] - vb[1]) * nh / vb[3];
+    vb[2] = nw; vb[3] = nh;
+    apply();
+  }
+  function centre() { return [vb[0] + vb[2] / 2, vb[1] + vb[3] / 2]; }
+  document.getElementById('zoom-in').addEventListener('click', function () { zoomAt(1.4, centre()); });
+  document.getElementById('zoom-out').addEventListener('click', function () { zoomAt(1 / 1.4, centre()); });
+  document.getElementById('zoom-fit').addEventListener('click', function () { vb = base.slice(); apply(); });
+  vp.addEventListener('wheel', function (e) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    zoomAt(Math.exp(-e.deltaY * 0.0025), toSvg(e.clientX, e.clientY));
+  }, { passive: false });
+  var pointers = new Map(), last = null, pinch = null;
+  vp.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'touch' && scale() <= 1.001 && pointers.size === 0) { pointers.set(e.pointerId, [e.clientX, e.clientY]); return; }
+    pointers.set(e.pointerId, [e.clientX, e.clientY]);
+    try { vp.setPointerCapture(e.pointerId); } catch (err) {}
+    last = [e.clientX, e.clientY];
+    vp.classList.add('dragging');
+  });
+  vp.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      var d = Math.hypot(pts[0][0] - pts[1][0], pts[0][1] - pts[1][1]);
+      var mid = toSvg((pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2);
+      if (pinch) zoomAt(d / pinch, mid);
+      pinch = d;
+      e.preventDefault();
+      return;
+    }
+    if (!last || scale() <= 1.001) return;
+    var r = svg.getBoundingClientRect();
+    vb[0] -= (e.clientX - last[0]) / r.width * vb[2];
+    vb[1] -= (e.clientY - last[1]) / r.height * vb[3];
+    last = [e.clientX, e.clientY];
+    apply();
+  });
+  function end(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = null;
+    if (pointers.size === 0) { last = null; vp.classList.remove('dragging'); }
+  }
+  vp.addEventListener('pointerup', end);
+  vp.addEventListener('pointercancel', end);
+  vp.addEventListener('keydown', function (e) {
+    var step = 0.1;
+    if (e.key === '+' || e.key === '=') zoomAt(1.4, centre());
+    else if (e.key === '-' || e.key === '_') zoomAt(1 / 1.4, centre());
+    else if (e.key === '0') { vb = base.slice(); apply(); }
+    else if (e.key === 'ArrowLeft') { vb[0] -= vb[2] * step; apply(); }
+    else if (e.key === 'ArrowRight') { vb[0] += vb[2] * step; apply(); }
+    else if (e.key === 'ArrowUp') { vb[1] -= vb[3] * step; apply(); }
+    else if (e.key === 'ArrowDown') { vb[1] += vb[3] * step; apply(); }
+    else return;
+    e.preventDefault();
+  });
+  apply();
+})();</script>
+<script>(function () {
+  var svg = document.getElementById('arch-svg');
+  var graphEl = document.getElementById('arch-graph');
+  if (!svg || !graphEl) return;
+  function routeAll(boxes, edges, opts) {
+  var o = opts || {};
+  var M = o.margin || 28, BEND = o.bend || 260, SHARE = o.share || 240;
+  var ids = o.obstacles || Object.keys(boxes);
+  var obs = ids.map(function (id) { return boxes[id]; });
+  function mid(b) { return [b.x + b.w / 2, b.y + b.h / 2]; }
+  // The side pair follows the larger gap between the two boxes, so a box moved
+  // to the other side of its neighbour re-attaches from the facing side.
+  var sides = edges.map(function (e) {
+    var a = boxes[e.s], b = boxes[e.t], ca = mid(a), cb = mid(b);
+    var gapV = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+    var gapH = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w));
+    var vertical = gapV > 2 * M && gapV >= gapH ? true : gapH > 2 * M ? false : Math.abs(cb[1] - ca[1]) > Math.abs(cb[0] - ca[0]);
+    if (vertical) return cb[1] >= ca[1] ? ['bottom', 'top'] : ['top', 'bottom'];
+    return cb[0] >= ca[0] ? ['right', 'left'] : ['left', 'right'];
+  });
+  var slots = {};
+  edges.forEach(function (e, i) {
+    var k1 = e.s + '|' + sides[i][0], k2 = e.t + '|' + sides[i][1];
+    (slots[k1] = slots[k1] || []).push({ i: i, end: 's', other: e.t });
+    (slots[k2] = slots[k2] || []).push({ i: i, end: 't', other: e.s });
+  });
+  var port = {};
+  Object.keys(slots).forEach(function (k) {
+    var cut = k.lastIndexOf('|'), b = boxes[k.slice(0, cut)], side = k.slice(cut + 1), list = slots[k];
+    var horiz = side === 'top' || side === 'bottom';
+    list.sort(function (u, v) { var cu = mid(boxes[u.other]), cv = mid(boxes[v.other]); return horiz ? cu[0] - cv[0] : cu[1] - cv[1]; });
+    list.forEach(function (sl, j) {
+      var span = horiz ? b.w : b.h, c = (horiz ? b.x : b.y) + span * 0.15 + span * 0.7 * (j + 1) / (list.length + 1);
+      var p, st, dir;
+      if (side === 'top') { p = [c, b.y]; st = [c, b.y - M]; dir = 3; }
+      else if (side === 'bottom') { p = [c, b.y + b.h]; st = [c, b.y + b.h + M]; dir = 1; }
+      else if (side === 'left') { p = [b.x, c]; st = [b.x - M, c]; dir = 2; }
+      else { p = [b.x + b.w, c]; st = [b.x + b.w + M, c]; dir = 0; }
+      port[sl.i + sl.end] = { p: p, st: st, dir: dir };
+    });
+  });
+  var cl = M * 0.5;
+  function hits(x1, y1, x2, y2) {
+    for (var k = 0; k < obs.length; k++) {
+      var b = obs[k];
+      if (Math.max(x1, x2) > b.x - cl && Math.min(x1, x2) < b.x + b.w + cl && Math.max(y1, y2) > b.y - cl && Math.min(y1, y2) < b.y + b.h + cl) return true;
+    }
+    return false;
+  }
+  function lanes(vals) {
+    vals.sort(function (a, b) { return a - b; });
+    var out = [];
+    for (var i = 0; i < vals.length; i++) {
+      if (!out.length || vals[i] - out[out.length - 1] > 1) out.push(vals[i]);
+      if (i + 1 < vals.length && vals[i + 1] - vals[i] > 3 * M) out.push((vals[i] + vals[i + 1]) / 2);
+    }
+    return out;
+  }
+  var baseX = [], baseY = [];
+  obs.forEach(function (b) { baseX.push(b.x - M, b.x + b.w + M); baseY.push(b.y - M, b.y + b.h + M); });
+  var used = {};
+  var DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+  function route(i) {
+    var S = port[i + 's'], T = port[i + 't'];
+    var xs = lanes(baseX.concat([S.st[0], T.st[0]])), ys = lanes(baseY.concat([S.st[1], T.st[1]]));
+    var nx = xs.length, ny = ys.length;
+    function idx(xi, yi) { return yi * nx + xi; }
+    var si = idx(xs.indexOf(S.st[0]), ys.indexOf(S.st[1])), ti = idx(xs.indexOf(T.st[0]), ys.indexOf(T.st[1]));
+    var inside = new Uint8Array(nx * ny);
+    for (var yi = 0; yi < ny; yi++) for (var xi = 0; xi < nx; xi++) {
+      var q = idx(xi, yi);
+      if (q !== si && q !== ti && hits(xs[xi], ys[yi], xs[xi], ys[yi])) inside[q] = 1;
+    }
+    var N = nx * ny * 4, dist = new Float64Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1);
+    var heap = [];
+    function push(c, st) { heap.push([c, st]); var j = heap.length - 1; while (j > 0) { var pj = (j - 1) >> 1; if (heap[pj][0] <= heap[j][0]) break; var tmp = heap[pj]; heap[pj] = heap[j]; heap[j] = tmp; j = pj; } }
+    function pop() { var top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; var j = 0; for (;;) { var l = 2 * j + 1, r = l + 1, m = j; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === j) break; var tmp = heap[m]; heap[m] = heap[j]; heap[j] = tmp; j = m; } } return top; }
+    var s0 = si * 4 + S.dir; dist[s0] = 0; push(0, s0);
+    var endDir = (T.dir + 2) % 4, best = -1;
+    while (heap.length) {
+      var cur = pop(), c = cur[0], st = cur[1];
+      if (c > dist[st]) continue;
+      var node = st >> 2, d = st & 3;
+      if (node === ti) { best = st; break; }
+      var x0 = node % nx, y0 = (node / nx) | 0;
+      for (var nd = 0; nd < 4; nd++) {
+        if (nd === (d + 2) % 4) continue;
+        var x1 = x0 + DX[nd], y1 = y0 + DY[nd];
+        if (x1 < 0 || y1 < 0 || x1 >= nx || y1 >= ny) continue;
+        var n1 = idx(x1, y1);
+        if (inside[n1]) continue;
+        var ax = xs[x0], ay = ys[y0], bx = xs[x1], by = ys[y1];
+        if (hits(ax, ay, bx, by) && n1 !== ti && node !== si) continue;
+        var key = Math.round(Math.min(ax, bx)) + ',' + Math.round(Math.min(ay, by)) + ',' + Math.round(Math.max(ax, bx)) + ',' + Math.round(Math.max(ay, by));
+        var cost = c + Math.abs(bx - ax) + Math.abs(by - ay) + (nd !== d ? BEND : 0) + (used[key] || 0) * SHARE;
+        if (n1 === ti && nd !== endDir) cost += BEND;
+        var ns = n1 * 4 + nd;
+        if (cost < dist[ns]) { dist[ns] = cost; prev[ns] = st; push(cost, ns); }
+      }
+    }
+    var pts = [];
+    if (best < 0) {
+      var my = (S.st[1] + T.st[1]) / 2;
+      pts = [S.st, [S.st[0], my], [T.st[0], my], T.st];
+    } else {
+      for (var k = best; k >= 0; k = prev[k]) { var nn = k >> 2; pts.push([xs[nn % nx], ys[(nn / nx) | 0]]); }
+      pts.reverse();
+    }
+    for (var u = 0; u + 1 < pts.length; u++) {
+      var p1 = pts[u], p2 = pts[u + 1];
+      var kk = Math.round(Math.min(p1[0], p2[0])) + ',' + Math.round(Math.min(p1[1], p2[1])) + ',' + Math.round(Math.max(p1[0], p2[0])) + ',' + Math.round(Math.max(p1[1], p2[1]));
+      used[kk] = (used[kk] || 0) + 1;
+    }
+    var all = [S.p].concat(pts, [T.p]), out = [all[0]];
+    for (var w = 1; w < all.length; w++) {
+      var a = out[out.length - 1], b = all[w], n2 = all[w + 1];
+      if (a[0] === b[0] && a[1] === b[1]) continue;
+      if (n2 && ((a[0] === b[0] && b[0] === n2[0]) || (a[1] === b[1] && b[1] === n2[1]))) continue;
+      out.push(b);
+    }
+    return out;
+  }
+  // Longer edges first: they have the fewest good corridors.
+  var order = edges.map(function (_, i) { return i; }).sort(function (a, b) {
+    var A = port[a + 's'].st, B = port[a + 't'].st, C = port[b + 's'].st, D = port[b + 't'].st;
+    return (Math.abs(D[0] - C[0]) + Math.abs(D[1] - C[1])) - (Math.abs(B[0] - A[0]) + Math.abs(B[1] - A[1]));
+  });
+  var res = new Array(edges.length);
+  order.forEach(function (i) { res[i] = route(i); });
+  return res;
+}
+  function pathD(pts, r) {
+  var d = 'M' + pts[0][0] + ',' + pts[0][1];
+  for (var i = 1; i < pts.length; i++) {
+    var p = pts[i], a = pts[i - 1], n = pts[i + 1];
+    if (!n) { d += ' L' + p[0] + ',' + p[1]; break; }
+    var l1 = Math.hypot(p[0] - a[0], p[1] - a[1]), l2 = Math.hypot(n[0] - p[0], n[1] - p[1]);
+    var k = Math.min(r, l1 / 2, l2 / 2);
+    var b1 = [p[0] - (p[0] - a[0]) / (l1 || 1) * k, p[1] - (p[1] - a[1]) / (l1 || 1) * k];
+    var b2 = [p[0] + (n[0] - p[0]) / (l2 || 1) * k, p[1] + (n[1] - p[1]) / (l2 || 1) * k];
+    d += ' L' + b1[0] + ',' + b1[1] + ' Q' + p[0] + ',' + p[1] + ' ' + b2[0] + ',' + b2[1];
+  }
+  return d;
+}
+  function labelAt(pts) {
+  var best = 0, at = pts[0];
+  for (var i = 0; i + 1 < pts.length; i++) {
+    var l = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]);
+    if (l > best) { best = l; at = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; }
+  }
+  return at;
+}
+  var KEY = "rs-arch-layout:RS Planner:client";
+  var graph = JSON.parse(graphEl.textContent), P = graph.L;
+  var reset = document.getElementById('layout-reset');
+  var toggle = document.getElementById('show-internal');
+  var nodes = {};
+  svg.querySelectorAll('g.node[data-id]').forEach(function (g) {
+    var id = g.getAttribute('data-id');
+    if (graph.boxes[id]) nodes[id] = { g: g, dx: 0, dy: 0 };
+  });
+  var groupEls = {};
+  svg.querySelectorAll('g.group[data-gid]').forEach(function (g) { groupEls[g.getAttribute('data-gid')] = g; });
+  var paths = {}, labels = {};
+  svg.querySelectorAll('path.edge[data-eid]').forEach(function (p) { paths[p.getAttribute('data-eid')] = p; });
+  svg.querySelectorAll('g[data-eid]').forEach(function (g) { labels[g.getAttribute('data-eid')] = g; });
+  var pending = false;
+  function redraw() {
+    pending = false;
+    var boxes = {}, leaves = Object.keys(graph.boxes);
+    leaves.forEach(function (id) {
+      var b = graph.boxes[id], n = nodes[id] || { dx: 0, dy: 0 };
+      boxes[id] = { x: b.x + n.dx, y: b.y + n.dy, w: b.w, h: b.h };
+      if (nodes[id]) nodes[id].g.setAttribute('transform', n.dx || n.dy ? 'translate(' + n.dx + ' ' + n.dy + ')' : '');
+    });
+    Object.keys(graph.groups).forEach(function (gid) {
+      var cs = graph.groups[gid].map(function (id) { return boxes[id]; });
+      var x = Math.min.apply(null, cs.map(function (b) { return b.x; })) - P.PAD;
+      var y = Math.min.apply(null, cs.map(function (b) { return b.y; })) - P.PAD - P.HEAD;
+      var r = Math.max.apply(null, cs.map(function (b) { return b.x + b.w; })) + P.PAD;
+      var bt = Math.max.apply(null, cs.map(function (b) { return b.y + b.h; })) + P.PAD;
+      boxes[gid] = { x: x, y: y, w: r - x, h: bt - y };
+      var el = groupEls[gid];
+      if (el) {
+        var rect = el.querySelector('rect'), text = el.querySelector('text');
+        rect.setAttribute('x', x); rect.setAttribute('y', y); rect.setAttribute('width', r - x); rect.setAttribute('height', bt - y);
+        text.setAttribute('x', x + 16); text.setAttribute('y', y + 21);
+      }
+    });
+    var showInternal = toggle && toggle.checked;
+    var vis = [];
+    graph.edges.forEach(function (e, i) {
+      var on = !e.internal || showInternal;
+      if (paths[i]) paths[i].hidden = !on;
+      if (labels[i]) labels[i].hidden = !on;
+      if (on) vis.push(i);
+    });
+    var routes = routeAll(boxes, vis.map(function (i) { return graph.edges[i]; }), { obstacles: leaves, margin: P.M, bend: 120, share: 110 });
+    vis.forEach(function (i, k) {
+      if (paths[i]) paths[i].setAttribute('d', pathD(routes[k], 6));
+      if (labels[i]) { var at = labelAt(routes[k]); labels[i].setAttribute('transform', 'translate(' + at[0] + ' ' + at[1] + ')'); }
+    });
+    reset.hidden = !Object.keys(nodes).some(function (id) { return nodes[id].dx || nodes[id].dy; });
+  }
+  function schedule() { if (!pending) { pending = true; requestAnimationFrame(redraw); } }
+  function save() {
+    var o = {};
+    Object.keys(nodes).forEach(function (id) { if (nodes[id].dx || nodes[id].dy) o[id] = [nodes[id].dx, nodes[id].dy]; });
+    try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+  }
+  var restored = false;
+  try {
+    var stored = JSON.parse(localStorage.getItem(KEY) || '{}');
+    Object.keys(stored).forEach(function (id) { if (nodes[id]) { nodes[id].dx = stored[id][0]; nodes[id].dy = stored[id][1]; restored = true; } });
+  } catch (e) {}
+  function units() { var vb = svg.viewBox.baseVal, r = svg.getBoundingClientRect(); return vb.width / r.width; }
+  Object.keys(nodes).forEach(function (id) {
+    var n = nodes[id], start = null;
+    n.g.addEventListener('pointerdown', function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.stopPropagation();
+      try { n.g.setPointerCapture(e.pointerId); } catch (err) {}
+      start = { x: e.clientX, y: e.clientY, dx: n.dx, dy: n.dy, u: units() };
+      n.g.classList.add('moving');
+    });
+    n.g.addEventListener('pointermove', function (e) {
+      if (!start) return;
+      n.dx = start.dx + (e.clientX - start.x) * start.u;
+      n.dy = start.dy + (e.clientY - start.y) * start.u;
+      schedule();
+    });
+    function end() { if (!start) return; start = null; n.g.classList.remove('moving'); save(); if (hover && hover !== id) highlight(hover); }
+    n.g.addEventListener('pointerup', end);
+    n.g.addEventListener('pointercancel', end);
+    n.g.addEventListener('keydown', function (e) {
+      var step = e.shiftKey ? 40 : 10, k = e.key;
+      if (k === 'ArrowLeft') n.dx -= step; else if (k === 'ArrowRight') n.dx += step;
+      else if (k === 'ArrowUp') n.dy -= step; else if (k === 'ArrowDown') n.dy += step;
+      else return;
+      e.preventDefault(); e.stopPropagation(); schedule(); save();
+    });
+  });
+  reset.addEventListener('click', function () {
+    Object.keys(nodes).forEach(function (id) { nodes[id].dx = 0; nodes[id].dy = 0; });
+    redraw();
+    try { localStorage.removeItem(KEY); } catch (e) {}
+  });
+  if (toggle) toggle.addEventListener('change', redraw);
+
+  // Highlight a box with every visible relation and neighbour; dim the rest.
+  var hover = null;
+  function highlight(id) {
+    hover = id;
+    svg.classList.toggle('hl', !!id);
+    svg.querySelectorAll('.on, .focus').forEach(function (el) { el.classList.remove('on'); el.classList.remove('focus'); });
+    if (!id) return;
+    var near = {}; near[id] = true;
+    var showInternal = toggle && toggle.checked;
+    graph.edges.forEach(function (e, i) {
+      if (e.internal && !showInternal) return;
+      if (e.s !== id && e.t !== id) return;
+      near[e.s] = true; near[e.t] = true;
+      if (paths[i]) paths[i].classList.add('on');
+      if (labels[i]) labels[i].classList.add('on');
+    });
+    Object.keys(near).forEach(function (k) {
+      if (nodes[k]) nodes[k].g.classList.add('on');
+      if (groupEls[k]) groupEls[k].classList.add('on');
+    });
+    if (nodes[id]) nodes[id].g.classList.add('focus');
+  }
+  Object.keys(nodes).forEach(function (id) {
+    var g = nodes[id].g;
+    g.addEventListener('pointerenter', function () { highlight(id); });
+    g.addEventListener('pointerleave', function () { if (hover === id && !g.classList.contains('moving')) highlight(null); });
+    g.addEventListener('focus', function () { highlight(id); });
+    g.addEventListener('blur', function () { if (hover === id) highlight(null); });
+  });
+  if (toggle) toggle.addEventListener('change', function () { if (hover) highlight(hover); });
+
+  if (restored) redraw(); else reset.hidden = true;
+})();</script>

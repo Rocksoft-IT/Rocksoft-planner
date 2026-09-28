@@ -1,0 +1,58 @@
+// rs-arch-map specification — copied verbatim into context/architecture/.
+// The kinds and tags below are the vocabulary of the boundary policy
+// (rs-arch-audit/references/boundary-policy.md). Do not edit per repo.
+
+specification {
+  element actor {
+    style {
+      shape person
+      color secondary
+    }
+  }
+  element app {
+    style {
+      color muted
+    }
+  }
+  element capability {
+    notation 'Core capability'
+    style {
+      color green
+    }
+  }
+  element domain {
+    notation 'Business domain (plugin)'
+    style {
+      color amber
+    }
+  }
+  element component
+  element external {
+    notation 'External service'
+    style {
+      color slate
+    }
+  }
+  element store {
+    style {
+      shape storage
+      color gray
+    }
+  }
+
+  relationship calls
+  relationship reads
+  relationship writes
+  relationship redirects {
+    line dotted
+  }
+  relationship uses
+
+  tag planned
+  tag dormant
+  tag legacy
+  tag exception
+  tag hot
+  tag untested
+  tag orphan
+}
