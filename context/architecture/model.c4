@@ -32,6 +32,7 @@ model {
       ownsCollections ['profiles']
       interface ['src/lib/supabase/server.ts#createClient', 'src/lib/supabase/client.ts#createClient']
       criticality 'high'
+      clientTitle 'Sign-in & accounts'
     }
   }
 
@@ -45,6 +46,7 @@ model {
       ownsRoutes ['/']
       interface ['src/lib/utils.ts', 'src/lib/types.ts', 'src/components/ui/Modal.tsx']
       criticality 'medium'
+      clientTitle 'App navigation & shared design'
     }
   }
 
@@ -58,6 +60,7 @@ model {
       ownsRoutes ['/people']
       ownsCollections ['team_members', 'time_off']
       criticality 'high'
+      clientTitle 'Team roster'
     }
   }
 
@@ -70,6 +73,7 @@ model {
       ownsRoutes ['/projects']
       ownsCollections ['projects']
       criticality 'medium'
+      clientTitle 'Projects'
     }
   }
 
@@ -79,6 +83,7 @@ model {
       ownsRoutes ['/timeline']
       ownsCollections ['allocations']
       criticality 'high'
+      clientTitle 'Scheduling & workload'
     }
   }
 
@@ -91,6 +96,7 @@ model {
       ownsRoutes ['/competencies']
       ownsCollections ['competency_tags', 'team_member_competencies', 'project_experience', 'project_experience_tags']
       criticality 'medium'
+      clientTitle 'Skills & expertise'
     }
   }
 
@@ -110,6 +116,7 @@ model {
         'GET /api/competencies', 'GET /api/search/experts', 'POST /api/search/experts'
       ]
       criticality 'medium'
+      clientTitle 'Public data API'
     }
   }
 
