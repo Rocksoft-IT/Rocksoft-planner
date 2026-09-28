@@ -1,0 +1,158 @@
+// Architecture model — owned by rs-arch-map, edited by humans too.
+// Contract: rs-arch-map/references/architecture-contract.md (§2 kinds, §3
+// ownership metadata, §4 relationships and exceptions).
+//
+// RS Planner is a single internal tool (no plugin/tenant verticals), so the
+// model has core capabilities only, no `domain` elements. If a swappable,
+// tenant-specific module appears later, split it out as a domain then.
+
+model {
+
+  // --- actors ---------------------------------------------------------------
+  teamMember = actor 'Team member' {
+    description 'A Rocksoft employee who signs in to plan projects, allocations and skills'
+  }
+  llmAgent = actor 'AI agent' {
+    description 'An LLM-based tool (e.g. an assistant) that looks up experts through the MCP server'
+  }
+
+  // --- deployables (deployment view, not ownership) --------------------------
+  site = app 'RS Planner web app' {
+    technology 'Next.js 16, React 19, Supabase'
+  }
+  competencyMcp = app 'Competency MCP server' {
+    technology 'Node.js, @modelcontextprotocol/sdk'
+  }
+
+  // --- core capabilities -----------------------------------------------------
+  identity = capability 'Identity & session' {
+    metadata {
+      ownsPaths ['src/app/auth/**', 'src/proxy.ts', 'src/lib/supabase/**']
+      ownsRoutes ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
+      ownsCollections ['profiles']
+      interface ['src/lib/supabase/server.ts#createClient', 'src/lib/supabase/client.ts#createClient']
+      criticality 'high'
+    }
+  }
+
+  shell = capability 'App shell & shared UI' {
+    metadata {
+      ownsPaths [
+        'src/app/layout.tsx', 'src/app/page.tsx', 'src/app/(dashboard)/layout.tsx',
+        'src/app/globals.css', 'src/components/Sidebar.tsx', 'src/components/ThemeProvider.tsx',
+        'src/components/ui/Modal.tsx', 'src/lib/utils.ts', 'src/lib/types.ts'
+      ]
+      ownsRoutes ['/']
+      interface ['src/lib/utils.ts', 'src/lib/types.ts', 'src/components/ui/Modal.tsx']
+      criticality 'medium'
+    }
+  }
+
+  team = capability 'Team roster & availability' {
+    metadata {
+      ownsPaths [
+        'src/app/(dashboard)/people/**', 'src/components/people/**',
+        'src/components/ui/PeopleFilter.tsx', 'src/components/ui/RoleSelect.tsx',
+        'src/components/ui/ContractTypeBadge.tsx'
+      ]
+      ownsRoutes ['/people']
+      ownsCollections ['team_members', 'time_off']
+      criticality 'high'
+    }
+  }
+
+  projects = capability 'Projects' {
+    metadata {
+      ownsPaths [
+        'src/app/(dashboard)/projects/**', 'src/components/projects/**',
+        'src/components/ui/ProjectFilter.tsx', 'src/components/ui/ColorPicker.tsx'
+      ]
+      ownsRoutes ['/projects']
+      ownsCollections ['projects']
+      criticality 'medium'
+    }
+  }
+
+  timeline = capability 'Timeline scheduling' {
+    metadata {
+      ownsPaths ['src/app/(dashboard)/timeline/**', 'src/components/timeline/**', 'src/components/ui/MonthPicker.tsx']
+      ownsRoutes ['/timeline']
+      ownsCollections ['allocations']
+      criticality 'high'
+    }
+  }
+
+  competencies = capability 'Skills & competencies' {
+    metadata {
+      ownsPaths [
+        'src/app/(dashboard)/competencies/**', 'src/components/competencies/**',
+        'src/components/ui/SkillsFilter.tsx', 'src/lib/competencies.ts'
+      ]
+      ownsRoutes ['/competencies']
+      ownsCollections ['competency_tags', 'team_member_competencies', 'project_experience', 'project_experience_tags']
+      criticality 'medium'
+    }
+  }
+
+  publicApi = capability 'Public competency API' {
+    metadata {
+      ownsPaths ['src/app/api/**', 'src/lib/api/auth.ts', 'mcp/competency/**']
+      ownsFunctions [
+        'GET /api/employees', 'GET /api/employees/[id]/competencies',
+        'GET /api/competencies', 'GET /api/search/experts', 'POST /api/search/experts'
+      ]
+      interface [
+        'src/app/api/employees/route.ts', 'src/app/api/employees/[id]/competencies/route.ts',
+        'src/app/api/competencies/route.ts', 'src/app/api/search/experts/route.ts'
+      ]
+      externalCallers [
+        'GET /api/employees', 'GET /api/employees/[id]/competencies',
+        'GET /api/competencies', 'GET /api/search/experts', 'POST /api/search/experts'
+      ]
+      criticality 'medium'
+    }
+  }
+
+  // --- externals and stores ----------------------------------------------------
+  db = store 'Supabase Postgres'
+
+  // --- relationships -----------------------------------------------------------
+  teamMember -[uses]-> site 'plans projects, allocations and skills'
+  llmAgent -[calls]-> competencyMcp 'looks up experts from a project brief'
+  competencyMcp -[calls]-> publicApi 'fetches employees, competencies and expert search over HTTP'
+
+  shell -[reads]-> identity 'reads the signed-in profile for the sidebar and theme'
+  identity -[redirects]-> timeline 'sends signed-in users to the timeline after login'
+  shell -[redirects]-> timeline 'the root path redirects to the timeline'
+  shell -[uses]-> team 'sidebar navigation link'
+  shell -[uses]-> projects 'sidebar navigation link'
+  shell -[uses]-> competencies 'sidebar navigation link'
+
+  team -[reads]-> timeline 'shows utilization on the roster'
+  team -[uses]-> identity 'reads the signed-in session'
+  team -[uses]-> shell 'shared types and utilities'
+
+  projects -[uses]-> identity 'reads the signed-in session'
+  projects -[uses]-> shell 'shared types and utilities'
+
+  timeline -[reads]-> team 'looks up the roster and time off for scheduling'
+  timeline -[reads]-> projects 'links allocations to projects'
+  timeline -[uses]-> competencies 'filters the schedule by skill'
+  timeline -[uses]-> identity 'reads the signed-in session'
+  timeline -[uses]-> shell 'shared types and utilities'
+
+  competencies -[reads]-> team 'links skills and project experience to team members'
+  competencies -[reads]-> projects 'links project experience to projects'
+  competencies -[uses]-> identity 'reads the signed-in profile and session'
+  competencies -[uses]-> shell 'shared types and utilities'
+
+  publicApi -[reads]-> team 'lists the employee directory'
+  publicApi -[reads]-> competencies 'serves skills, technologies and expert search'
+  publicApi -[uses]-> identity 'uses the Supabase admin client'
+
+  identity -[writes]-> db 'profiles'
+  team -[writes]-> db 'team_members, time_off'
+  projects -[writes]-> db 'projects'
+  timeline -[writes]-> db 'allocations'
+  competencies -[writes]-> db 'competency_tags, team_member_competencies, project_experience, project_experience_tags'
+}

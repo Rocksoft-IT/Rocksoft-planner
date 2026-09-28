@@ -1,0 +1,88 @@
+{
+  "date": "2026-09-28",
+  "commit": "851ef8e",
+  "windowDays": 90,
+  "churnCommits": 58,
+  "skippedAutosave": 17,
+  "coverageSources": [],
+  "elements": {
+    "identity": {
+      "churn": {
+        "commits": 2,
+        "lines": 29,
+        "share": 0.034
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "shell": {
+      "churn": {
+        "commits": 27,
+        "lines": 839,
+        "share": 0.466
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "team": {
+      "churn": {
+        "commits": 12,
+        "lines": 218,
+        "share": 0.207
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "projects": {
+      "churn": {
+        "commits": 1,
+        "lines": 26,
+        "share": 0.017
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "timeline": {
+      "churn": {
+        "commits": 18,
+        "lines": 2289,
+        "share": 0.31
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "competencies": {
+      "churn": {
+        "commits": 6,
+        "lines": 878,
+        "share": 0.103
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    },
+    "publicApi": {
+      "churn": {
+        "commits": 5,
+        "lines": 645,
+        "share": 0.086
+      },
+      "coverage": null,
+      "orphans": [],
+      "testGapScore": null
+    }
+  },
+  "unownedChurn": null,
+  "outsideModelChurn": {
+    "commits": 24,
+    "lines": 1653,
+    "share": 0.414
+  },
+  "unowned": [],
+  "knip": null
+}
