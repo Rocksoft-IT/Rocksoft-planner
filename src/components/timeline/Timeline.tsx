@@ -715,17 +715,17 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
           {/* ── Sticky header row ── */}
           <div className="flex sticky top-0 z-20">
-            {/* Top-left corner: sticky top + left */}
+            {/* Frozen corner stretches to cover the full month + day header. */}
             <div
               className="shrink-0 sticky left-0 z-30 bg-slate-950 border-b border-r border-slate-800 px-4 flex items-end pb-1"
-              style={{ width: 224, height: 56 }}
+              style={{ width: 224 }}
             >
               <span className="text-xs text-slate-500 font-medium">
                 ZESPÓŁ {hasActiveFilter && `· ${filteredPeople.length}`}
               </span>
             </div>
             {/* Month + day header */}
-            <div className="bg-slate-950 border-b border-slate-800" style={{ width: days.length * DAY_WIDTH }}>
+            <div className="shrink-0 bg-slate-950 border-b border-slate-800" style={{ width: days.length * DAY_WIDTH }}>
               <div className="flex h-7 border-b border-slate-800">
                 {monthGroups.map(({ label, count }) => (
                   <div
@@ -737,7 +737,8 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   </div>
                 ))}
               </div>
-              <div className="flex h-[29px]">
+              {/* Grow with the labels and padding instead of squeezing two lines into a fixed height. */}
+              <div className="flex min-h-[32px]">
                 {days.map((day) => {
                   const weekend = isWeekend(day)
                   const today = isToday(day)
@@ -745,17 +746,17 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        'flex flex-col items-center justify-center border-r border-slate-800 text-xs shrink-0',
+                        'flex flex-col items-center justify-center gap-0.5 py-1 border-r border-slate-800 shrink-0 whitespace-nowrap',
                         weekend ? 'bg-slate-900' : '',
                         today ? 'bg-indigo-950' : ''
                       )}
                       style={{ width: DAY_WIDTH }}
                     >
-                      <span className={cn('text-[10px]', weekend ? 'text-slate-600' : 'text-slate-500')}>
+                      <span className={cn('text-[10px] leading-tight shrink-0', weekend ? 'text-slate-600' : 'text-slate-500')}>
                         {format(day, 'EEE')[0]}
                       </span>
                       <span className={cn(
-                        'text-[11px] font-medium leading-none',
+                        'text-[11px] font-medium leading-tight shrink-0',
                         today ? 'text-indigo-400 font-bold' : weekend ? 'text-slate-600' : 'text-slate-300'
                       )}>
                         {format(day, 'd')}
