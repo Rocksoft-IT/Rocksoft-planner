@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Service-role Supabase client for the public API. It BYPASSES Row Level Security,
-// so it must only ever be used inside server-side route handlers that are already
-// guarded by requireApiKey(). Never import this into a client component.
+// Service-role Supabase client. It BYPASSES Row Level Security, so use only in
+// server routes guarded by an API key, CRON_SECRET, or session auth with RLS
+// authorization of the specific member before fetching Entra's contract value.
+// Never import this into a client component.
 //
 // Requires SUPABASE_SERVICE_ROLE_KEY (server-only secret, not NEXT_PUBLIC_*).
 export function createAdminClient() {
@@ -10,7 +11,7 @@ export function createAdminClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !serviceKey) {
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — required for the competency API.'
+      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — required for server integrations.'
     )
   }
   return createClient(url, serviceKey, {

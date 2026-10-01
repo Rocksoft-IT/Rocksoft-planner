@@ -27,12 +27,14 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
   const [modal, setModal] = useState<{ open: boolean; person?: TeamMember | null }>({ open: false })
   const [groupMode, setGroupMode] = useState<GroupMode>('none')
   const [query, setQuery] = useState('')
+  const [notice, setNotice] = useState<string | undefined>()
 
   // Availability is measured over the next 2 weeks (today → +13 days).
   const days = useMemo(() => getAvailabilityWindow(), [])
   const windowLabel = `${format(days[0], 'dd.MM')}–${format(days[days.length - 1], 'dd.MM')}`
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (syncNotice?: string) => {
+    setNotice(syncNotice)
     const supabase = createClient()
     const { data } = await supabase.from('team_members').select('*').order('full_name')
     if (data) setPeople(data as TeamMember[])
@@ -122,6 +124,9 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
       </div>
 
       {/* Search */}
+      {notice && (
+        <p role="status" className="text-sm text-amber-400 light:text-amber-700 mb-4">{notice}</p>
+      )}
       <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-lg px-3 py-2 mb-4 max-w-md transition">
         <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>

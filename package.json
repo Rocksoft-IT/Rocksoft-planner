@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "entra:sync": "node scripts/sync-entra.mjs",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest"
