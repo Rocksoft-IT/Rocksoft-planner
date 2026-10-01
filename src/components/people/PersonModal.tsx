@@ -1,47 +1,40 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import RoleSelect from '@/components/ui/RoleSelect'
 import { createClient } from '@/lib/supabase/client'
-import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedOptionClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
-import { CONTRACT_TYPES, type ContractType, type TeamMember } from '@/lib/types'
+import { AVATAR_COLORS, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
+import type { TeamMember } from '@/lib/types'
 
 interface PersonModalProps {
   open: boolean
   onClose: () => void
-  onSaved: () => void
+  onSaved: (notice?: string) => void
   person?: TeamMember | null
 }
 
 export default function PersonModal({ open, onClose, onSaved, person }: PersonModalProps) {
-  const [fullName, setFullName] = useState('')
-  const [roles, setRoles] = useState<string[]>([])
-  const [email, setEmail] = useState('')
-  const [capacity, setCapacity] = useState('8')
-  const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0])
-  const [contractType, setContractType] = useState<ContractType | ''>('')
+  return (
+    <Modal open={open} onClose={onClose} title={person ? 'Edit person' : 'Add person'}>
+      <PersonForm key={`${person?.id ?? 'new'}:${open}`} onClose={onClose} onSaved={onSaved} person={person} />
+    </Modal>
+  )
+}
+
+function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>) {
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => { active.current = false }
+  }, [])
+  const [fullName, setFullName] = useState(person?.full_name ?? '')
+  const [roles, setRoles] = useState<string[]>(person?.role ? person.role.split(',').map((r) => r.trim()).filter(Boolean) : [])
+  const [email, setEmail] = useState(person?.email ?? '')
+  const [capacity, setCapacity] = useState(String(person?.capacity_hours_per_day ?? 8))
+  const [avatarColor, setAvatarColor] = useState(person?.avatar_color ?? AVATAR_COLORS[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (person) {
-      setFullName(person.full_name)
-      setRoles(person.role ? person.role.split(',').map((r) => r.trim()).filter(Boolean) : [])
-      setEmail(person.email)
-      setCapacity(String(person.capacity_hours_per_day))
-      setAvatarColor(person.avatar_color)
-      setContractType(person.contract_type ?? '')
-    } else {
-      setFullName('')
-      setRoles([])
-      setEmail('')
-      setCapacity('8')
-      setAvatarColor(AVATAR_COLORS[0])
-      setContractType('')
-    }
-    setError('')
-  }, [person, open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -56,28 +49,39 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
       capacity_hours_per_day: parseFloat(capacity),
       avatar_color: avatarColor,
     }
-    const payload = { ...base, contract_type: contractType || null }
+    try {
+      // A known ID lets us sync after insert without relying on SELECT permissions
+      // on the write response. A failed lookup must never cause a second insert.
+      const memberId = person?.id ?? crypto.randomUUID()
+      const { error: dbError } = person
+        ? await supabase.from('team_members').update(base).eq('id', memberId)
+        : await supabase.from('team_members').insert({ ...base, id: memberId })
+      if (dbError) { setError(dbError.message); return }
 
-    const write = (body: Record<string, unknown>) =>
-      person
-        ? supabase.from('team_members').update(body).eq('id', person.id)
-        : supabase.from('team_members').insert(body)
-
-    let { error: dbError } = await write(payload)
-    // Deploy-order safety net: if this frontend ships before the contract_type
-    // migration (migrations/2026-09-25-team-member-contract-type.sql) has run,
-    // PostgREST rejects the whole write with a "schema cache" error (PGRST204).
-    // Retry without the new field so the rest of the profile still saves;
-    // contract_type starts persisting automatically once the column exists.
-    // Safe to drop once the column is guaranteed present in every environment.
-    if (dbError?.code === 'PGRST204' && dbError.message.includes('contract_type')) {
-      ;({ error: dbError } = await write(base))
+      let notice: string | undefined
+      const emailChanged = person && person.email.trim().toLowerCase() !== email.trim().toLowerCase()
+      if ((!person || emailChanged) && email.trim()) {
+        try {
+          const response = await fetch('/api/integrations/entra/member', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ memberId }), signal: AbortSignal.timeout(60_000),
+          })
+          if (!response.ok) throw new Error('Contract lookup failed')
+          const result = await response.json()
+          if (result.status !== 'synced') notice = 'Osoba została zapisana. Nie znaleziono jednoznacznego typu umowy w Entra ID.'
+        } catch {
+          notice = 'Osoba została zapisana. Nie udało się pobrać typu umowy z Entra ID. Odczyt zostanie ponowiony przy kolejnej synchronizacji.'
+        }
+      }
+      onSaved(notice)
+      // The Entra lookup can finish after the user opens a different form.
+      // Refresh the saved profile without closing that newer form.
+      if (active.current) onClose()
+    } catch {
+      setError('Nie udało się zapisać osoby. Spróbuj ponownie.')
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
-    if (dbError) { setError(dbError.message); return }
-    onSaved()
-    onClose()
   }
 
   async function handleDelete() {
@@ -93,11 +97,10 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
     setLoading(false)
     if (dbError) { setError(dbError.message); return }
     onSaved()
-    onClose()
+    if (active.current) onClose()
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={person ? 'Edit person' : 'Add person'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
@@ -145,17 +148,18 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
         </div>
 
         <div>
-          <label className={cn(themedLabelClass, 'mb-1.5')}>Typ umowy</label>
-          <select
-            value={contractType}
-            onChange={(e) => setContractType(e.target.value as ContractType | '')}
+          <label htmlFor="person-contract-type" className={cn(themedLabelClass, 'mb-1.5')}>Typ umowy</label>
+          <input
+            id="person-contract-type"
+            value={person?.contract_type ?? '—'}
+            readOnly
             className={themedInputClass}
-          >
-            <option value="" className={themedOptionClass}>—</option>
-            {CONTRACT_TYPES.map((ct) => (
-              <option key={ct} value={ct} className={themedOptionClass}>{ct}</option>
-            ))}
-          </select>
+          />
+          <p className="text-xs text-slate-500 mt-1.5">
+            {person
+              ? 'Typ umowy jest pobierany z Entra ID i aktualizowany na początku miesiąca.'
+              : 'Typ umowy zostanie pobrany z Entra ID po dodaniu osoby, na podstawie adresu e-mail.'}
+          </p>
         </div>
 
         <div>
@@ -196,6 +200,5 @@ export default function PersonModal({ open, onClose, onSaved, person }: PersonMo
           </div>
         </div>
       </form>
-    </Modal>
   )
 }

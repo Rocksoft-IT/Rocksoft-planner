@@ -11,9 +11,9 @@ export interface Profile {
   updated_at: string
 }
 
-export type ContractType = 'UoP' | 'B2B' | 'Freelance'
+export type ContractType = 'UoP' | 'B2B' | 'Freelance' | 'Umowa Zlecenie' | 'Umowa o Dzieło' | 'Powołanie do Zarządu'
 
-export const CONTRACT_TYPES: ContractType[] = ['UoP', 'B2B', 'Freelance']
+export const CONTRACT_TYPES: ContractType[] = ['UoP', 'B2B', 'Freelance', 'Umowa Zlecenie', 'Umowa o Dzieło', 'Powołanie do Zarządu']
 
 export interface TeamMember {
   id: string
@@ -23,6 +23,9 @@ export interface TeamMember {
   capacity_hours_per_day: number
   avatar_color: string
   contract_type: ContractType | null
+  entra_contract_type?: ContractType | null
+  entra_user_id?: string | null
+  entra_contract_synced_at?: string | null
   created_at: string
   updated_at: string
 }
