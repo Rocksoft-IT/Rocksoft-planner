@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getContractAttribute, getGraphUsers } from '@/lib/entra/graph'
 import { contractMapping, planContractSync } from '@/lib/entra/contracts'
+import { getSyncMembers } from '@/lib/entra/members'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -37,23 +38,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid member ID' }, { status: 400 })
   }
   const { data: member, error } = await supabase.from('team_members')
-    .select('id, email').eq('id', memberId).maybeSingle()
+    .select('id, email, full_name').eq('id', memberId).maybeSingle()
   if (error) return NextResponse.json({ error: 'Failed to load team member' }, { status: 500 })
   if (!member) return NextResponse.json({ error: 'Team member not found' }, { status: 404 })
-  if (!member.email?.trim()) return NextResponse.json({ status: 'skipped', updated: 0 })
+  if (!member.email?.trim() && !member.full_name?.trim()) {
+    return NextResponse.json({ status: 'skipped', updated: 0 })
+  }
 
   try {
     const startedAt = new Date().toISOString()
     const attribute = getContractAttribute()
     const mapping = contractMapping()
-    const users = await getGraphUsers([attribute], member.email)
-    const { updates, skipped } = planContractSync([member], users, attribute, mapping)
+    const admin = createAdminClient()
+    const email = member.email?.trim()
+    // Read the full directory for names: a server-side equality filter would
+    // miss names that differ only by whitespace and could hide duplicates.
+    const nameMembers = email ? [member] : await getSyncMembers(admin)
+    const users = await getGraphUsers([attribute], email || undefined)
+    const { updates, skipped } = planContractSync([member], users, attribute, mapping, nameMembers)
     if (!updates.length) return NextResponse.json({ status: 'skipped', updated: 0, skipped })
-    const { data: updated, error: writeError } = await createAdminClient().rpc('sync_entra_contract_types', {
+    const { data: updated, error: writeError } = await admin.rpc('sync_entra_contract_types', {
       p_updates: updates, p_synced_at: startedAt,
     })
     if (writeError) throw new Error('Failed to save Entra contract type. Check the database migration.')
-    return NextResponse.json({ status: updated ? 'synced' : 'skipped', updated }, {
+    return NextResponse.json({ status: updated && updates[0].sync_contract ? 'synced' : 'skipped', updated }, {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (error) {

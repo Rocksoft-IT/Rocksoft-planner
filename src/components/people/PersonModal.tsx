@@ -60,7 +60,8 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
 
       let notice: string | undefined
       const emailChanged = person && person.email.trim().toLowerCase() !== email.trim().toLowerCase()
-      if ((!person || emailChanged) && email.trim()) {
+      const nameChanged = person && !email.trim() && person.full_name !== fullName
+      if ((!person || emailChanged || nameChanged) && (email.trim() || fullName.trim())) {
         try {
           const response = await fetch('/api/integrations/entra/member', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -158,7 +159,7 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
           <p className="text-xs text-slate-500 mt-1.5">
             {person
               ? 'Typ umowy jest pobierany z Entra ID i aktualizowany na początku miesiąca.'
-              : 'Typ umowy zostanie pobrany z Entra ID po dodaniu osoby, na podstawie adresu e-mail.'}
+              : 'Typ umowy zostanie pobrany z Entra ID po dodaniu osoby, na podstawie e-maila lub unikalnego imienia i nazwiska.'}
           </p>
         </div>
 

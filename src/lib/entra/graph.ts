@@ -3,6 +3,7 @@ export type GraphUser = {
   id: string
   mail?: string | null
   userPrincipalName?: string | null
+  displayName?: string | null
   [attribute: string]: unknown
 }
 
@@ -50,7 +51,7 @@ export async function getGraphUsers(attributes: string[], email?: string): Promi
   if (typeof token.access_token !== 'string' || !token.access_token) throw new Error('Invalid Entra token response.')
 
   const query = new URLSearchParams({
-    '$select': [...new Set(['id', 'mail', 'userPrincipalName', ...attributes.map((a) => a.split('.')[0])])].join(','),
+    '$select': [...new Set(['id', 'mail', 'userPrincipalName', 'displayName', ...attributes.map((a) => a.split('.')[0])])].join(','),
     '$top': '999',
   })
   if (email !== undefined) {
