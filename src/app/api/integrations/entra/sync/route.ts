@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getContractAttribute, getGraphUsers } from '@/lib/entra/graph'
 import { contractMapping, planContractSync } from '@/lib/entra/contracts'
+import { getSyncMembers } from '@/lib/entra/members'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,18 +22,7 @@ async function sync(request: NextRequest) {
     const mapping = contractMapping()
     const supabase = createAdminClient()
     const startedAt = new Date().toISOString()
-    // Read all members, also beyond Supabase's default 1000-row page.
-    const members: { id: string; email: string }[] = []
-    for (let offset = 0; ;) {
-      const { data, error } = await supabase.from('team_members')
-        .select('id, email').order('id').range(offset, offset + 999)
-      if (error) throw new Error('Failed to load team members.')
-      if (!data?.length) break
-      members.push(...data)
-      // Supabase may have a configured response cap below the requested page
-      // size. Advance by what was actually returned and stop only on an empty page.
-      offset += data.length
-    }
+    const members = await getSyncMembers(supabase)
     const users = await getGraphUsers([attribute])
     const { updates, skipped } = planContractSync(members, users, attribute, mapping)
     const { data: updated, error } = await supabase.rpc('sync_entra_contract_types', {
