@@ -1,11 +1,12 @@
 <!-- preview-link -->
 
-**What this delivers:** The foundation for the new light/dark theme switch. You can now open the menu under your avatar in the sidebar and pick Light or Dark, and your choice is saved to your account so it follows you next time you sign in. This first update themes the side menu and popup windows; the main screens (Timeline, People, Projects, Kompetencje) still show in dark for now and will switch over in follow-up updates.
+**What this delivers:** The Timeline now works in the Light theme. Switching to Light from the avatar menu turns the Timeline page, its top bar, the people column, the date header and grid, the filters and the month picker light, with no reload. Dark stays exactly as it is today. People, Projects and Kompetencje still show in dark and will follow in later updates.
 
 **Please check on the preview:**
-- Open the app without changing anything — it should look exactly like it does today (dark).
-- Click your avatar and switch to Light — the sidebar and any popup window you open should switch immediately, with no page reload.
-- Refresh the page while set to Light — it should load already in Light, with no flash of dark first.
-- Sign out and sign back in — the sign-in screen should stay dark, then switch to Light right after you're signed in again.
+- Set the theme to Light and open Timeline: no dark patches should remain in the header, people column, date header or grid, and the people column should still stay visibly separated when you scroll sideways.
+- Look at project bars that use a pale colour: the text should be easy to read, and the bar should still show that project's colour.
+- Find a person who is over-allocated: their availability bar should still be clearly red in both themes.
+- Look at a time-off block, then open the three filters, the month picker and the add/edit windows: all should look right in Light.
+- Switch back to Dark and confirm Timeline looks the same as before.
 
 **Status:** Ready to merge once you have checked the preview.
