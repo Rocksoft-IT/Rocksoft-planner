@@ -65,7 +65,7 @@ The scoping class is applied to the `(dashboard)` layout's wrapper `<div>` (`(da
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
 | 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | done | #69 |
-| 2 | Timeline theming | 5-7 | 1 | yes | in-progress | — |
+| 2 | Timeline theming | 5-7 | 1 | yes | done | — |
 | 3 | People + Projects theming | 8-9 | 1 | yes | in-progress | — |
 | 4 | Kompetencje theming | 10 | 1 | yes | in-progress | — |
 
