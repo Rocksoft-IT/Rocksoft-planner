@@ -1,7 +1,7 @@
 ---
 change_id: theme-persistence-fix
 title: Fix chosen theme reverting to dark after switching
-status: implemented
+status: impl_reviewed
 created: 2026-10-07
 updated: 2026-10-07
 archived_at: null
