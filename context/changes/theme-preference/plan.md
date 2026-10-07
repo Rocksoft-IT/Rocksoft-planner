@@ -347,8 +347,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 5: Timeline grid, frozen pane, month header
 #### Automated
-- [ ] 5.1 npm run build succeeds
-- [ ] 5.2 npm run lint passes with no new errors
+- [x] 5.1 npm run build succeeds
+- [x] 5.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 5.3 the Timeline grid, frozen person-name column, and month header render correctly in both themes, with the sticky column still visually separated from scrolled content
 

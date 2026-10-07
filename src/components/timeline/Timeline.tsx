@@ -586,22 +586,22 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     >
     <div className="flex flex-col h-full">
       {dragError && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm shrink-0">
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-sm shrink-0">
           <span>{dragError}</span>
           <button
             onClick={() => setDragError('')}
-            className="text-red-400 hover:text-red-300 shrink-0"
+            className="text-red-400 hover:text-red-300 light:text-red-600 light:hover:text-red-500 shrink-0"
           >
             ✕
           </button>
         </div>
       )}
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 bg-slate-950 shrink-0 flex-wrap">
+      <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 light:border-slate-200 bg-slate-950 light:bg-white shrink-0 flex-wrap">
         <div className="flex items-center gap-1">
           <button
             onClick={navigatePrev}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"
+            className="p-1.5 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
@@ -609,13 +609,13 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           </button>
           <button
             onClick={scrollToToday}
-            className="px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition"
+            className="px-2.5 py-1 text-xs font-medium text-slate-300 light:text-slate-700 hover:text-white light:hover:text-slate-900 bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 rounded transition"
           >
             Dziś
           </button>
           <button
             onClick={navigateNext}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"
+            className="p-1.5 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
@@ -659,7 +659,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           optionLabels={{ [NO_CONTRACT_TYPE]: 'Bez typu' }}
         />
 
-        <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg">
+        <div className="flex items-center gap-1 bg-slate-800 light:bg-slate-100 p-0.5 rounded-lg">
           {([
             { value: 'name', label: 'Nazwa' },
             { value: 'contractType', label: 'Typ umowy' },
@@ -669,7 +669,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               onClick={() => setSortMode(value)}
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-md transition',
-                sortMode === value ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                sortMode === value ? 'bg-slate-600 light:bg-white light:shadow-sm text-white light:text-slate-900' : 'text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900'
               )}
             >
               {label}
@@ -680,7 +680,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setOooModal({ open: true })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 light:bg-slate-100 hover:bg-slate-600 light:hover:bg-slate-200 text-slate-200 light:text-slate-700 text-sm font-medium rounded-lg transition"
             title="Dodaj nieobecność"
           >
             <span className="text-base leading-none">🏖️</span>
@@ -717,7 +717,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           <div className="flex sticky top-0 z-20">
             {/* Frozen corner stretches to cover the full month + day header. */}
             <div
-              className="shrink-0 sticky left-0 z-30 bg-slate-950 border-b border-r border-slate-800 px-4 flex items-end pb-1"
+              className="shrink-0 sticky left-0 z-30 bg-slate-950 light:bg-white border-b border-r border-slate-800 light:border-slate-200 px-4 flex items-end pb-1"
               style={{ width: 224 }}
             >
               <span className="text-xs text-slate-500 font-medium">
@@ -725,12 +725,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               </span>
             </div>
             {/* Month + day header */}
-            <div className="shrink-0 bg-slate-950 border-b border-slate-800" style={{ width: days.length * DAY_WIDTH }}>
-              <div className="flex h-7 border-b border-slate-800">
+            <div className="shrink-0 bg-slate-950 light:bg-white border-b border-slate-800 light:border-slate-200" style={{ width: days.length * DAY_WIDTH }}>
+              <div className="flex h-7 border-b border-slate-800 light:border-slate-200">
                 {monthGroups.map(({ label, count }) => (
                   <div
                     key={label}
-                    className="flex items-center px-3 text-xs font-semibold text-slate-400 border-r border-slate-800"
+                    className="flex items-center px-3 text-xs font-semibold text-slate-400 light:text-slate-600 border-r border-slate-800 light:border-slate-200"
                     style={{ width: count * DAY_WIDTH }}
                   >
                     {label}
@@ -746,18 +746,18 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        'flex flex-col items-center justify-center gap-0.5 py-1 border-r border-slate-800 shrink-0 whitespace-nowrap',
-                        weekend ? 'bg-slate-900' : '',
-                        today ? 'bg-indigo-950' : ''
+                        'flex flex-col items-center justify-center gap-0.5 py-1 border-r border-slate-800 light:border-slate-200 shrink-0 whitespace-nowrap',
+                        weekend ? 'bg-slate-900 light:bg-slate-100' : '',
+                        today ? 'bg-indigo-950 light:bg-indigo-100' : ''
                       )}
                       style={{ width: DAY_WIDTH }}
                     >
-                      <span className={cn('text-[10px] leading-tight shrink-0', weekend ? 'text-slate-600' : 'text-slate-500')}>
+                      <span className={cn('text-[10px] leading-tight shrink-0', weekend ? 'text-slate-600 light:text-slate-400' : 'text-slate-500')}>
                         {format(day, 'EEE')[0]}
                       </span>
                       <span className={cn(
                         'text-[11px] font-medium leading-tight shrink-0',
-                        today ? 'text-indigo-400 font-bold' : weekend ? 'text-slate-600' : 'text-slate-300'
+                        today ? 'text-indigo-400 light:text-indigo-600 font-bold' : weekend ? 'text-slate-600 light:text-slate-400' : 'text-slate-300 light:text-slate-700'
                       )}>
                         {format(day, 'd')}
                       </span>
@@ -777,11 +777,11 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
             const av = formatAvailability(util)
 
             return (
-            <div key={person.id} className="flex border-b border-slate-800" style={{ minHeight: rowHeight }}>
+            <div key={person.id} className="flex border-b border-slate-800 light:border-slate-200" style={{ minHeight: rowHeight }}>
 
               {/* Frozen left cell — its content can grow the row (see calcRowHeight) */}
               <div
-                className="shrink-0 sticky left-0 z-10 bg-slate-950 border-r border-slate-800 flex items-center px-4 py-2 gap-3"
+                className="shrink-0 sticky left-0 z-10 bg-slate-950 light:bg-white border-r border-slate-800 light:border-slate-200 flex items-center px-4 py-2 gap-3"
                 style={{ width: 224 }}
               >
                 <div
@@ -793,7 +793,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {/* Wraps to a second line only when the name doesn't fit next to the badge */}
-                    <p className="min-w-0 text-sm font-medium text-white leading-tight line-clamp-2 break-words" title={person.full_name}>
+                    <p className="min-w-0 text-sm font-medium text-white light:text-slate-900 leading-tight line-clamp-2 break-words" title={person.full_name}>
                       {person.full_name}
                     </p>
                     <ContractTypeBadge type={person.contract_type} />
@@ -831,12 +831,12 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     key={day.toISOString()}
                     onClick={() => !weekend && !didDrag.current && openCreate(person.id, format(day, 'yyyy-MM-dd'))}
                     className={cn(
-                      'h-full border-r border-slate-800 shrink-0',
+                      'h-full border-r border-slate-800 light:border-slate-200 shrink-0',
                       weekend
-                        ? 'bg-slate-900/50'
+                        ? 'bg-slate-900/50 light:bg-slate-100/70'
                         : today
-                        ? 'bg-indigo-950/30 cursor-pointer hover:bg-indigo-950/50'
-                        : 'cursor-pointer hover:bg-slate-800/40'
+                        ? 'bg-indigo-950/30 light:bg-indigo-50 cursor-pointer hover:bg-indigo-950/50 light:hover:bg-indigo-100'
+                        : 'cursor-pointer hover:bg-slate-800/40 light:hover:bg-slate-100'
                     )}
                     style={{ width: DAY_WIDTH }}
                   />
