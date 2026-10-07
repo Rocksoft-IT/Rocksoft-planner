@@ -33,7 +33,7 @@ Chosen (Consult, rs-advisor agreed): ship small code hardening plus a mandatory 
 ## Increments
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | Surface and diagnose theme save failures | 1 | — | yes | in-progress | — |
+| 1 | Surface and diagnose theme save failures | 1 | — | yes | done | — |
 
 ## Phase 1: Surface and diagnose theme save failures
 
