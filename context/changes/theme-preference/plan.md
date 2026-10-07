@@ -64,10 +64,10 @@ The scoping class is applied to the `(dashboard)` layout's wrapper `<div>` (`(da
 
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | pending | — |
-| 2 | Timeline theming | 5-7 | 1 | yes | pending | — |
-| 3 | People + Projects theming | 8-9 | 1 | yes | pending | — |
-| 4 | Kompetencje theming | 10 | 1 | yes | pending | — |
+| 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | done | #69 |
+| 2 | Timeline theming | 5-7 | 1 | yes | in-progress | — |
+| 3 | People + Projects theming | 8-9 | 1 | yes | in-progress | — |
+| 4 | Kompetencje theming | 10 | 1 | yes | in-progress | — |
 
 Increments 2, 3, and 4 are file-disjoint from each other (confirmed in research) and may run in parallel once increment 1 is merged.
 
