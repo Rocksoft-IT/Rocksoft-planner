@@ -2,7 +2,7 @@
 # Implementation Review: Planners can switch RS Planner between dark and light theme
 
 **Plan**: context/changes/theme-preference/plan.md   **Scope**: Increment 3 (Phases 8-9), feedback cycle 1 (`reviews/feedback-inc-3-1.md`)   **Date**: 2026-10-07
-**Round**: 1   **Verdict**: NEEDS_ATTENTION   **Findings**: 1
+**Round**: 2   **Verdict**: APPROVED   **Findings**: 1
 
 ## Verdicts
 | Dimension | Verdict |
@@ -35,3 +35,11 @@ Evidence gathered:
 ## Round 1 (feedback cycle 1)
 Next: `rs-implement theme-preference increment 3 --from-review context/changes/theme-preference/reviews/impl-review-inc-3-feedback-1.md`, then re-review. Increment 3 is not the last increment (increment 4 pending), so `change.md` status stays `implementing`.
 Manual 8.3 / 9.3 remain pending (human on preview).
+
+## Round 2
+Re-review of merge commit `31634c4` and `d480730` (read `fix-feedback-1-r1.md` and the commits; full suite not re-run, the fix is a merge and carries no tests).
+- F1: `origin/main` (`19a3cca`) is now an ancestor of `HEAD`, so the PR no longer conflicts. No conflict markers in `plan.md` or `reviews/pr-summary.md`.
+- `plan.md` `## Increments`: rows 1, 2, 3 `done`, row 4 `in-progress`, PR column unchanged. `## Progress` rows 5.x-9.x automated checked with their original SHAs; manual rows still pending.
+- `git diff origin/main HEAD` outside `context/` is exactly increment 3's 5 files (`PeopleClient`, `ProjectsClient`, `PersonModal`, `ColorPicker`, `RoleSelect`); no hand edits to `src/`. `ACCEPT` findings of the round 2 review were not touched.
+- Re-ran `npm run build` on the merged tree: exit 0. Lint matches the baseline per `fix-feedback-1-r1.md` (4 errors, 3 warnings, all pre-existing; unchanged from my trial merge in round 1).
+- Manual 8.3 / 9.3 remain pending (human on preview). Increment 3 is not the last increment; `change.md` status is untouched.
