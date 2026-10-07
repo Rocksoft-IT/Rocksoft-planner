@@ -27,7 +27,7 @@ A parity test beats deriving one source from the other: the SQL files are hand-r
 ## Increments
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
-| 1 | Contract-type SQL/TS parity test | 1 | — | no | pending | — |
+| 1 | Contract-type SQL/TS parity test | 1 | — | no | in-progress | — |
 
 ## Phase 1: Parity test
 ### Overview
