@@ -377,8 +377,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 9: Projects theming
 #### Automated
-- [x] 9.1 npm run build succeeds
-- [x] 9.2 npm run lint passes with no new errors
+- [x] 9.1 npm run build succeeds — 9fa936d
+- [x] 9.2 npm run lint passes with no new errors — 9fa936d
 #### Manual
 - [ ] 9.3 Projects cards, ProjectModal, and the colour-swatch picker render correctly in both themes with project colours unchanged
 
