@@ -156,7 +156,7 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
             readOnly
             className={themedInputClass}
           />
-          <p className="text-xs text-slate-500 mt-1.5">
+          <p className="text-xs text-slate-500 light:text-slate-600 mt-1.5">
             {person
               ? 'Typ umowy jest pobierany z Entra ID i aktualizowany na początku miesiąca.'
               : 'Typ umowy zostanie pobrany z Entra ID po dodaniu osoby, na podstawie e-maila lub unikalnego imienia i nazwiska.'}
