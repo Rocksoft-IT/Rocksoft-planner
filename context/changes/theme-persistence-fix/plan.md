@@ -79,9 +79,9 @@ No new migration. The existing `migrations/2026-09-15-profile-theme.sql` (idempo
 
 ### Phase 1: Surface and diagnose theme save failures
 #### Automated
-- [ ] 1.1 `npm test` passes, including the new ThemeProvider tests (new alert tests fail on the unmodified provider)
-- [ ] 1.2 `npm run lint` passes
-- [ ] 1.3 `npm run build` succeeds
+- [x] 1.1 `npm test` passes, including the new ThemeProvider tests (new alert tests fail on the unmodified provider)
+- [x] 1.2 `npm run lint` passes
+- [x] 1.3 `npm run build` succeeds
 #### Manual
 - [ ] 1.4 On the deployed Supabase, `profiles.theme` exists (SQL editor: `select column_name from information_schema.columns where table_name='profiles' and column_name='theme'` returns a row); if absent, `migrations/2026-09-15-profile-theme.sql` is applied first
 - [ ] 1.5 With DevTools open, switching to light on a preview issues a PATCH to `/rest/v1/profiles` that succeeds, the theme stays light after reload and after signing in on another browser

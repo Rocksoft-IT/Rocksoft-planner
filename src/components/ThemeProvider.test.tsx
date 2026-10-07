@@ -8,7 +8,10 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(),
 }))
 
-type UpdateResult = { error: { message: string } | null; count: number | null }
+type UpdateResult = {
+  error: { message: string; code?: string; details?: string | null; hint?: string | null } | null
+  count: number | null
+}
 
 // Each update({theme}).eq(id) call resolves via a caller-controlled promise
 // instead of firing immediately, so tests can choose the order responses
@@ -140,5 +143,123 @@ describe('ThemeProvider', () => {
 
     calls[1].resolve({ error: null, count: 1 })
     await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('dark'))
+  })
+
+  it('shows an alert when the save fails and the theme is rolled back', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: { message: 'network error' }, count: null })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not be saved/i)
+    expect(screen.getByTestId('theme')).toHaveTextContent('dark')
+  })
+
+  it('shows an alert for a 0-row match', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: null, count: 0 })
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  it('logs the migration hint and error details for a missing-column error', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({
+      error: { message: 'column "theme" does not exist', code: '42703', details: 'd', hint: 'h' },
+      count: null,
+    })
+
+    await screen.findByRole('alert')
+    const logged = JSON.stringify(errorSpy.mock.calls)
+    expect(logged).toContain('42703')
+    expect(logged).toContain('migrations/2026-09-15-profile-theme.sql')
+  })
+
+  it('does not log the migration hint for an unrelated error', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: { message: 'network error' }, count: null })
+
+    await screen.findByRole('alert')
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('migrations/')
+  })
+
+  it('clears the alert on dismiss', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: { message: 'network error' }, count: null })
+    await screen.findByRole('alert')
+
+    await user.click(screen.getByRole('button', { name: /dismiss/i }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('clears the alert on the next toggle and after a later successful save', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: { message: 'network error' }, count: null })
+    await screen.findByRole('alert')
+
+    await user.click(screen.getByText('light'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    calls[1].resolve({ error: null, count: 1 })
+    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('light'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows no alert after a successful save', async () => {
+    const user = userEvent.setup()
+    const { calls } = mockSupabase()
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    calls[0].resolve({ error: null, count: 1 })
+
+    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('light'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows no alert for a failed write superseded by a queued choice', async () => {
+    const user = userEvent.setup()
+    const { calls, update } = mockSupabase()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderProvider('dark')
+
+    await user.click(screen.getByText('light'))
+    await user.click(screen.getByText('dark'))
+    calls[0].resolve({ error: { message: 'network error' }, count: null })
+
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(2))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    calls[1].resolve({ error: null, count: 1 })
+    await waitFor(() => expect(screen.getByTestId('theme')).toHaveTextContent('dark'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
