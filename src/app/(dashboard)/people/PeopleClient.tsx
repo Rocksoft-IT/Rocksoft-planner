@@ -103,7 +103,7 @@ export default function PeopleClient({ initialPeople, initialAllocations, initia
   }, [filteredPeople, groupMode, allocations, timeOff, days])
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-full light:bg-slate-50">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>

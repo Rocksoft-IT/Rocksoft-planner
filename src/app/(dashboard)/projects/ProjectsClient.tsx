@@ -20,7 +20,7 @@ export default function ProjectsClient({ initialProjects }: Props) {
   }, [])
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-full light:bg-slate-50">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-semibold text-white light:text-slate-900">Projects</h1>
@@ -70,7 +70,7 @@ export default function ProjectsClient({ initialProjects }: Props) {
             )}
 
             <div
-              className="mt-3 px-2 py-1 rounded text-xs font-medium inline-block"
+              className="mt-3 px-2 py-1 rounded text-xs font-medium inline-block light:text-slate-800!"
               style={{
                 backgroundColor: hexToRgba(project.color, 0.15),
                 color: project.color,
