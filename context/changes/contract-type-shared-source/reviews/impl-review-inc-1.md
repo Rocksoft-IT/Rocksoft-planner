@@ -10,7 +10,7 @@
 | Plan Adherence | PASS |
 | Scope Discipline | PASS |
 | Safety & Quality | PASS |
-| Architecture | PASS (no `model.c4`; gate not applicable) |
+| Architecture | PASS (by inspection; see note) |
 | Pattern Consistency | PASS |
 | Success Criteria | PASS |
 
@@ -48,3 +48,6 @@ The reviewer re-ran the mutation on the TS side only; the SQL-side removal was n
 
 ## Environment note
 The worktree path named in the task did not exist; it was created from `origin/feat/contract-type-shared-source/1` (branch `feat/contract-type-shared-source/1`) before reviewing. No code was changed.
+
+## Architecture gate note
+`context/architecture/model.c4` exists, but the `rs-arch-audit` facts script was not executed in this review. By inspection the only code in the diff is one test file in `src/lib/` that imports `./types` and `node:fs`/`node:path` and reads `migrations/` and `supabase-schema.sql` as text: no import of another domain or plugin, no new backend call, route or store access. No boundary crossing is possible from this diff.
