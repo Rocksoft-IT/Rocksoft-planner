@@ -370,15 +370,15 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 8: People theming
 #### Automated
-- [x] 8.1 npm run build succeeds
-- [x] 8.2 npm run lint passes with no new errors
+- [x] 8.1 npm run build succeeds — 78aa24a
+- [x] 8.2 npm run lint passes with no new errors — 78aa24a
 #### Manual
 - [ ] 8.3 the People list, group toggle, availability bars, and PersonModal (including its avatar-colour picker) render correctly in both themes with avatar colours unchanged
 
 ### Phase 9: Projects theming
 #### Automated
-- [ ] 9.1 npm run build succeeds
-- [ ] 9.2 npm run lint passes with no new errors
+- [x] 9.1 npm run build succeeds
+- [x] 9.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 9.3 Projects cards, ProjectModal, and the colour-swatch picker render correctly in both themes with project colours unchanged
 

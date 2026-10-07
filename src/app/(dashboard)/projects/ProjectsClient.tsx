@@ -23,8 +23,8 @@ export default function ProjectsClient({ initialProjects }: Props) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-white">Projects</h1>
-          <p className="text-sm text-slate-400 mt-0.5">{projects.length} active projects</p>
+          <h1 className="text-lg font-semibold text-white light:text-slate-900">Projects</h1>
+          <p className="text-sm text-slate-400 light:text-slate-600 mt-0.5">{projects.length} active projects</p>
         </div>
         <button
           onClick={() => setModal({ open: true, project: null })}
@@ -42,7 +42,7 @@ export default function ProjectsClient({ initialProjects }: Props) {
           <div
             key={project.id}
             onClick={() => setModal({ open: true, project })}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-4 cursor-pointer hover:border-slate-600 transition group"
+            className="bg-slate-900 light:bg-white border border-slate-800 light:border-slate-200 rounded-xl p-4 cursor-pointer hover:border-slate-600 light:hover:border-slate-400 transition group"
             style={{ borderLeftColor: project.color, borderLeftWidth: 4 }}
           >
             <div className="flex items-start gap-3">
@@ -51,15 +51,15 @@ export default function ProjectsClient({ initialProjects }: Props) {
                 style={{ backgroundColor: project.color }}
               />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{project.name}</p>
+                <p className="font-medium text-white light:text-slate-900 truncate">{project.name}</p>
                 {project.description && (
-                  <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">{project.description}</p>
+                  <p className="text-sm text-slate-400 light:text-slate-600 mt-0.5 line-clamp-2">{project.description}</p>
                 )}
               </div>
             </div>
 
             {(project.start_date || project.end_date) && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+              <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 light:text-slate-600">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
@@ -82,7 +82,7 @@ export default function ProjectsClient({ initialProjects }: Props) {
         ))}
 
         {projects.length === 0 && (
-          <div className="col-span-full text-center py-16 text-slate-500">
+          <div className="col-span-full text-center py-16 text-slate-500 light:text-slate-600">
             <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
             </svg>
