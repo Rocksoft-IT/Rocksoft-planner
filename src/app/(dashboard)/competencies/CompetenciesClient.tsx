@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn, themedInputClass, themedPlaceholderClass, themedLabelClass, themedOptionClass } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import TagMultiSelect from '@/components/competencies/TagMultiSelect'
 import CompetencyEditor from '@/components/competencies/CompetencyEditor'
@@ -53,10 +53,10 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
 
   return (
     <div className="max-w-3xl mx-auto px-4 lg:px-8 py-8">
-      <h1 className="text-xl font-semibold text-white mb-1">Baza kompetencji</h1>
-      <p className="text-sm text-slate-400 mb-6">Wyszukuj ekspertów i uzupełniaj swoje kompetencje.</p>
+      <h1 className="text-xl font-semibold text-white light:text-slate-900 mb-1">Baza kompetencji</h1>
+      <p className="text-sm text-slate-400 light:text-slate-600 mb-6">Wyszukuj ekspertów i uzupełniaj swoje kompetencje.</p>
 
-      <div className="flex gap-1 mb-6 border-b border-slate-800">
+      <div className="flex gap-1 mb-6 border-b border-slate-800 light:border-slate-200">
         <TabButton active={tab === 'search'} onClick={() => setTab('search')}>Wyszukiwarka</TabButton>
         <TabButton active={tab === 'edit'} onClick={() => setTab('edit')}>Moje kompetencje</TabButton>
       </div>
@@ -64,21 +64,21 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
       {tab === 'search' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Umiejętności</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Umiejętności</label>
             <TagMultiSelect options={skillOptions} value={skillSlugs} onChange={setSkillSlugs} placeholder="Dowolne umiejętności…" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Technologie</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Technologie</label>
             <TagMultiSelect options={techOptions} value={techSlugs} onChange={setTechSlugs} placeholder="Dowolne technologie…" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Opis / słowa kluczowe</label>
+            <label className={cn(themedLabelClass, 'mb-1.5')}>Opis / słowa kluczowe</label>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') runSearch() }}
               placeholder="np. konfigurator 3D, e-commerce…"
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500"
+              className={cn(themedInputClass, themedPlaceholderClass)}
             />
           </div>
           <button
@@ -90,35 +90,35 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
           </button>
 
           {searchError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{searchError}</div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{searchError}</div>
           )}
 
           {results !== null && (
             <div className="pt-2">
               {results.length === 0 ? (
-                <p className="text-slate-500 text-sm">Brak dopasowań.</p>
+                <p className="text-slate-500 light:text-slate-600 text-sm">Brak dopasowań.</p>
               ) : (
                 <ul className="space-y-2">
                   {results.map((r) => (
-                    <li key={r.team_member_id} className="bg-slate-800/60 border border-slate-700 rounded-lg p-3">
+                    <li key={r.team_member_id} className="bg-slate-800/60 light:bg-slate-50 border border-slate-700 light:border-slate-200 rounded-lg p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-white">{r.full_name}</p>
-                          <p className="text-xs text-slate-400">{r.role || r.email}</p>
+                          <p className="text-sm font-medium text-white light:text-slate-900">{r.full_name}</p>
+                          <p className="text-xs text-slate-400 light:text-slate-600">{r.role || r.email}</p>
                         </div>
-                        <span className="text-xs text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full shrink-0">
+                        <span className="text-xs text-indigo-300 light:text-indigo-700 bg-indigo-500/20 light:bg-indigo-100 px-2 py-0.5 rounded-full shrink-0">
                           {Math.round(r.score * 100) / 100} pkt
                         </span>
                       </div>
                       {r.matched.skills_technologies.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {r.matched.skills_technologies.map((m) => (
-                            <span key={m.slug} className="bg-slate-700 text-slate-300 text-[11px] px-2 py-0.5 rounded-full">{m.name}</span>
+                            <span key={m.slug} className="bg-slate-700 light:bg-slate-200 text-slate-300 light:text-slate-700 text-[11px] px-2 py-0.5 rounded-full">{m.name}</span>
                           ))}
                         </div>
                       )}
                       {r.matched.experience.length > 0 && (
-                        <p className="text-[11px] text-slate-500 mt-2">
+                        <p className="text-[11px] text-slate-500 light:text-slate-600 mt-2">
                           Doświadczenie: {r.matched.experience.map((e) => e.title).join(', ')}
                         </p>
                       )}
@@ -135,14 +135,14 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
         <div className="space-y-5">
           {isAdmin && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Edytuj osobę (admin)</label>
+              <label className={cn(themedLabelClass, 'mb-1.5')}>Edytuj osobę (admin)</label>
               <select
                 value={editMemberId ?? ''}
                 onChange={(e) => setEditMemberId(e.target.value || null)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2.5 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
               >
-                <option value="">— wybierz —</option>
-                {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+                <option value="" className={themedOptionClass}>— wybierz —</option>
+                {members.map((m) => <option key={m.id} value={m.id} className={themedOptionClass}>{m.full_name}</option>)}
               </select>
             </div>
           )}
@@ -150,7 +150,7 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
           {editMemberId ? (
             <CompetencyEditor key={editMemberId} memberId={editMemberId} initialTags={tags} />
           ) : (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-amber-300 text-sm">
+            <div className="bg-amber-500/10 light:bg-amber-50 border border-amber-500/20 light:border-amber-200 rounded-lg p-4 text-amber-300 light:text-amber-800 text-sm">
               Twoje konto nie jest powiązane z osobą w zespole (brak dopasowania po adresie e-mail).
               {isAdmin ? ' Wybierz osobę powyżej.' : ' Skontaktuj się z administratorem, aby powiązać profil.'}
             </div>
@@ -167,7 +167,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={cn(
         'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition',
-        active ? 'border-indigo-500 text-white' : 'border-transparent text-slate-400 hover:text-white'
+        active ? 'border-indigo-500 text-white light:text-slate-900' : 'border-transparent text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900'
       )}
     >
       {children}

@@ -384,8 +384,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 10: Kompetencje theming
 #### Automated
-- [ ] 10.1 npm run build succeeds
-- [ ] 10.2 npm run lint passes with no new errors
-- [ ] 10.3 git diff shows no changes under src/app/api/ or mcp/
+- [x] 10.1 npm run build succeeds
+- [x] 10.2 npm run lint passes with no new errors
+- [x] 10.3 git diff shows no changes under src/app/api/ or mcp/
 #### Manual
 - [ ] 10.4 Kompetencje tabs, search, tag chips, the inline competency editor, and ExperienceModal render correctly in both themes
