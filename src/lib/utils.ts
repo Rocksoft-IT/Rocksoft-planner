@@ -67,6 +67,8 @@ export function isAllocationInView(allocation: Allocation, days: Date[]) {
 
 // Returns { allocated: number (0-100+), free: number (0-100) }
 // Weekends are ignored. OOO days reduce available capacity.
+// Tentative allocations (not yet confirmed by the client) are excluded — they
+// must not make a person look busy or overloaded.
 export function calcUtilization(
   allocations: Allocation[],
   days: Date[],
@@ -86,6 +88,7 @@ export function calcUtilization(
 
   let totalAllocatedHours = 0
   for (const alloc of allocations) {
+    if (alloc.status === 'tentative') continue
     const overlap = workdays.filter((d) => {
       const ds = format(d, 'yyyy-MM-dd')
       // Don't count hours on OOO days

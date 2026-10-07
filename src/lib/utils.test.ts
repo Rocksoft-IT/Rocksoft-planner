@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE } from './utils'
-import type { ContractType, TeamMember } from './types'
+import { calcUtilization, compareByContractType, formatAvailability, matchesContractTypeFilter, NO_CONTRACT_TYPE } from './utils'
+import type { Allocation, ContractType, TeamMember } from './types'
 
 function makePerson(full_name: string, contract_type: ContractType | null): TeamMember {
   return {
@@ -68,5 +68,48 @@ describe('matchesContractTypeFilter', () => {
   it('matches people with no contract type via NO_CONTRACT_TYPE', () => {
     const shown = everyone.filter((p) => matchesContractTypeFilter(p, [NO_CONTRACT_TYPE]))
     expect(shown.map((p) => p.full_name)).toEqual(['Ewa'])
+  })
+})
+
+function makeAllocation(hours_per_day: number, status: Allocation['status']): Allocation {
+  return {
+    id: `${status}-${hours_per_day}`,
+    person_id: 'p1',
+    project_id: 'proj',
+    start_date: '2026-10-05',
+    end_date: '2026-10-09',
+    hours_per_day,
+    status,
+    notes: null,
+    created_by: null,
+    updated_by: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  }
+}
+
+describe('calcUtilization', () => {
+  // Mon 2026-10-05 .. Fri 2026-10-09 — five workdays, 40h capacity at 8h/day.
+  const week = [5, 6, 7, 8, 9].map((d) => new Date(2026, 9, d))
+
+  it('ignores tentative allocations, so they never cause overload', () => {
+    const util = calcUtilization(
+      [makeAllocation(8, 'confirmed'), makeAllocation(8, 'tentative')],
+      week,
+      8,
+    )
+    expect(util.allocatedHours).toBe(40)
+    expect(util.allocated).toBe(100)
+    expect(formatAvailability(util).isOver).toBe(false)
+  })
+
+  it('still flags overload from confirmed allocations', () => {
+    const util = calcUtilization(
+      [makeAllocation(8, 'confirmed'), makeAllocation(2, 'confirmed')],
+      week,
+      8,
+    )
+    expect(util.allocatedHours).toBe(50)
+    expect(formatAvailability(util).isOver).toBe(true)
   })
 })
