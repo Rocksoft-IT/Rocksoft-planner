@@ -29,10 +29,10 @@ export default function TimelineClient({ initialPeople, initialProjects, initial
   }, [])
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-6 py-4 border-b border-slate-800 shrink-0">
-        <h1 className="text-lg font-semibold text-white">Timeline</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Przegląd alokacji zespołu</p>
+    <div className="h-full flex flex-col light:bg-slate-50">
+      <div className="px-6 py-4 border-b border-slate-800 light:border-slate-200 shrink-0">
+        <h1 className="text-lg font-semibold text-white light:text-slate-900">Timeline</h1>
+        <p className="text-sm text-slate-400 light:text-slate-500 mt-0.5">Przegląd alokacji zespołu</p>
       </div>
       <div className="flex-1 overflow-hidden">
         <Timeline

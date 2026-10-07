@@ -65,7 +65,7 @@ The scoping class is applied to the `(dashboard)` layout's wrapper `<div>` (`(da
 | # | Name | Phases | Depends on | User-visible | Status | PR |
 |---|---|---|---|---|---|---|
 | 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | done | #69 |
-| 2 | Timeline theming | 5-7 | 1 | yes | in-progress | — |
+| 2 | Timeline theming | 5-7 | 1 | yes | done | — |
 | 3 | People + Projects theming | 8-9 | 1 | yes | done | — |
 | 4 | Kompetencje theming | 10 | 1 | yes | in-progress | — |
 
@@ -347,15 +347,15 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 5: Timeline grid, frozen pane, month header
 #### Automated
-- [ ] 5.1 npm run build succeeds
-- [ ] 5.2 npm run lint passes with no new errors
+- [x] 5.1 npm run build succeeds — 4221250
+- [x] 5.2 npm run lint passes with no new errors — 4221250
 #### Manual
 - [ ] 5.3 the Timeline grid, frozen person-name column, and month header render correctly in both themes, with the sticky column still visually separated from scrolled content
 
 ### Phase 6: Availability bar, allocation blocks, time-off blocks
 #### Automated
-- [ ] 6.1 npm run build succeeds
-- [ ] 6.2 npm run lint passes with no new errors
+- [x] 6.1 npm run build succeeds — 8eef6f2
+- [x] 6.2 npm run lint passes with no new errors — 8eef6f2
 #### Manual
 - [ ] 6.3 an allocation block using a light-hue project colour keeps readable text in light theme, while the block still visibly carries that project's colour via its background/border
 - [ ] 6.4 over-allocation (red) on the availability bar is clearly red in both themes
@@ -363,8 +363,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 7: Timeline modals and Timeline-only filters
 #### Automated
-- [ ] 7.1 npm run build succeeds
-- [ ] 7.2 npm run lint passes with no new errors
+- [x] 7.1 npm run build succeeds — d2d735b
+- [x] 7.2 npm run lint passes with no new errors — d2d735b
 #### Manual
 - [ ] 7.3 AllocationModal, TimeOffModal, and all three Timeline filter dropdowns plus the month picker render correctly with no dark leftovers in light mode
 
