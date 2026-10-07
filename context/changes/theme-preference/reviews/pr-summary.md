@@ -7,4 +7,4 @@
 - Open "Moje kompetencje", add a skill and a technology, then open the experience dialog and confirm nothing stays dark.
 - Switch back to dark and confirm the screen looks the same as before.
 
-**Status:** Not ready: in light mode the page background still looks dark, so some text is hard to read; a fix is on its way.
+**Status:** Ready to merge once you have checked the preview.
