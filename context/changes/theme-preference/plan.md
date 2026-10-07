@@ -370,8 +370,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 8: People theming
 #### Automated
-- [ ] 8.1 npm run build succeeds
-- [ ] 8.2 npm run lint passes with no new errors
+- [x] 8.1 npm run build succeeds
+- [x] 8.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 8.3 the People list, group toggle, availability bars, and PersonModal (including its avatar-colour picker) render correctly in both themes with avatar colours unchanged
 

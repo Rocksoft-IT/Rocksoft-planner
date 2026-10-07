@@ -51,12 +51,12 @@ export default function RoleSelect({ value, onChange }: RoleSelectProps) {
       >
         <div className="flex flex-wrap gap-1 flex-1 min-w-0">
           {value.length === 0 ? (
-            <span className="text-slate-500">Wybierz stanowisko…</span>
+            <span className="text-slate-500 light:text-slate-600">Wybierz stanowisko…</span>
           ) : (
             value.map((r) => (
               <span
                 key={r}
-                className="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-0.5 rounded-full"
+                className="bg-indigo-500/20 text-indigo-300 light:bg-indigo-100 light:text-indigo-700 text-xs px-2 py-0.5 rounded-full"
               >
                 {r}
               </span>
