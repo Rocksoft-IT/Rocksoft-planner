@@ -354,8 +354,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 6: Availability bar, allocation blocks, time-off blocks
 #### Automated
-- [x] 6.1 npm run build succeeds
-- [x] 6.2 npm run lint passes with no new errors
+- [x] 6.1 npm run build succeeds — 8eef6f2
+- [x] 6.2 npm run lint passes with no new errors — 8eef6f2
 #### Manual
 - [ ] 6.3 an allocation block using a light-hue project colour keeps readable text in light theme, while the block still visibly carries that project's colour via its background/border
 - [ ] 6.4 over-allocation (red) on the availability bar is clearly red in both themes
@@ -363,8 +363,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 7: Timeline modals and Timeline-only filters
 #### Automated
-- [ ] 7.1 npm run build succeeds
-- [ ] 7.2 npm run lint passes with no new errors
+- [x] 7.1 npm run build succeeds
+- [x] 7.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 7.3 AllocationModal, TimeOffModal, and all three Timeline filter dropdowns plus the month picker render correctly with no dark leftovers in light mode
 
