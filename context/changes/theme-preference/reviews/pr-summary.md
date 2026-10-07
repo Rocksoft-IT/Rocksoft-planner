@@ -10,4 +10,4 @@
 - Wróć do ciemnego motywu i sprawdź, czy ekran wygląda jak wcześniej.
 - Szybko przejrzyj Oś czasu, Osoby i Projekty w obu motywach, żeby potwierdzić, że po połączeniu wszystko wygląda poprawnie.
 
-**Status:** Ready to merge once you have checked the preview.
+**Status:** Gotowe do scalenia po sprawdzeniu podglądu.
