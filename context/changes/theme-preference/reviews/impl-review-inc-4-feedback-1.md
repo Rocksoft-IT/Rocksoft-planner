@@ -39,7 +39,7 @@
   6. Code: no manual edits expected. Confirm `git diff origin/main...HEAD -- src` still shows only the three competencies files after the merge, and no `light:` override from increments 2/3 was dropped (`git diff origin/main -- src` limited to those three files).
   7. Re-run `npm run build`, `npm run lint` (expect only the 4 errors / 3 warnings listed above, none in the competencies files) and `npm test` (expect all green). Record the commands with their last lines in `reviews/fix-inc-4-feedback-1-r1.md` (main already owns `fix-feedback-1-r1.md` for increment 3). No new test is required: no behaviour changes, so there is no red-first proof.
   8. Pushing is the caller's job; afterwards verify with `git merge-tree` / `gh pr view 88 --json mergeable` that the PR is no longer CONFLICTING.
-- **Decision**: FIXED (MERGE_SHA) — real merge conflict blocks the PR; one unambiguous resolution (take main for increments 2/3 state, branch for increment 4 state).
+- **Decision**: FIXED (1adf977) — real merge conflict blocks the PR; one unambiguous resolution (take main for increments 2/3 state, branch for increment 4 state).
 
 ## Plan-drift classification
 - In plan AND diff: unchanged since r2 of this increment (three competencies files).
