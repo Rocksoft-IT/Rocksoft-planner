@@ -1,7 +1,7 @@
 ---
 change_id: contract-type-shared-source
 title: Contract-type allowed values duplicated across TS and SQL (no shared source)
-status: implementing
+status: implemented
 created: 2026-10-07
 updated: 2026-10-07
 archived_at: null

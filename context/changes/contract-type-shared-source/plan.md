@@ -59,8 +59,8 @@ The test is the deliverable. Red-first proof is the temporary-mutation criterion
 
 ### Phase 1: Parity test
 #### Automated
-- [x] 1.1 `npm test` passes, including the new parity test
-- [x] 1.2 Parity test fails when a value is temporarily added to `CONTRACT_TYPES` or removed from one SQL constraint, and passes again after the revert
-- [x] 1.3 `npm run lint` passes on the new file
-- [x] 1.4 `npx tsc --noEmit` passes
+- [x] 1.1 `npm test` passes, including the new parity test — 080c517
+- [x] 1.2 Parity test fails when a value is temporarily added to `CONTRACT_TYPES` or removed from one SQL constraint, and passes again after the revert — 080c517
+- [x] 1.3 `npm run lint` passes on the new file — 080c517
+- [x] 1.4 `npx tsc --noEmit` passes — 080c517
 #### Manual
