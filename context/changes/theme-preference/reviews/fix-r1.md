@@ -1,15 +1,15 @@
-# Fix round 1 - Increment 4
+# Fix round 1 - increment 3 (theme-preference)
 
-Finding fixed: F1 (Kompetencje page canvas stays dark in light mode). Per orchestrator decision the fix is per-page, not in `layout.tsx`.
+Findings fixed: F1, F2. F3, F4 ACCEPT, untouched.
 
-Change: `src/app/(dashboard)/competencies/CompetenciesClient.tsx` - the page root is now `<div className="min-h-full light:bg-slate-50">` wrapping the original `max-w-3xl` container (mirrors Timeline's pattern). No unprefixed class changed, so the dark theme is unchanged.
+- F1: `min-h-full light:bg-slate-50` on the root div of `PeopleClient.tsx` and `ProjectsClient.tsx` (per-page, not `layout.tsx`, per orchestrator decision: file-disjoint with increments 2/4).
+- F2: `light:text-slate-800!` on the Active badge in `ProjectsClient.tsx`; the inline tint and `project.color` are unchanged (important modifier needed to beat the inline `style` colour).
 
 ## Verification
-- `npm run build` - exit 0, all routes listed.
-- `npm run lint` - 7 problems (4 errors, 3 warnings), identical to the round-1 baseline, all in files outside this increment; `npx eslint` on `CompetenciesClient.tsx` alone - exit 0, clean.
-- `npm test` (full suite) - 2 files, 13 tests passed, no failures (baseline: no failures).
-- Red-first proof: not applicable. The change is a presentation-only Tailwind class on a wrapper; there is no test that can observe it (no new or changed tests).
-- `git diff --stat -- src/app/api mcp` - empty (10.3 still holds).
-- Manual 10.4 remains `[ ]` (visual check on the preview).
-
-F2 was ACCEPT, left untouched.
+- `npm run build` - exit 0 (all routes compiled).
+- Generated CSS contains both classes: `.light\:bg-slate-50:where(.light,.light *){background-color:var(--color-slate-50)}` and `.light\:text-slate-800\!:where(.light,.light *){color:var(--color-slate-800)!important}`.
+- `npx eslint` on the two files: 0 errors, 1 pre-existing warning (`PeopleClient.tsx:103`).
+- `npm run lint`: 4 errors + 3 warnings, identical to the baseline in the review report (none in touched lines).
+- `npm test` (vitest run): 2 files, 13 tests passed; no new failures.
+- Red-first proof: not applicable, class-only styling change with no testable behaviour (no test covers these pages); the generated-CSS check above is the proof the variants resolve.
+- Manual 8.3 / 9.3 remain pending (human on preview).
