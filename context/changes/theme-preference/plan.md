@@ -363,8 +363,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 7: Timeline modals and Timeline-only filters
 #### Automated
-- [x] 7.1 npm run build succeeds
-- [x] 7.2 npm run lint passes with no new errors
+- [x] 7.1 npm run build succeeds — d2d735b
+- [x] 7.2 npm run lint passes with no new errors — d2d735b
 #### Manual
 - [ ] 7.3 AllocationModal, TimeOffModal, and all three Timeline filter dropdowns plus the month picker render correctly with no dark leftovers in light mode
 
