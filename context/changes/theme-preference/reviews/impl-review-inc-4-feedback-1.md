@@ -2,7 +2,7 @@
 # Implementation Review: Theme preference (light/dark)
 
 **Plan**: context/changes/theme-preference/plan.md   **Scope**: Increment 4 (Phase 10, Kompetencje theming), feedback cycle 1   **Date**: 2026-10-07
-**Round**: 1   **Verdict**: NEEDS_ATTENTION   **Findings**: 1
+**Round**: 2   **Verdict**: APPROVED   **Findings**: 1
 
 ## Verdicts
 | Dimension | Verdict |
@@ -59,3 +59,6 @@ Architecture gate: `context/architecture/model.c4` not present, SKIPPED (no boun
 
 ## Notes
 - Round-3 rule: not reached (feedback cycle 1, round 1).
+
+## Round 2
+Re-review of merge 1adf977 (+ `reviews/fix-inc-4-feedback-1-r1.md`, docs follow-up 7ec984b). Verified: the merge commit has parents f800ef3 (branch) and 64304e8 (origin/main); no conflict markers remain; `plan.md` Increments rows 1-4 are all `done`; `change.md` is `status: implemented`; main's `fix-r1.md` (increment 3) is kept and increment 4's evidence sits in `fix-inc-4-r1.md`; `git diff origin/main...HEAD -- src` lists only the three competencies files, so no increment 2/3 theme work was dropped. `git merge-tree origin/main HEAD` is clean and the branch is 0 commits behind origin/main (re-fetched). Re-ran: `npm run build` exit 0; `npm run lint` 4 errors / 3 warnings, all pre-existing (`ProjectModal`, `AllocationModal`, `TimeOffModal`, `Timeline`, `PeopleClient`), none in the competencies files; `npm test` 3 files / 19 tests pass. No ACCEPT finding touched. Manual 10.4 remains pending for the client's preview.
