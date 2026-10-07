@@ -67,7 +67,7 @@ The scoping class is applied to the `(dashboard)` layout's wrapper `<div>` (`(da
 | 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | done | #69 |
 | 2 | Timeline theming | 5-7 | 1 | yes | done | — |
 | 3 | People + Projects theming | 8-9 | 1 | yes | done | — |
-| 4 | Kompetencje theming | 10 | 1 | yes | in-progress | — |
+| 4 | Kompetencje theming | 10 | 1 | yes | done | — |
 
 Increments 2, 3, and 4 are file-disjoint from each other (confirmed in research) and may run in parallel once increment 1 is merged.
 
@@ -384,8 +384,8 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 10: Kompetencje theming
 #### Automated
-- [ ] 10.1 npm run build succeeds
-- [ ] 10.2 npm run lint passes with no new errors
-- [ ] 10.3 git diff shows no changes under src/app/api/ or mcp/
+- [x] 10.1 npm run build succeeds — 8caf164
+- [x] 10.2 npm run lint passes with no new errors — 8caf164
+- [x] 10.3 git diff shows no changes under src/app/api/ or mcp/ — 8caf164
 #### Manual
 - [ ] 10.4 Kompetencje tabs, search, tag chips, the inline competency editor, and ExperienceModal render correctly in both themes

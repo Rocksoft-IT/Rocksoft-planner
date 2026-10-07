@@ -1,10 +1,10 @@
 ---
 change_id: theme-preference
 title: Planners can switch RS Planner between dark and light theme
-status: implementing
+status: archived
 created: 2026-09-15
 updated: 2026-10-07
-archived_at: null
+archived_at: 2026-10-07T07:42:09Z
 ---
 
 ## Notes

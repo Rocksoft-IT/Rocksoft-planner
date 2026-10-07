@@ -42,10 +42,10 @@ export default function TagMultiSelect({ options, value, onChange, placeholder }
       >
         <div className="flex flex-wrap gap-1 flex-1 min-w-0">
           {selectedNames.length === 0 ? (
-            <span className="text-slate-500">{placeholder ?? 'Wybierz…'}</span>
+            <span className="text-slate-500 light:text-slate-600">{placeholder ?? 'Wybierz…'}</span>
           ) : (
             selectedNames.map((n) => (
-              <span key={n} className="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-0.5 rounded-full">{n}</span>
+              <span key={n} className="bg-indigo-500/20 light:bg-indigo-100 text-indigo-300 light:text-indigo-700 text-xs px-2 py-0.5 rounded-full">{n}</span>
             ))
           )}
         </div>
