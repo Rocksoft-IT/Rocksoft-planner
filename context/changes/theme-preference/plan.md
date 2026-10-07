@@ -67,7 +67,7 @@ The scoping class is applied to the `(dashboard)` layout's wrapper `<div>` (`(da
 | 1 | Theme foundation (schema, mechanism, avatar menu, shared modal chrome) | 1-4 | — | yes | done | #69 |
 | 2 | Timeline theming | 5-7 | 1 | yes | in-progress | — |
 | 3 | People + Projects theming | 8-9 | 1 | yes | in-progress | — |
-| 4 | Kompetencje theming | 10 | 1 | yes | in-progress | — |
+| 4 | Kompetencje theming | 10 | 1 | yes | done | — |
 
 Increments 2, 3, and 4 are file-disjoint from each other (confirmed in research) and may run in parallel once increment 1 is merged.
 
