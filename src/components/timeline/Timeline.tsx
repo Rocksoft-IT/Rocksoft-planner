@@ -183,14 +183,14 @@ function DraggableAllocBlock({
         style={{ paddingLeft: 8 + labelOffset }}
       >
         <div className="flex items-center gap-0.5 shrink-0">
-          <span className="text-[10px] font-semibold opacity-80 leading-none" style={{ color: bg }}>
+          <span className="text-[10px] font-semibold opacity-80 leading-none light:text-slate-800!" style={{ color: bg }}>
             {hoursPerDay}h
           </span>
           {isTentative && (
-            <span className="text-[9px] font-bold leading-none" style={{ color: bg, opacity: 0.8 }}>?</span>
+            <span className="text-[9px] font-bold leading-none light:text-slate-800!" style={{ color: bg, opacity: 0.8 }}>?</span>
           )}
         </div>
-        <span className="text-xs font-medium truncate leading-none" style={{ color: bg }}>
+        <span className="text-xs font-medium truncate leading-none light:text-slate-800!" style={{ color: bg }}>
           {projectName}
         </span>
       </div>
@@ -234,7 +234,7 @@ function DraggableOooBlock({
       ref={setNodeRef}
       data-block
       onClick={onClick}
-      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity"
+      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity light:[background:repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0_4px,#f1f5f9_4px,#f1f5f9_8px)]! light:border-l-slate-400!"
       style={{
         left, width, top: laneTop, height: LANE_HEIGHT,
         background: `repeating-linear-gradient(45deg, #1e293b, #1e293b 4px, #253047 4px, #253047 8px)`,
@@ -246,7 +246,7 @@ function DraggableOooBlock({
       {...listeners}
     >
       <span className="text-sm leading-none">{emoji}</span>
-      <span className="text-[11px] font-medium text-slate-300 truncate leading-none">{label}</span>
+      <span className="text-[11px] font-medium text-slate-300 light:text-slate-700 truncate leading-none">{label}</span>
     </div>
   )
 }
@@ -806,7 +806,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                         {av.isUnavailable ? 'niedostępny' : av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-700 light:bg-slate-200 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
                         style={{ width: `${av.barPct}%`, backgroundColor: av.color }} />
                     </div>

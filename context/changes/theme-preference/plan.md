@@ -347,15 +347,15 @@ One migration, `migrations/2026-09-15-profile-theme.sql`: adds `profiles.theme t
 
 ### Phase 5: Timeline grid, frozen pane, month header
 #### Automated
-- [x] 5.1 npm run build succeeds
-- [x] 5.2 npm run lint passes with no new errors
+- [x] 5.1 npm run build succeeds — 4221250
+- [x] 5.2 npm run lint passes with no new errors — 4221250
 #### Manual
 - [ ] 5.3 the Timeline grid, frozen person-name column, and month header render correctly in both themes, with the sticky column still visually separated from scrolled content
 
 ### Phase 6: Availability bar, allocation blocks, time-off blocks
 #### Automated
-- [ ] 6.1 npm run build succeeds
-- [ ] 6.2 npm run lint passes with no new errors
+- [x] 6.1 npm run build succeeds
+- [x] 6.2 npm run lint passes with no new errors
 #### Manual
 - [ ] 6.3 an allocation block using a light-hue project colour keeps readable text in light theme, while the block still visibly carries that project's colour via its background/border
 - [ ] 6.4 over-allocation (red) on the availability bar is clearly red in both themes
