@@ -2,14 +2,14 @@
 # Implementation Review: Planners can switch RS Planner between dark and light theme
 
 **Plan**: context/changes/theme-preference/plan.md   **Scope**: Increment 3 (Phases 8-9, People + Projects theming)   **Date**: 2026-10-07
-**Round**: 1   **Verdict**: REJECTED   **Findings**: 4
+**Round**: 2   **Verdict**: APPROVED   **Findings**: 4
 
 ## Verdicts
 | Dimension | Verdict |
 |---|---|
-| Plan Adherence | FAIL |
+| Plan Adherence | PASS |
 | Scope Discipline | PASS |
-| Safety & Quality | WARNING |
+| Safety & Quality | PASS |
 | Architecture | PASS |
 | Pattern Consistency | PASS |
 | Success Criteria | PASS |
@@ -30,7 +30,7 @@ Diff scope: 5 code files (`PeopleClient.tsx`, `ProjectsClient.tsx`, `PersonModal
 - **Location**: `src/app/(dashboard)/layout.tsx:25` (`className="flex h-screen bg-slate-900 overflow-hidden"`), consumed by `src/app/(dashboard)/people/PeopleClient.tsx:106` and `src/app/(dashboard)/projects/ProjectsClient.tsx:23` (both root `<div className="p-6">`, no background of their own)
 - **Detail**: Confirmed the implementer's note. The themed wrapper carries `bg-slate-900` with no `light:` override and nothing downstream paints a background, so in light theme the area behind the cards is still dark slate. This increment then sets page-level text to dark: titles `light:text-slate-900` (`PeopleClient.tsx:110`, `ProjectsClient.tsx:26`), subtitles/labels `light:text-slate-600` (e.g. `PeopleClient.tsx:111,159,181`, empty states `:305,318`, `ProjectsClient.tsx:85`). Dark text on `#0f172a` is effectively invisible (slate-900 on slate-900 = 1:1; slate-600 on slate-900 ~ 2.7:1), while the white cards sit on a dark canvas. `grep` shows no `light:bg-slate-50`/similar anywhere in `src/` for the page canvas, and no phase in the plan owns the wrapper background (Phase 2 only added the `.light` class; layout.tsx is not in any later phase's file list), so increments 2 and 4 will hit the same gap. Phases 8/9's goal (FR-004: People and Projects render correctly in light theme) is not met.
 - **Fix**: Give the page canvas a light background. Preferred for this increment (stays inside owned, file-disjoint files, no merge conflict with increments 2/4): add `min-h-full light:bg-slate-50` to the root `<div className="p-6">` of `PeopleClient.tsx` and `ProjectsClient.tsx` so it fills the visible `<main>` area. The one-token alternative, `light:bg-slate-50` on the wrapper in `layout.tsx:25`, is cleaner overall but touches increment 1's shared file; the orchestrator may apply it once instead (an identical edit from multiple increments merges cleanly).
-- **Decision**: FIXED (5472b91) — unambiguous, CRITICAL.
+- **Decision**: FIXED (5472b91) — verified r2
 
 ### F2 — Projects "Active" badge uses the raw project colour as text; unreadable for light-hue projects on a white card
 - **Severity**: WARNING
@@ -39,7 +39,7 @@ Diff scope: 5 code files (`PeopleClient.tsx`, `ProjectsClient.tsx`, `PersonModal
 - **Location**: `src/app/(dashboard)/projects/ProjectsClient.tsx:70-76` (`backgroundColor: hexToRgba(project.color, 0.15), color: project.color`)
 - **Detail**: Same pattern the plan already proved risky for allocation blocks (plan "Allocation-block text contrast"; Phase 6, increment 2), but Phase 9 did not cover it and the diff leaves it untouched. Computed WCAG contrast of each `PROJECT_COLORS` swatch (`src/lib/utils.ts:109-122`) as 12px text on its own 15% tint over a white card: lime `#84cc16` 1.78, amber `#f59e0b` 1.91, cyan `#06b6d4` 2.11, teal `#14b8a6` 2.17, emerald `#10b981` 2.19, orange `#f97316` 2.40, pink 2.94, blue 3.09, red 3.10, violet 3.53, indigo 3.70, rose 3.70. All 12 are below 4.5:1; the light hues are close to illegible. The same neutral text (slate-900) on that tint scores 14-16:1. Dark theme is unaffected (these colours read fine on slate-900).
 - **Fix**: Keep the tint (`backgroundColor`) and the card's left border/dot as raw `project.color`; in light theme only switch the badge text to a fixed neutral. Because the colour is set via inline `style`, a plain `light:text-slate-800` class loses to it: use Tailwind 4's important modifier (`light:text-slate-800!`) or move the colour out of the inline style. Mirror whatever Phase 6 uses for allocation blocks so both stay consistent.
-- **Decision**: FIXED (5472b91) — one unambiguous fix, mirrors the plan's own resolved design.
+- **Decision**: FIXED (5472b91) — verified r2
 
 ### F3 — Availability status text (People list) coloured with Tailwind-500 hexes on white
 - **Severity**: OBSERVATION
@@ -62,3 +62,10 @@ Diff scope: 5 code files (`PeopleClient.tsx`, `ProjectsClient.tsx`, `PersonModal
 ## Manual criteria (diff evidence)
 - 8.3 People list, group toggle, availability bars, PersonModal: list/toggle/search/empty states themed in the diff; avatar colour values untouched (`PeopleClient.tsx:241` inline `avatar_color`). Pending human check, **blocked on F1** (page canvas).
 - 9.3 Projects cards, ProjectModal, swatch picker: cards and `ColorPicker.tsx:21` ring themed; project colours untouched. Pending human check, **blocked on F1 and F2**.
+
+## Round 2
+Re-review of fix commit `5472b91` (read `fix-r1.md` and the commit diff; no full-suite re-run, `fix-r1.md` carries the lint baseline comparison and test run).
+- F1: `min-h-full light:bg-slate-50` added to the root div of `PeopleClient.tsx:106` and `ProjectsClient.tsx:23`; no dark-theme class touched, so dark is unchanged. The page canvas now turns light under `.light`; the dark titles/labels from round 1 sit on it legibly (slate-900 on slate-50 ~17:1, slate-600 ~7:1). Percent `min-h-full` resolves because `<main>` is a stretched flex item (`layout.tsx:29`).
+- F2: `light:text-slate-800!` added to the Active badge (`ProjectsClient.tsx:73`); the inline tint and `project.color` are untouched, important modifier beats the inline `style` colour. Generated CSS contains both new variants (per `fix-r1.md`).
+- Re-ran `npm run build`: exit 0. Fix commit touched only the two owned files plus `fix-r1.md`; no ACCEPT finding (F3, F4) was touched.
+- Manual 8.3 / 9.3 remain pending (human on preview). Increment 3 is not the last increment, so `change.md` status is untouched.
