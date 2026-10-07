@@ -1,11 +1,10 @@
 <!-- preview-link -->
 
-**What this delivers:** The foundation for the new light/dark theme switch. You can now open the menu under your avatar in the sidebar and pick Light or Dark, and your choice is saved to your account so it follows you next time you sign in. This first update themes the side menu and popup windows; the main screens (Timeline, People, Projects, Kompetencje) still show in dark for now and will switch over in follow-up updates.
+**What this delivers:** The Kompetencje screen (expert search, "Moje kompetencje" editor, experience dialog, tag chips and filters) now has a light look for people who choose the light theme; the dark look is unchanged.
 
 **Please check on the preview:**
-- Open the app without changing anything — it should look exactly like it does today (dark).
-- Click your avatar and switch to Light — the sidebar and any popup window you open should switch immediately, with no page reload.
-- Refresh the page while set to Light — it should load already in Light, with no flash of dark first.
-- Sign out and sign back in — the sign-in screen should stay dark, then switch to Light right after you're signed in again.
+- Switch to the light theme from the avatar menu, open Kompetencje and confirm the page background, headings, tabs, search results and tag chips are all clearly readable.
+- Open "Moje kompetencje", add a skill and a technology, then open the experience dialog and confirm nothing stays dark.
+- Switch back to dark and confirm the screen looks the same as before.
 
-**Status:** Ready to merge once you have checked the preview.
+**Status:** Not ready: in light mode the page background still looks dark, so some text is hard to read; a fix is on its way.
