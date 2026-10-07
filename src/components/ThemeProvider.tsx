@@ -11,6 +11,14 @@ interface ThemeContextValue {
   setTheme: (theme: Theme) => void
 }
 
+// supabase-js PostgrestError fields beyond `message` that help diagnose a failed save.
+interface SaveError {
+  message: string
+  code?: string
+  details?: string | null
+  hint?: string | null
+}
+
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 interface ThemeProviderProps {
@@ -31,6 +39,8 @@ interface ThemeProviderProps {
 // /auth/* always dark.
 export default function ThemeProvider({ initialTheme, profileId, className, children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(initialTheme)
+  // True while a failed, un-superseded save is being reported to the user.
+  const [saveFailed, setSaveFailed] = useState(false)
 
   // Writes are serialized (never fired concurrently): if a save is already in
   // flight when the user toggles again, the new value is queued and sent only
@@ -66,7 +76,19 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
         // forever with nothing ever logged.
         const failed = error ? error.message : count === 0 ? 'no profile row matched' : null
         if (failed) {
-          console.error('Failed to save theme preference:', failed)
+          const details = error as SaveError | null
+          const missingColumn =
+            details?.code === '42703' ||
+            details?.code === 'PGRST204' ||
+            (/\btheme\b/i.test(details?.message ?? '') && /column/i.test(details?.message ?? ''))
+          console.error('Failed to save theme preference:', failed, {
+            code: details?.code,
+            details: details?.details,
+            hint: details?.hint,
+            ...(missingColumn
+              ? { migration: 'profiles.theme column is missing; apply migrations/2026-09-15-profile-theme.sql' }
+              : {}),
+          })
           if (queued !== null && queued !== value) {
             // A newer choice already superseded this failed one — keep
             // chasing that instead of rolling the UI back to a value the
@@ -78,10 +100,12 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
             // actually saved (it would otherwise silently revert on the
             // next reload with no explanation).
             setThemeState(previous)
+            setSaveFailed(true)
           }
           return
         }
 
+        setSaveFailed(false)
         if (queued !== null && queued !== value) persistThemeRef.current(queued, value)
       })
   }, [profileId])
@@ -92,6 +116,7 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
   const setTheme = useCallback((next: Theme) => {
     if (next === theme) return
     const previous = theme
+    setSaveFailed(false)
     setThemeState(next)
     if (saveInFlightRef.current) {
       queuedThemeRef.current = next
@@ -104,6 +129,24 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <div className={cn(className, theme === 'light' && 'light')}>
         {children}
+        {saveFailed && (
+          <div
+            role="alert"
+            className="fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg border border-red-500/30 bg-slate-900 light:bg-white p-3 text-sm text-red-300 light:text-red-700 shadow-lg"
+          >
+            <p>
+              Your theme could not be saved, so it was switched back. Try again, or contact an administrator if it keeps happening.
+            </p>
+            <button
+              type="button"
+              onClick={() => setSaveFailed(false)}
+              aria-label="Dismiss"
+              className="shrink-0 text-red-300 light:text-red-700 hover:text-red-100 light:hover:text-red-900"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
     </ThemeContext.Provider>
   )
