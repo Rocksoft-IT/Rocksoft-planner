@@ -6,6 +6,7 @@ import {
   eachDayOfInterval,
   format,
   isWeekend,
+  parseISO,
   startOfWeek,
 } from 'date-fns'
 import { CONTRACT_TYPES, type Allocation, type TeamMember, type TimeOff, type ViewMode } from './types'
@@ -140,6 +141,28 @@ export const AVATAR_COLORS = [
 
 export function formatDate(date: Date | string): string {
   return format(new Date(date), 'yyyy-MM-dd')
+}
+
+// True when a 'yyyy-MM-dd' date falls on Saturday or Sunday. Parsed as a local
+// date (parseISO), not UTC, so the weekday never shifts with the timezone.
+export function isWeekendDate(isoDate: string): boolean {
+  return isWeekend(parseISO(isoDate))
+}
+
+// Project allocations may span a weekend, but must start and end on a workday —
+// nobody is assigned to a project on Saturday or Sunday. Returns the Polish
+// error message to show, or null when the range is allowed.
+export const WEEKEND_ALLOCATION_ERROR = 'Alokacja nie może zaczynać się ani kończyć w sobotę lub niedzielę.'
+export function validateAllocationDates(startDate: string, endDate: string): string | null {
+  return isWeekendDate(startDate) || isWeekendDate(endDate) ? WEEKEND_ALLOCATION_ERROR : null
+}
+
+// Workdays (Mon–Fri) in an inclusive 'yyyy-MM-dd' range — the days an
+// allocation actually books hours on. Weekends inside the range book nothing.
+export function countWorkdays(startDate: string, endDate: string): number {
+  if (startDate > endDate) return 0
+  return eachDayOfInterval({ start: parseISO(startDate), end: parseISO(endDate) })
+    .filter((d) => !isWeekend(d)).length
 }
 
 // Forward-looking availability window: today through today + 13 (the next 2 weeks).

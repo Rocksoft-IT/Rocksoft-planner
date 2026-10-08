@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcUtilization, compareByContractType, formatAvailability, matchesContractTypeFilter, NO_CONTRACT_TYPE } from './utils'
+import { calcUtilization, compareByContractType, countWorkdays, formatAvailability, isWeekendDate, matchesContractTypeFilter, NO_CONTRACT_TYPE, validateAllocationDates, WEEKEND_ALLOCATION_ERROR } from './utils'
 import type { Allocation, ContractType, TeamMember } from './types'
 
 function makePerson(full_name: string, contract_type: ContractType | null): TeamMember {
@@ -71,13 +71,18 @@ describe('matchesContractTypeFilter', () => {
   })
 })
 
-function makeAllocation(hours_per_day: number, status: Allocation['status']): Allocation {
+function makeAllocation(
+  hours_per_day: number,
+  status: Allocation['status'],
+  start_date = '2026-10-05',
+  end_date = '2026-10-09',
+): Allocation {
   return {
     id: `${status}-${hours_per_day}`,
     person_id: 'p1',
     project_id: 'proj',
-    start_date: '2026-10-05',
-    end_date: '2026-10-09',
+    start_date,
+    end_date,
     hours_per_day,
     status,
     notes: null,
@@ -111,5 +116,38 @@ describe('calcUtilization', () => {
     )
     expect(util.allocatedHours).toBe(50)
     expect(formatAvailability(util).isOver).toBe(true)
+  })
+
+  it('books no hours on Saturday and Sunday of an allocation spanning a weekend', () => {
+    // Fri 2026-10-09 .. Mon 2026-10-12 — Sat/Sun inside the range book nothing.
+    const span = [9, 10, 11, 12].map((d) => new Date(2026, 9, d))
+    const util = calcUtilization([makeAllocation(8, 'confirmed', '2026-10-09', '2026-10-12')], span, 8)
+    expect(util.allocatedHours).toBe(16)
+    expect(util.capacityHours).toBe(16)
+  })
+})
+
+describe('weekend allocation rules', () => {
+  it('detects Saturday and Sunday', () => {
+    expect(isWeekendDate('2026-10-09')).toBe(false) // Fri
+    expect(isWeekendDate('2026-10-10')).toBe(true) // Sat
+    expect(isWeekendDate('2026-10-11')).toBe(true) // Sun
+    expect(isWeekendDate('2026-10-12')).toBe(false) // Mon
+  })
+
+  it('rejects an allocation that starts or ends on a weekend', () => {
+    expect(validateAllocationDates('2026-10-10', '2026-10-12')).toBe(WEEKEND_ALLOCATION_ERROR)
+    expect(validateAllocationDates('2026-10-09', '2026-10-11')).toBe(WEEKEND_ALLOCATION_ERROR)
+    expect(validateAllocationDates('2026-10-10', '2026-10-10')).toBe(WEEKEND_ALLOCATION_ERROR)
+  })
+
+  it('allows an allocation spanning a weekend between two workdays', () => {
+    expect(validateAllocationDates('2026-10-09', '2026-10-12')).toBeNull()
+  })
+
+  it('counts only workdays in a range', () => {
+    expect(countWorkdays('2026-10-05', '2026-10-18')).toBe(10)
+    expect(countWorkdays('2026-10-09', '2026-10-12')).toBe(2)
+    expect(countWorkdays('2026-10-12', '2026-10-09')).toBe(0)
   })
 })
