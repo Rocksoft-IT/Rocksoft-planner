@@ -21,7 +21,7 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate } from '@/lib/utils'
+import { calcUtilization, compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate, countWorkdays, isWeekendDate, validateAllocationDates, WEEKEND_ALLOCATION_ERROR } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
@@ -97,6 +97,8 @@ interface DraggableAllocBlockProps {
   bg: string
   isTentative: boolean
   hoursPerDay: number
+  // Hours booked on workdays only — a weekend inside the range books nothing.
+  totalHours: number
   projectName: string
   scrollLeft: number
   onClick: (e: React.MouseEvent) => void
@@ -136,6 +138,7 @@ function DraggableAllocBlock({
   bg,
   isTentative,
   hoursPerDay,
+  totalHours,
   projectName,
   scrollLeft,
   onClick,
@@ -159,7 +162,7 @@ function DraggableAllocBlock({
         left, width, top: laneTop, height: LANE_HEIGHT,
         transform: CSS.Transform.toString(transform ? { ...transform, x: snappedX, y: 0 } : null),
       }}
-      title={`${projectName} — ${hoursPerDay}h/dzień · ${isTentative ? 'Tentative' : 'Confirmed'}`}
+      title={`${projectName} — ${hoursPerDay}h/dzień (${totalHours}h w dni robocze) · ${isTentative ? 'Tentative' : 'Confirmed'}`}
       {...attributes}
       {...listeners}
     >
@@ -401,6 +404,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         const newEnd = formatDate(addDays(new Date(alloc.end_date), dayOffset))
         const clampedEnd = newEnd < alloc.start_date ? alloc.start_date : newEnd
         if (clampedEnd === alloc.end_date) return
+        if (isWeekendDate(clampedEnd)) { setDragError(WEEKEND_ALLOCATION_ERROR); return }
 
         const { error } = await supabase
           .from('allocations')
@@ -416,6 +420,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         const newStart = formatDate(addDays(new Date(alloc.start_date), dayOffset))
         const clampedStart = newStart > alloc.end_date ? alloc.end_date : newStart
         if (clampedStart === alloc.start_date) return
+        if (isWeekendDate(clampedStart)) { setDragError(WEEKEND_ALLOCATION_ERROR); return }
 
         const { error } = await supabase
           .from('allocations')
@@ -441,6 +446,8 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
     const newStart = formatDate(addDays(new Date(alloc.start_date), dayOffset))
     const newEnd = formatDate(addDays(new Date(alloc.end_date), dayOffset))
+    const weekendError = validateAllocationDates(newStart, newEnd)
+    if (weekendError) { setDragError(weekendError); return }
 
     const supabase = createClient()
     const { error } = await supabase
@@ -908,6 +915,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     bg={bg}
                     isTentative={isTentative}
                     hoursPerDay={item.hours_per_day}
+                    totalHours={countWorkdays(item.start_date, item.end_date) * item.hours_per_day}
                     projectName={project?.name ?? ''}
                     scrollLeft={scrollLeft}
                     onClick={(e) => { e.stopPropagation(); if (!didDrag.current && !dragActiveRef.current) openEdit(item) }}

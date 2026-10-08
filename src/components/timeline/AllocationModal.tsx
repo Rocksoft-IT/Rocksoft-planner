@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import { createClient } from '@/lib/supabase/client'
-import { formatDate, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
+import { formatDate, validateAllocationDates, cn, themedInputClass, themedPlaceholderClass, themedLabelClass, dangerButtonClass, secondaryButtonClass } from '@/lib/utils'
 import { TIME_OFF_LABELS } from '@/lib/types'
 import type { Allocation, TeamMember, Project, TimeOff } from '@/lib/types'
 
@@ -85,6 +85,10 @@ export default function AllocationModal({
     // component stays mounted when the modal closes (only Modal itself unmounts).
     const isTimeOffEntry = kind === 'timeoff' && !allocation
     if (!isTimeOffEntry && !projectId) { setError('Wybierz projekt.'); return }
+    if (!isTimeOffEntry) {
+      const weekendError = validateAllocationDates(startDate, endDate)
+      if (weekendError) { setError(weekendError); return }
+    }
 
     setLoading(true)
     const supabase = createClient()
