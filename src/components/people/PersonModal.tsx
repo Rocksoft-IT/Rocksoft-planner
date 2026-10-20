@@ -104,7 +104,7 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
   return (
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[var(--status-error)] text-sm">{error}</div>
         )}
 
         <div>
@@ -156,7 +156,7 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
             readOnly
             className={themedInputClass}
           />
-          <p className="text-xs text-slate-500 light:text-slate-600 mt-1.5">
+          <p className="text-xs text-muted mt-1.5">
             {person
               ? 'Typ umowy jest pobierany z Entra ID i aktualizowany na początku miesiąca.'
               : 'Typ umowy zostanie pobrany z Entra ID po dodaniu osoby, na podstawie e-maila lub unikalnego imienia i nazwiska.'}
@@ -194,7 +194,7 @@ function PersonForm({ onClose, onSaved, person }: Omit<PersonModalProps, 'open'>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
             >
               {loading ? 'Zapisuję…' : person ? 'Zapisz' : 'Dodaj osobę'}
             </button>

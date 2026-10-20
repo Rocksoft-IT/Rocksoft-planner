@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { avatarColorStyle } from '@/lib/colors'
 import { useTheme } from '@/components/ThemeProvider'
 import type { Profile } from '@/lib/types'
 
@@ -71,7 +72,7 @@ const THEME_OPTIONS: { value: 'dark' | 'light'; label: string; icon: React.React
 
 const themeRadioItemClass = cn(
   'flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer outline-none',
-  'text-slate-300 light:text-slate-700',
+  'text-secondary',
   'hover:bg-slate-700 light:hover:bg-slate-100 data-[highlighted]:bg-slate-700 light:data-[highlighted]:bg-slate-100'
 )
 
@@ -96,7 +97,7 @@ export default function Sidebar({ profile }: SidebarProps) {
     : '?'
 
   return (
-    <aside className="w-16 lg:w-56 bg-slate-950 light:bg-white border-r border-slate-800 light:border-slate-200 flex flex-col h-screen shrink-0 sticky top-0 z-40">
+    <aside className="w-16 lg:w-56 bg-surface light:bg-white border-r border-slate-800 light:border-slate-200 flex flex-col h-screen shrink-0 sticky top-0 z-40">
       {/* Logo */}
       <div className="h-14 flex items-center px-3 lg:px-4 border-b border-slate-800 light:border-slate-200 shrink-0">
         <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shrink-0">
@@ -104,7 +105,7 @@ export default function Sidebar({ profile }: SidebarProps) {
             <path d="M8 2v3M16 2v3M3 8h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
           </svg>
         </div>
-        <span className="ml-2.5 font-semibold text-white light:text-slate-900 hidden lg:block">Planner</span>
+        <span className="ml-2.5 font-semibold text-foreground hidden lg:block">Planner</span>
       </div>
 
       {/* Nav */}
@@ -119,10 +120,10 @@ export default function Sidebar({ profile }: SidebarProps) {
                 'flex items-center gap-3 px-2 lg:px-3 py-2.5 rounded-lg transition-colors text-sm font-medium group',
                 active
                   ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100'
+                  : 'text-muted hover:text-foreground hover:bg-slate-800 light:hover:bg-slate-100'
               )}
             >
-              <span className={cn(active ? 'text-white' : 'text-slate-500 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-900')}>{icon}</span>
+              <span className={cn(active ? 'text-white' : 'text-muted group-hover:text-white light:group-hover:text-slate-900')}>{icon}</span>
               <span className="hidden lg:block">{label}</span>
             </Link>
           )
@@ -140,13 +141,13 @@ export default function Sidebar({ profile }: SidebarProps) {
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-                  style={{ backgroundColor: profile?.avatar_color ?? '#6366f1' }}
+                  style={avatarColorStyle(profile?.avatar_color)}
                 >
                   {initials}
                 </div>
                 <div className="flex-1 min-w-0 hidden lg:block">
-                  <p className="text-sm font-medium text-white light:text-slate-900 truncate">{profile?.full_name ?? 'User'}</p>
-                  <p className="text-xs text-slate-500 light:text-slate-600 truncate">{profile?.role ?? ''}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{profile?.full_name ?? 'User'}</p>
+                  <p className="text-xs text-muted truncate">{profile?.role ?? ''}</p>
                 </div>
               </button>
             </DropdownMenu.Trigger>
@@ -160,9 +161,9 @@ export default function Sidebar({ profile }: SidebarProps) {
               side="top"
               align="start"
               sideOffset={8}
-              className="z-50 min-w-40 rounded-lg border border-slate-700 light:border-slate-200 bg-slate-800 light:bg-white p-1 shadow-2xl"
+              className="z-50 min-w-40 rounded-lg border border-slate-700 light:border-slate-200 bg-surface-raised light:bg-white p-1 shadow-2xl"
             >
-              <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-slate-500 light:text-slate-600">
+              <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-muted">
                 Theme
               </DropdownMenu.Label>
               <DropdownMenu.RadioGroup value={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark')}>
@@ -173,7 +174,7 @@ export default function Sidebar({ profile }: SidebarProps) {
                       {option.label}
                     </span>
                     <DropdownMenu.ItemIndicator>
-                      <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-indigo-400 light:text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5"/>
                       </svg>
                     </DropdownMenu.ItemIndicator>
@@ -185,7 +186,7 @@ export default function Sidebar({ profile }: SidebarProps) {
           <button
             onClick={handleSignOut}
             title="Sign out"
-            className="text-slate-500 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition hidden lg:block shrink-0"
+            className="text-muted hover:text-foreground transition hidden lg:block shrink-0"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

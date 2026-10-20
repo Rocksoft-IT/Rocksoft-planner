@@ -19,14 +19,14 @@ export function cn(...inputs: ClassValue[]) {
 // AllocationModal, TimeOffModal, ExperienceModal) so the two themes stay in sync
 // from one place instead of drifting across five separate call sites.
 export const themedInputClass =
-  'w-full bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2.5 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-export const themedPlaceholderClass = 'placeholder-slate-500 light:placeholder-slate-400'
+  'w-full bg-surface-raised light:bg-white border border-control-border light:border-slate-300 rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+export const themedPlaceholderClass = 'placeholder-muted'
 // Native <option> elements ignore the parent <select>'s theme classes for the open
 // dropdown list on most platforms, so they need their own themed background/text.
-export const themedOptionClass = 'bg-slate-800 light:bg-white text-white light:text-slate-900'
-export const themedLabelClass = 'block text-sm font-medium text-slate-300 light:text-slate-700'
-export const dangerButtonClass = 'text-red-400 light:text-red-600 hover:text-red-300 light:hover:text-red-700 text-sm transition'
-export const secondaryButtonClass = 'px-4 py-2 text-sm text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition'
+export const themedOptionClass = 'bg-surface-raised light:bg-white text-foreground'
+export const themedLabelClass = 'block text-sm font-medium text-secondary'
+export const dangerButtonClass = 'text-[var(--status-error)] hover:text-red-300 light:hover:text-red-700 text-sm transition'
+export const secondaryButtonClass = 'px-4 py-2 text-sm text-muted hover:text-foreground transition'
 
 export function getViewDays(anchorDate: Date, mode: ViewMode): Date[] {
   const start = startOfWeek(anchorDate, { weekStartsOn: 1 })
@@ -192,6 +192,7 @@ export function formatAvailability(util: {
   isOver: boolean
   isUnavailable: boolean
   color: string
+  barColor: string
   label: string
 } {
   const { allocatedHours, capacityHours } = util
@@ -209,13 +210,15 @@ export function formatAvailability(util: {
   // sum to 100, and a person with any allocation never rounds up into 100% free.
   const freePct = isUnavailable ? 0 : Math.max(0, util.free)
 
-  const color = isUnavailable
-    ? '#64748b'
+  const state = isUnavailable
+    ? 'unavailable'
     : isOver
-      ? '#ef4444'
+      ? 'over'
       : freePct <= 15
-        ? '#f59e0b'
-        : '#10b981'
+        ? 'busy'
+        : 'free'
+  const color = `var(--availability-${state})`
+  const barColor = `var(--availability-${state}-bar, var(--availability-${state}))`
 
   const label = isUnavailable
     ? 'Niedostępny'
@@ -231,7 +234,7 @@ export function formatAvailability(util: {
   // 0%-wide bar.
   const barPct = isUnavailable || isOver || isFull ? 100 : freePct
 
-  return { freeHours, freePct, barPct, isFull, isOver, isUnavailable, color, label }
+  return { freeHours, freePct, barPct, isFull, isOver, isUnavailable, color, barColor, label }
 }
 
 // Index of a contract type in the Timeline's contract-type sort group order

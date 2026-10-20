@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { avatarColorStyle } from '@/lib/colors'
 import type { TeamMember } from '@/lib/types'
 
 interface PeopleFilterProps {
@@ -54,7 +55,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
           'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition border',
           hasFilter
             ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300 hover:bg-indigo-600/30 light:bg-indigo-50 light:border-indigo-300 light:text-indigo-700 light:hover:bg-indigo-100'
-            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600 light:bg-white light:border-slate-300 light:text-slate-600 light:hover:text-slate-900 light:hover:border-slate-400'
+            : 'bg-surface-raised border-slate-700 text-muted hover:text-white hover:border-slate-600 light:bg-white light:border-slate-300 light:text-slate-600 light:hover:text-slate-900 light:hover:border-slate-400'
         )}
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,7 +75,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
         >
           <span
             className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-            style={{ backgroundColor: p.avatar_color ?? '#6366f1' }}
+            style={avatarColorStyle(p.avatar_color)}
           >
             {p.full_name[0]}
           </span>
@@ -94,7 +95,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
       {hasFilter && (
         <button
           onClick={clear}
-          className="text-[11px] text-slate-500 hover:text-slate-300 light:hover:text-slate-700 transition underline underline-offset-2"
+          className="text-[11px] text-muted hover:text-slate-300 light:hover:text-slate-700 transition underline underline-offset-2"
         >
           wyczyść
         </button>
@@ -102,11 +103,11 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 top-full mt-1.5 left-0 w-64 bg-slate-900 light:bg-white border border-slate-700 light:border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 top-full mt-1.5 left-0 w-64 bg-canvas light:bg-white border border-slate-700 light:border-slate-200 rounded-xl shadow-2xl overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-slate-800 light:border-slate-200">
-            <div className="flex items-center gap-2 bg-slate-800 light:bg-slate-100 rounded-lg px-3 py-2">
-              <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="flex items-center gap-2 bg-surface-raised light:bg-slate-100 rounded-lg px-3 py-2">
+              <svg className="w-3.5 h-3.5 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
               <input
@@ -115,10 +116,10 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Szukaj osoby…"
-                className="flex-1 bg-transparent text-sm text-white light:text-slate-900 placeholder-slate-500 light:placeholder-slate-400 outline-none"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder-muted outline-none"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="text-slate-500 hover:text-white light:hover:text-slate-900">
+                <button onClick={() => setQuery('')} className="text-muted hover:text-foreground">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
@@ -129,18 +130,18 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
 
           {/* Select all / deselect */}
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-800 light:border-slate-200">
-            <span className="text-[11px] text-slate-500">{filtered.length} osób</span>
+            <span className="text-[11px] text-muted">{filtered.length} osób</span>
             <div className="flex gap-2">
               <button
                 onClick={() => onChange(filtered.map((p) => p.id))}
-                className="text-[11px] text-indigo-400 hover:text-indigo-300 light:text-indigo-600 light:hover:text-indigo-500 transition"
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 light:text-indigo-600 light:hover:text-indigo-700 transition"
               >
                 Zaznacz wszystkich
               </button>
               {hasFilter && (
                 <>
                   <span className="text-slate-700 light:text-slate-300">·</span>
-                  <button onClick={clear} className="text-[11px] text-slate-500 hover:text-slate-300 light:hover:text-slate-700 transition">
+                  <button onClick={clear} className="text-[11px] text-muted hover:text-slate-300 light:hover:text-slate-700 transition">
                     Wyczyść
                   </button>
                 </>
@@ -151,7 +152,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
           {/* People list */}
           <div className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-slate-500 text-center">Brak wyników</p>
+              <p className="px-3 py-4 text-sm text-muted text-center">Brak wyników</p>
             ) : (
               filtered.map((person) => {
                 const isSelected = selected.includes(person.id)
@@ -162,13 +163,13 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
                     onClick={() => toggle(person.id)}
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-800 light:hover:bg-slate-100',
-                      isSelected ? 'text-white light:text-slate-900' : 'text-slate-300 light:text-slate-700'
+                      isSelected ? 'text-foreground' : 'text-secondary'
                     )}
                   >
                     {/* Checkbox */}
                     <span className={cn(
                       'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition',
-                      isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-600 light:border-slate-300'
+                      isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-control-border light:border-slate-300'
                     )}>
                       {isSelected && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -180,7 +181,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
                     {/* Avatar */}
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold shrink-0"
-                      style={{ backgroundColor: person.avatar_color ?? '#6366f1' }}
+                      style={avatarColorStyle(person.avatar_color)}
                     >
                       {person.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
@@ -189,7 +190,7 @@ export default function PeopleFilter({ people, selected, onChange }: PeopleFilte
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{person.full_name}</p>
                       {person.role && (
-                        <p className="text-[11px] text-slate-500 truncate">{person.role.split(',')[0].trim()}</p>
+                        <p className="text-[11px] text-muted truncate">{person.role.split(',')[0].trim()}</p>
                       )}
                     </div>
                   </button>

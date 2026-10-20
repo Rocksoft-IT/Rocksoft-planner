@@ -78,7 +78,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
     <Modal open={open} onClose={onClose} title={project ? 'Edit project' : 'New project'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[var(--status-error)] text-sm">{error}</div>
         )}
 
         <div>
@@ -145,7 +145,7 @@ export default function ProjectModal({ open, onClose, onSaved, project }: Projec
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
             >
               {loading ? 'Saving…' : project ? 'Update' : 'Create project'}
             </button>

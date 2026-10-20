@@ -69,7 +69,7 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
   return (
     <Modal open onClose={onClose} title={experience ? 'Edytuj doświadczenie' : 'Dodaj doświadczenie'} className="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>}
+        {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[var(--status-error)] text-sm">{error}</div>}
 
         <div>
           <label className={cn(themedLabelClass, 'mb-1.5')}>Projekt / tytuł</label>
@@ -108,7 +108,7 @@ export default function ExperienceModal({ onClose, onSaved, memberId, techOption
           )}
           <div className="flex gap-2 ml-auto">
             <button type="button" onClick={onClose} className={secondaryButtonClass}>Anuluj</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
+            <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
               {loading ? 'Zapisuję…' : 'Zapisz'}
             </button>
           </div>

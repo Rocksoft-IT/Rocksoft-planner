@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <ThemeProvider
       initialTheme={initialTheme}
       profileId={user.id}
-      className="flex h-screen bg-slate-900 overflow-hidden"
+      className="flex h-screen bg-canvas overflow-hidden"
     >
       <Sidebar profile={profile as Profile | null} />
       <main className="flex-1 overflow-auto">
