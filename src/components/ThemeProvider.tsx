@@ -132,7 +132,7 @@ export default function ThemeProvider({ initialTheme, profileId, className, chil
         {saveFailed && (
           <div
             role="alert"
-            className="fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg border border-red-500/30 bg-slate-900 light:bg-white p-3 text-sm text-red-300 light:text-red-700 shadow-lg"
+            className="fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg border border-red-500/30 bg-canvas light:bg-white p-3 text-sm text-red-300 light:text-red-700 shadow-lg"
           >
             <p>
               Your theme could not be saved, so it was switched back. Try again, or contact an administrator if it keeps happening.

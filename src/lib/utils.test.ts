@@ -127,6 +127,18 @@ describe('calcUtilization', () => {
   })
 })
 
+describe('availability bar for fully booked people', () => {
+  it('fills the bar for 0 free hours out of 20 hours of capacity', () => {
+    const availability = formatAvailability({
+      allocated: 100, free: 0, allocatedHours: 20, capacityHours: 20,
+    })
+    expect(availability.isFull).toBe(true)
+    expect(availability.freeHours).toBe(0)
+    expect(availability.freePct).toBe(0)
+    expect(availability.barPct).toBe(100)
+  })
+})
+
 describe('weekend allocation rules', () => {
   it('detects Saturday and Sunday', () => {
     expect(isWeekendDate('2026-10-09')).toBe(false) // Fri

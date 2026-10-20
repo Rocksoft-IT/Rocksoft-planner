@@ -79,7 +79,7 @@ export default function TimeOffModal({
     <Modal open={open} onClose={onClose} title={timeOff ? 'Edytuj nieobecność' : 'Dodaj nieobecność'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{error}</div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[var(--status-error)] text-sm">{error}</div>
         )}
 
         {/* Type selector */}
@@ -96,12 +96,12 @@ export default function TimeOffModal({
                   className={cn(
                     'flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition',
                     type === t
-                      ? 'border-slate-400 bg-slate-700 light:bg-slate-100'
-                      : 'border-slate-700 light:border-slate-200 bg-slate-800 light:bg-slate-50 hover:border-slate-600 light:hover:border-slate-300'
+                      ? 'border-slate-400 bg-surface-hover light:bg-slate-100'
+                      : 'border-slate-700 light:border-slate-200 bg-surface-raised light:bg-slate-50 hover:border-slate-600 light:hover:border-slate-300'
                   )}
                 >
                   <span className="text-xl leading-none">{emoji}</span>
-                  <span className={cn('text-xs font-medium', type === t ? 'text-white light:text-slate-900' : 'text-slate-400 light:text-slate-500')}>
+                  <span className={cn('text-xs font-medium', type === t ? 'text-foreground' : 'text-muted')}>
                     {label}
                   </span>
                 </button>
@@ -153,7 +153,7 @@ export default function TimeOffModal({
           <div className="flex gap-2 ml-auto">
             <button type="button" onClick={onClose} className={secondaryButtonClass}>Anuluj</button>
             <button type="submit" disabled={loading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
               {loading ? 'Zapisuję…' : timeOff ? 'Zapisz' : 'Dodaj'}
             </button>
           </div>

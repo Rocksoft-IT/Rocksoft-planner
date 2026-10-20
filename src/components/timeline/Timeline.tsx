@@ -12,6 +12,7 @@ import {
   type DragCancelEvent,
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { avatarColorStyle, projectColorStyle } from '@/lib/colors'
 import {
   format,
   addDays,
@@ -21,7 +22,7 @@ import {
   isToday,
   isWeekend,
 } from 'date-fns'
-import { calcUtilization, compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE, formatAvailability, getAvailabilityWindow, getAllocationStyle, hexToRgba, cn, formatDate, countWorkdays, isWeekendDate, validateAllocationDates, WEEKEND_ALLOCATION_ERROR } from '@/lib/utils'
+import { calcUtilization, compareByContractType, matchesContractTypeFilter, NO_CONTRACT_TYPE, formatAvailability, getAvailabilityWindow, getAllocationStyle, cn, formatDate, countWorkdays, isWeekendDate, validateAllocationDates, WEEKEND_ALLOCATION_ERROR } from '@/lib/utils'
 import { ROLES } from '@/components/ui/RoleSelect'
 import MonthPicker from '@/components/ui/MonthPicker'
 import PeopleFilter from '@/components/ui/PeopleFilter'
@@ -92,7 +93,6 @@ interface DraggableAllocBlockProps {
   left: number
   width: number
   laneTop: number
-  blockTop: number
   blockHeight: number
   bg: string
   isTentative: boolean
@@ -133,7 +133,6 @@ function DraggableAllocBlock({
   left,
   width,
   laneTop,
-  blockTop,
   blockHeight,
   bg,
   isTentative,
@@ -157,8 +156,10 @@ function DraggableAllocBlock({
       ref={setNodeRef}
       data-block
       onClick={onClick}
-      className="absolute cursor-pointer hover:opacity-90 transition-opacity"
+      className="project-colors allocation-block absolute rounded cursor-pointer"
+      data-tentative={isTentative}
       style={{
+        ...projectColorStyle(bg),
         left, width, top: laneTop, height: LANE_HEIGHT,
         transform: CSS.Transform.toString(transform ? { ...transform, x: snappedX, y: 0 } : null),
       }}
@@ -166,17 +167,13 @@ function DraggableAllocBlock({
       {...attributes}
       {...listeners}
     >
+      {isTentative && <div aria-hidden="true" className="allocation-pattern" />}
       <div
-        className="absolute rounded"
+        className="absolute rounded pointer-events-none"
         style={{
-          left: 0, right: 0,
-          top: blockTop - laneTop, height: blockHeight,
-          background: isTentative
-            ? `repeating-linear-gradient(45deg,${hexToRgba(bg,0.12)},${hexToRgba(bg,0.12)} 4px,${hexToRgba(bg,0.28)} 4px,${hexToRgba(bg,0.28)} 8px)`
-            : hexToRgba(bg, 0.25),
-          borderLeft: `3px solid ${bg}`,
-          borderStyle: isTentative ? 'dashed' : 'solid',
-          opacity: isTentative ? 0.85 : 1,
+          left: 0, width: 3,
+          top: Math.round((LANE_HEIGHT - blockHeight) / 2), height: blockHeight - 2,
+          backgroundColor: 'var(--project-accent)',
         }}
       />
       {/* Label — always visible, follows the viewport's left edge. Hours lead
@@ -186,14 +183,14 @@ function DraggableAllocBlock({
         style={{ paddingLeft: 8 + labelOffset }}
       >
         <div className="flex items-center gap-0.5 shrink-0">
-          <span className="text-[10px] font-semibold opacity-80 leading-none light:text-slate-800!" style={{ color: bg }}>
+          <span className="allocation-hours text-[10px] font-semibold leading-none">
             {hoursPerDay}h
           </span>
           {isTentative && (
-            <span className="text-[9px] font-bold leading-none light:text-slate-800!" style={{ color: bg, opacity: 0.8 }}>?</span>
+            <span className="text-[9px] font-bold leading-none">?</span>
           )}
         </div>
-        <span className="text-xs font-medium truncate leading-none light:text-slate-800!" style={{ color: bg }}>
+        <span className="text-xs font-medium truncate leading-none">
           {projectName}
         </span>
       </div>
@@ -237,11 +234,9 @@ function DraggableOooBlock({
       ref={setNodeRef}
       data-block
       onClick={onClick}
-      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden hover:opacity-80 transition-opacity light:[background:repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0_4px,#f1f5f9_4px,#f1f5f9_8px)]! light:border-l-slate-400!"
+      className="absolute rounded cursor-pointer flex items-center px-2 gap-1 overflow-hidden border border-separator bg-surface-raised hover:outline hover:outline-1 hover:outline-control-border"
       style={{
         left, width, top: laneTop, height: LANE_HEIGHT,
-        background: `repeating-linear-gradient(45deg, #1e293b, #1e293b 4px, #253047 4px, #253047 8px)`,
-        borderLeft: '3px solid #475569',
         transform: CSS.Transform.toString(transform ? { ...transform, x: snappedX, y: 0 } : null),
       }}
       title={`${label} · ${notes ?? ''}`}
@@ -249,7 +244,7 @@ function DraggableOooBlock({
       {...listeners}
     >
       <span className="text-sm leading-none">{emoji}</span>
-      <span className="text-[11px] font-medium text-slate-300 light:text-slate-700 truncate leading-none">{label}</span>
+      <span className="text-[11px] font-medium text-secondary truncate leading-none">{label}</span>
     </div>
   )
 }
@@ -593,22 +588,22 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
     >
     <div className="flex flex-col h-full">
       {dragError && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-sm shrink-0">
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-[var(--status-error)] text-sm shrink-0">
           <span>{dragError}</span>
           <button
             onClick={() => setDragError('')}
-            className="text-red-400 hover:text-red-300 light:text-red-600 light:hover:text-red-500 shrink-0"
+            className="text-red-400 hover:text-red-300 light:text-red-600 light:hover:text-red-700 shrink-0"
           >
             ✕
           </button>
         </div>
       )}
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-6 h-14 border-b border-slate-800 light:border-slate-200 bg-slate-950 light:bg-white shrink-0 flex-wrap">
+      <div className="flex items-center gap-x-3 gap-y-2 px-6 py-2 min-h-14 border-b border-separator light:border-slate-200 bg-surface light:bg-white shrink-0 flex-wrap">
         <div className="flex items-center gap-1">
           <button
             onClick={navigatePrev}
-            className="p-1.5 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
+            className="p-1.5 text-muted hover:text-foreground hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
@@ -616,13 +611,13 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           </button>
           <button
             onClick={scrollToToday}
-            className="px-2.5 py-1 text-xs font-medium text-slate-300 light:text-slate-700 hover:text-white light:hover:text-slate-900 bg-slate-800 light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 rounded transition"
+            className="px-2.5 py-1 text-xs font-medium text-secondary hover:text-foreground bg-surface-raised light:bg-slate-100 hover:bg-slate-700 light:hover:bg-slate-200 rounded transition"
           >
             Dziś
           </button>
           <button
             onClick={navigateNext}
-            className="p-1.5 text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900 hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
+            className="p-1.5 text-muted hover:text-foreground hover:bg-slate-800 light:hover:bg-slate-100 rounded transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
@@ -666,7 +661,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           optionLabels={{ [NO_CONTRACT_TYPE]: 'Bez typu' }}
         />
 
-        <div className="flex items-center gap-1 bg-slate-800 light:bg-slate-100 p-0.5 rounded-lg">
+        <div className="flex items-center gap-1 bg-surface-raised light:bg-slate-100 p-0.5 rounded-lg">
           {([
             { value: 'name', label: 'Nazwa' },
             { value: 'contractType', label: 'Typ umowy' },
@@ -676,7 +671,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
               onClick={() => setSortMode(value)}
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-md transition',
-                sortMode === value ? 'bg-slate-600 light:bg-white light:shadow-sm text-white light:text-slate-900' : 'text-slate-400 light:text-slate-500 hover:text-white light:hover:text-slate-900'
+                sortMode === value ? 'bg-slate-600 light:bg-white light:shadow-sm text-foreground' : 'text-muted hover:text-foreground'
               )}
             >
               {label}
@@ -687,7 +682,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setOooModal({ open: true })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 light:bg-slate-100 hover:bg-slate-600 light:hover:bg-slate-200 text-slate-200 light:text-slate-700 text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-hover light:bg-slate-100 hover:bg-slate-600 light:hover:bg-slate-200 text-slate-200 light:text-slate-700 text-sm font-medium rounded-lg transition"
             title="Dodaj nieobecność"
           >
             <span className="text-base leading-none">🏖️</span>
@@ -696,7 +691,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
 
           <button
             onClick={() => setModal({ open: true })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
@@ -724,20 +719,20 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           <div className="flex sticky top-0 z-20">
             {/* Frozen corner stretches to cover the full month + day header. */}
             <div
-              className="shrink-0 sticky left-0 z-30 bg-slate-950 light:bg-white border-b border-r border-slate-800 light:border-slate-200 px-4 flex items-end pb-1"
+              className="shrink-0 sticky left-0 z-30 bg-surface light:bg-white border-b border-r border-separator light:border-slate-200 px-4 flex items-end pb-1"
               style={{ width: 224 }}
             >
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-muted font-medium">
                 ZESPÓŁ {hasActiveFilter && `· ${filteredPeople.length}`}
               </span>
             </div>
             {/* Month + day header */}
-            <div className="shrink-0 bg-slate-950 light:bg-white border-b border-slate-800 light:border-slate-200" style={{ width: days.length * DAY_WIDTH }}>
-              <div className="flex h-7 border-b border-slate-800 light:border-slate-200">
+            <div className="shrink-0 bg-surface light:bg-white border-b border-separator light:border-slate-200" style={{ width: days.length * DAY_WIDTH }}>
+              <div className="flex h-7 border-b border-separator light:border-slate-200">
                 {monthGroups.map(({ label, count }) => (
                   <div
                     key={label}
-                    className="flex items-center px-3 text-xs font-semibold text-slate-400 light:text-slate-600 border-r border-slate-800 light:border-slate-200"
+                    className="flex items-center px-3 text-xs font-semibold text-muted border-r border-separator light:border-slate-200"
                     style={{ width: count * DAY_WIDTH }}
                   >
                     {label}
@@ -753,18 +748,18 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        'flex flex-col items-center justify-center gap-0.5 py-1 border-r border-slate-800 light:border-slate-200 shrink-0 whitespace-nowrap',
-                        weekend ? 'bg-slate-900 light:bg-slate-100' : '',
+                        'flex flex-col items-center justify-center gap-0.5 py-1 border-r border-separator light:border-slate-200 shrink-0 whitespace-nowrap',
+                        weekend ? 'bg-canvas light:bg-slate-100' : '',
                         today ? 'bg-indigo-950 light:bg-indigo-100' : ''
                       )}
                       style={{ width: DAY_WIDTH }}
                     >
-                      <span className={cn('text-[10px] leading-tight shrink-0', weekend ? 'text-slate-600 light:text-slate-400' : 'text-slate-500')}>
+                      <span className="text-[10px] leading-tight shrink-0 text-muted">
                         {format(day, 'EEE')[0]}
                       </span>
                       <span className={cn(
                         'text-[11px] font-medium leading-tight shrink-0',
-                        today ? 'text-indigo-400 light:text-indigo-600 font-bold' : weekend ? 'text-slate-600 light:text-slate-400' : 'text-slate-300 light:text-slate-700'
+                        today ? 'text-indigo-300 light:text-indigo-700 font-bold' : weekend ? 'text-muted' : 'text-secondary'
                       )}>
                         {format(day, 'd')}
                       </span>
@@ -784,41 +779,41 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
             const av = formatAvailability(util)
 
             return (
-            <div key={person.id} className="flex border-b border-slate-800 light:border-slate-200" style={{ minHeight: rowHeight }}>
+            <div key={person.id} className="flex border-b border-separator light:border-slate-200" style={{ minHeight: rowHeight }}>
 
               {/* Frozen left cell — its content can grow the row (see calcRowHeight) */}
               <div
-                className="shrink-0 sticky left-0 z-10 bg-slate-950 light:bg-white border-r border-slate-800 light:border-slate-200 flex items-center px-4 py-2 gap-3"
+                className="shrink-0 sticky left-0 z-10 bg-surface light:bg-white border-r border-separator light:border-slate-200 flex items-center px-4 py-2 gap-3"
                 style={{ width: 224 }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-                  style={{ backgroundColor: person.avatar_color ?? '#6366f1' }}
+                  style={avatarColorStyle(person.avatar_color)}
                 >
                   {person.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {/* Wraps to a second line only when the name doesn't fit next to the badge */}
-                    <p className="min-w-0 text-sm font-medium text-white light:text-slate-900 leading-tight line-clamp-2 break-words" title={person.full_name}>
+                    <p className="min-w-0 text-sm font-medium text-foreground leading-tight line-clamp-2 break-words" title={person.full_name}>
                       {person.full_name}
                     </p>
                     <ContractTypeBadge type={person.contract_type} />
                   </div>
                   <div className="mt-1.5">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[10px] text-slate-500">Wolne {av.freeHours}h / {capacityHours}h</span>
+                      <span className="text-[10px] text-muted">Wolne {av.freeHours}h / {capacityHours}h</span>
                       <span className="text-[10px] font-medium" style={{ color: av.color }}
                         title={`${util.allocated}% zajęty · ${av.freePct}% wolne`}>
                         {av.isUnavailable ? 'niedostępny' : av.isOver ? 'przeciążony' : av.isFull ? 'pełny' : `${av.freePct}% wolne`}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-slate-700 light:bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-track rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
-                        style={{ width: `${av.barPct}%`, backgroundColor: av.color }} />
+                        style={{ width: `${av.barPct}%`, backgroundColor: av.barColor || av.color }} />
                     </div>
                     {ooodays > 0 && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">🏖️ {ooodays} dni OOO</p>
+                      <p className="text-[10px] text-muted mt-0.5">🏖️ {ooodays} dni OOO</p>
                     )}
                   </div>
                 </div>
@@ -838,9 +833,9 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     key={day.toISOString()}
                     onClick={() => !weekend && !didDrag.current && openCreate(person.id, format(day, 'yyyy-MM-dd'))}
                     className={cn(
-                      'h-full border-r border-slate-800 light:border-slate-200 shrink-0',
+                      'h-full border-r border-separator light:border-slate-200 shrink-0',
                       weekend
-                        ? 'bg-slate-900/50 light:bg-slate-100/70'
+                        ? 'bg-canvas/50 light:bg-slate-100/70'
                         : today
                         ? 'bg-indigo-950/30 light:bg-indigo-50 cursor-pointer hover:bg-indigo-950/50 light:hover:bg-indigo-100'
                         : 'cursor-pointer hover:bg-slate-800/40 light:hover:bg-slate-100'
@@ -876,7 +871,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                   )
                 }
 
-                // ── Allocation block — height proportional to hours_per_day / 8h ──
+                // Full-height label surface; the left accent still indicates hours / 8h.
                 const project = item.project
                 const bg = project?.color ?? '#6366f1'
                 const isTentative = item.status === 'tentative'
@@ -884,8 +879,6 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                 // Scale height: 8h = full LANE_HEIGHT, minimum 6px so it's always visible
                 const ratio = Math.min(item.hours_per_day / 8, 1)
                 const blockHeight = Math.max(6, Math.round(LANE_HEIGHT * ratio))
-                // Center vertically within the lane slot
-                const blockTop = laneTop + Math.round((LANE_HEIGHT - blockHeight) / 2)
 
                 // Live resize preview: grow/shrink the block by the snapped day offset.
                 // Minimum width is a single day (matching the drop-time clamp to start/end).
@@ -910,7 +903,6 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
                     left={previewLeft}
                     width={previewWidth}
                     laneTop={laneTop}
-                    blockTop={blockTop}
                     blockHeight={blockHeight}
                     bg={bg}
                     isTentative={isTentative}
@@ -927,7 +919,7 @@ export default function Timeline({ people, projects, allocations, timeOffs, onRe
           )})}
 
           {filteredPeople.length === 0 && (
-            <div className="px-4 py-6 text-center text-xs text-slate-500">
+            <div className="px-4 py-6 text-center text-xs text-muted">
               Brak osób spełniających kryteria filtrowania
             </div>
           )}

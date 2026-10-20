@@ -94,7 +94,7 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
     await load()
   }
 
-  if (loading) return <p className="text-slate-500 light:text-slate-600 text-sm">Ładowanie…</p>
+  if (loading) return <p className="text-muted text-sm">Ładowanie…</p>
 
   const techOptions = allTags.filter((t) => t.kind === 'technology')
 
@@ -105,34 +105,34 @@ export default function CompetencyEditor({ memberId, initialTags }: CompetencyEd
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white light:text-slate-900">Doświadczenie projektowe</h3>
+          <h3 className="text-sm font-semibold text-foreground">Doświadczenie projektowe</h3>
           <button
             onClick={() => { setEditingExp(null); setExpModalOpen(true) }}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition"
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition"
           >
             + Dodaj
           </button>
         </div>
         {experiences.length === 0 ? (
-          <p className="text-slate-500 light:text-slate-600 text-sm">Brak wpisów.</p>
+          <p className="text-muted text-sm">Brak wpisów.</p>
         ) : (
           <ul className="space-y-2">
             {experiences.map((exp) => (
-              <li key={exp.id} className="bg-slate-800/60 light:bg-slate-50 border border-slate-700 light:border-slate-200 rounded-lg p-3">
+              <li key={exp.id} className="bg-surface-raised/60 light:bg-slate-50 border border-slate-700 light:border-slate-200 rounded-lg p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white light:text-slate-900">{exp.title}</p>
-                    {exp.role && <p className="text-xs text-slate-400 light:text-slate-600">{exp.role}</p>}
-                    {exp.description && <p className="text-xs text-slate-400 light:text-slate-600 mt-1 line-clamp-2">{exp.description}</p>}
+                    <p className="text-sm font-medium text-foreground">{exp.title}</p>
+                    {exp.role && <p className="text-xs text-muted">{exp.role}</p>}
+                    {exp.description && <p className="text-xs text-muted mt-1 line-clamp-2">{exp.description}</p>}
                     {(exp.tags ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(exp.tags ?? []).map((t) => (
-                          <span key={t.id} className="bg-slate-700 light:bg-slate-200 text-slate-300 light:text-slate-700 text-[11px] px-2 py-0.5 rounded-full">{t.name}</span>
+                          <span key={t.id} className="bg-surface-hover light:bg-slate-200 text-secondary text-[11px] px-2 py-0.5 rounded-full">{t.name}</span>
                         ))}
                       </div>
                     )}
                   </div>
-                  <button onClick={() => { setEditingExp(exp); setExpModalOpen(true) }} className="text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900 text-xs shrink-0">Edytuj</button>
+                  <button onClick={() => { setEditingExp(exp); setExpModalOpen(true) }} className="text-muted hover:text-foreground text-xs shrink-0">Edytuj</button>
                 </div>
               </li>
             ))}
@@ -188,15 +188,15 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
 
   return (
     <section>
-      <h3 className="text-sm font-semibold text-white light:text-slate-900 mb-3">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
       <div className="flex flex-wrap gap-2 mb-3">
-        {mine.length === 0 && <p className="text-slate-500 light:text-slate-600 text-sm">Brak.</p>}
+        {mine.length === 0 && <p className="text-muted text-sm">Brak.</p>}
         {mine.map((c) => (
           <span key={c.id} className="group inline-flex items-center gap-1.5 bg-indigo-500/20 light:bg-indigo-100 text-indigo-300 light:text-indigo-700 text-xs px-2.5 py-1 rounded-full">
             {c.tag?.name}
-            {c.proficiency ? <span className="text-indigo-400/80 light:text-indigo-600">· {c.proficiency}/5</span> : null}
-            {c.years_experience != null ? <span className="text-indigo-400/80 light:text-indigo-600">· {c.years_experience} l.</span> : null}
-            <button onClick={() => onRemove(c.id)} className="text-indigo-400 light:text-indigo-600 hover:text-white light:hover:text-slate-900" title="Usuń">×</button>
+            {c.proficiency ? <span className="text-indigo-300 light:text-indigo-600">· {c.proficiency}/5</span> : null}
+            {c.years_experience != null ? <span className="text-indigo-300 light:text-indigo-600">· {c.years_experience} l.</span> : null}
+            <button onClick={() => onRemove(c.id)} className="text-indigo-400 light:text-indigo-600 hover:text-foreground" title="Usuń">×</button>
           </span>
         ))}
       </div>
@@ -206,7 +206,7 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
           onChange={(e) => setName(e.target.value)}
           list={listId}
           placeholder={kind === 'skill' ? 'Dodaj umiejętność…' : 'Dodaj technologię…'}
-          className="flex-1 bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500 light:placeholder-slate-400"
+          className="flex-1 bg-surface-raised light:bg-white border border-control-border light:border-slate-300 rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-indigo-500 placeholder-muted"
         />
         <datalist id={listId}>
           {allTags.filter((t) => t.kind === kind).map((t) => <option key={t.id} value={t.name} />)}
@@ -214,7 +214,7 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
         <select
           value={proficiency}
           onChange={(e) => setProficiency(e.target.value)}
-          className="bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-2 py-2 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
+          className="bg-surface-raised light:bg-white border border-control-border light:border-slate-300 rounded-lg px-2 py-2 text-foreground text-sm focus:outline-none focus:border-indigo-500"
           title="Poziom (opcjonalnie)"
         >
           <option value="" className={themedOptionClass}>Poziom</option>
@@ -229,9 +229,9 @@ function CompetencySection({ kind, title, competencies, allTags, onAdd, onRemove
           step="0.5"
           placeholder="Lata"
           title="Lata doświadczenia (opcjonalnie)"
-          className="w-20 bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-2 py-2 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder-slate-500 light:placeholder-slate-400"
+          className="w-20 bg-surface-raised light:bg-white border border-control-border light:border-slate-300 rounded-lg px-2 py-2 text-foreground text-sm focus:outline-none focus:border-indigo-500 placeholder-muted"
         />
-        <button type="submit" className="px-3 py-2 bg-slate-700 light:bg-slate-200 hover:bg-slate-600 light:hover:bg-slate-300 text-white light:text-slate-900 text-sm rounded-lg transition">Dodaj</button>
+        <button type="submit" className="px-3 py-2 bg-surface-hover light:bg-slate-200 hover:bg-slate-600 light:hover:bg-slate-300 text-foreground text-sm rounded-lg transition">Dodaj</button>
       </form>
     </section>
   )

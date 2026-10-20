@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Theme: the app is dark by default (every existing class already *is* the
- * dark appearance). `light:` is a class-scoped variant, not Tailwind's
+ * Theme: dark tokens are the default; .light supplies a separate palette.
+ * `light:` remains a class-scoped variant for existing components, not Tailwind's
  * built-in `dark:` — it only activates inside an ancestor carrying the
  * `.light` class (applied to the (dashboard) layout wrapper for a
  * signed-in user with theme = 'light'; see ThemeProvider.tsx). Auth pages
@@ -12,6 +12,108 @@
 
 :root {
   --font-sans: var(--font-inter);
+  color-scheme: dark;
+  --canvas: #0f172a;
+  --surface: #020617;
+  --surface-raised: #1e293b;
+  --surface-hover: #334155;
+  --foreground: #f8fafc;
+  --secondary: #cbd5e1;
+  --muted: #a8b7cc;
+  --separator: #64748b;
+  --control-border: #94a3b8;
+  --track: #1e293b;
+  --availability-free: #34d399;
+  --availability-busy: #fbbf24;
+  --availability-over: #fca5a5;
+  --availability-unavailable: #cbd5e1;
+  --availability-free-bar: #34d399;
+  --availability-busy-bar: #fbbf24;
+  --availability-over-bar: #fca5a5;
+  --availability-unavailable-bar: #cbd5e1;
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-error: #fca5a5;
+}
+
+.light {
+  color-scheme: light;
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --surface-hover: #e2e8f0;
+  --foreground: #0f172a;
+  --secondary: #334155;
+  --muted: #475569;
+  --separator: #64748b;
+  --control-border: #64748b;
+  --track: #e2e8f0;
+  /* Preserve the original light-mode availability palette. */
+  --availability-free: #10b981;
+  --availability-busy: #f59e0b;
+  --availability-over: #ef4444;
+  --availability-unavailable: #64748b;
+  --availability-free-bar: #10b981;
+  --availability-busy-bar: #f59e0b;
+  --availability-over-bar: #ef4444;
+  --availability-unavailable-bar: #64748b;
+  --status-success: #087443;
+  --status-warning: #a34606;
+  --status-error: #b91c1c;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-foreground: var(--foreground);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-separator: var(--separator);
+  --color-control-border: var(--control-border);
+  --color-track: var(--track);
+}
+
+/* Project colors are opaque, theme-specific pairs generated in lib/colors.ts. */
+.project-colors {
+  --project-bg: var(--project-bg-dark);
+  --project-text: var(--project-text-dark);
+  --project-accent: var(--project-accent-dark);
+}
+
+.light .project-colors {
+  --project-bg: var(--project-bg-light);
+  --project-text: var(--project-text-light);
+  --project-accent: var(--project-accent-light);
+}
+
+.project-badge,
+.allocation-block {
+  color: var(--project-text);
+  background-color: var(--project-bg);
+  border: 1px solid var(--project-accent);
+}
+
+.allocation-block:hover {
+  outline: 1px solid var(--project-accent);
+}
+
+.allocation-block[data-tentative="true"] {
+  border-style: dashed;
+}
+
+/* The pattern occupies only the bottom edge, leaving an opaque label surface. */
+.allocation-pattern {
+  position: absolute;
+  inset: auto 0 0;
+  height: 4px;
+  pointer-events: none;
+  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--project-accent) 4px 6px);
+}
+
+.allocation-hours {
+  color: var(--foreground);
 }
 
 * {
@@ -28,23 +130,12 @@ html, body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--control-border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* Light-mode scrollbar equivalents, scoped to the same .light ancestor. */
-.light ::-webkit-scrollbar-track {
-  background: #e2e8f0;
-}
-.light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-}
-.light ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--secondary);
 }

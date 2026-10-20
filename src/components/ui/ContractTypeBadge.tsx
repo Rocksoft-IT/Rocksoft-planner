@@ -1,13 +1,14 @@
 import { cn } from '@/lib/utils'
+import { projectColorStyle } from '@/lib/colors'
 import type { ContractType } from '@/lib/types'
 
-const BADGE_STYLES: Record<ContractType, string> = {
-  UoP:       'bg-emerald-500/15 text-emerald-300 light:text-emerald-700 border-emerald-500/30',
-  B2B:       'bg-sky-500/15 text-sky-300 light:text-sky-700 border-sky-500/30',
-  Freelance: 'bg-amber-500/15 text-amber-300 light:text-amber-700 border-amber-500/30',
-  'Umowa Zlecenie': 'bg-violet-500/15 text-violet-300 light:text-violet-700 border-violet-500/30',
-  'Umowa o Dzieło': 'bg-orange-500/15 text-orange-300 light:text-orange-700 border-orange-500/30',
-  'Powołanie do Zarządu': 'bg-rose-500/15 text-rose-300 light:text-rose-700 border-rose-500/30',
+const BADGE_COLORS: Record<ContractType, string> = {
+  UoP: '#10b981',
+  B2B: '#0ea5e9',
+  Freelance: '#f59e0b',
+  'Umowa Zlecenie': '#8b5cf6',
+  'Umowa o Dzieło': '#f97316',
+  'Powołanie do Zarządu': '#e11d48',
 }
 
 const SHORT_LABELS: Partial<Record<ContractType, string>> = {
@@ -23,9 +24,9 @@ export default function ContractTypeBadge({ type, className }: { type: ContractT
     <span
       title={type}
       aria-label={type}
+      style={projectColorStyle(BADGE_COLORS[type])}
       className={cn(
-        'inline-flex items-center px-1.5 py-px rounded border text-[10px] font-semibold leading-tight shrink-0',
-        BADGE_STYLES[type],
+        'project-colors project-badge inline-flex items-center px-1.5 py-px rounded text-[10px] font-semibold leading-tight shrink-0',
         className
       )}
     >

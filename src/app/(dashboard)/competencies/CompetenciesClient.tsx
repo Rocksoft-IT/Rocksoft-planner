@@ -54,8 +54,8 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
   return (
     <div className="min-h-full light:bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 lg:px-8 py-8">
-        <h1 className="text-xl font-semibold text-white light:text-slate-900 mb-1">Baza kompetencji</h1>
-        <p className="text-sm text-slate-400 light:text-slate-600 mb-6">Wyszukuj ekspertów i uzupełniaj swoje kompetencje.</p>
+        <h1 className="text-xl font-semibold text-foreground mb-1">Baza kompetencji</h1>
+        <p className="text-sm text-muted mb-6">Wyszukuj ekspertów i uzupełniaj swoje kompetencje.</p>
 
         <div className="flex gap-1 mb-6 border-b border-slate-800 light:border-slate-200">
           <TabButton active={tab === 'search'} onClick={() => setTab('search')}>Wyszukiwarka</TabButton>
@@ -85,27 +85,27 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
             <button
               onClick={runSearch}
               disabled={searching}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
             >
               {searching ? 'Szukam…' : 'Szukaj ekspertów'}
             </button>
 
             {searchError && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 light:text-red-600 text-sm">{searchError}</div>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[var(--status-error)] text-sm">{searchError}</div>
             )}
 
             {results !== null && (
               <div className="pt-2">
                 {results.length === 0 ? (
-                  <p className="text-slate-500 light:text-slate-600 text-sm">Brak dopasowań.</p>
+                  <p className="text-muted text-sm">Brak dopasowań.</p>
                 ) : (
                   <ul className="space-y-2">
                     {results.map((r) => (
-                      <li key={r.team_member_id} className="bg-slate-800/60 light:bg-slate-50 border border-slate-700 light:border-slate-200 rounded-lg p-3">
+                      <li key={r.team_member_id} className="bg-surface-raised/60 light:bg-slate-50 border border-slate-700 light:border-slate-200 rounded-lg p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-white light:text-slate-900">{r.full_name}</p>
-                            <p className="text-xs text-slate-400 light:text-slate-600">{r.role || r.email}</p>
+                            <p className="text-sm font-medium text-foreground">{r.full_name}</p>
+                            <p className="text-xs text-muted">{r.role || r.email}</p>
                           </div>
                           <span className="text-xs text-indigo-300 light:text-indigo-700 bg-indigo-500/20 light:bg-indigo-100 px-2 py-0.5 rounded-full shrink-0">
                             {Math.round(r.score * 100) / 100} pkt
@@ -114,12 +114,12 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
                         {r.matched.skills_technologies.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {r.matched.skills_technologies.map((m) => (
-                              <span key={m.slug} className="bg-slate-700 light:bg-slate-200 text-slate-300 light:text-slate-700 text-[11px] px-2 py-0.5 rounded-full">{m.name}</span>
+                              <span key={m.slug} className="bg-surface-hover light:bg-slate-200 text-secondary text-[11px] px-2 py-0.5 rounded-full">{m.name}</span>
                             ))}
                           </div>
                         )}
                         {r.matched.experience.length > 0 && (
-                          <p className="text-[11px] text-slate-500 light:text-slate-600 mt-2">
+                          <p className="text-[11px] text-muted mt-2">
                             Doświadczenie: {r.matched.experience.map((e) => e.title).join(', ')}
                           </p>
                         )}
@@ -140,7 +140,7 @@ export default function CompetenciesClient({ tags, members, myMemberId, isAdmin 
                 <select
                   value={editMemberId ?? ''}
                   onChange={(e) => setEditMemberId(e.target.value || null)}
-                  className="w-full bg-slate-800 light:bg-white border border-slate-600 light:border-slate-300 rounded-lg px-3 py-2.5 text-white light:text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-surface-raised light:bg-white border border-control-border light:border-slate-300 rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-indigo-500"
                 >
                   <option value="" className={themedOptionClass}>— wybierz —</option>
                   {members.map((m) => <option key={m.id} value={m.id} className={themedOptionClass}>{m.full_name}</option>)}
@@ -169,7 +169,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={cn(
         'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition',
-        active ? 'border-indigo-500 text-white light:text-slate-900' : 'border-transparent text-slate-400 light:text-slate-600 hover:text-white light:hover:text-slate-900'
+        active ? 'border-indigo-500 text-foreground' : 'border-transparent text-muted hover:text-foreground'
       )}
     >
       {children}
