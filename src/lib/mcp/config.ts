@@ -1,5 +1,13 @@
+import { NextResponse } from 'next/server'
+
 export const MCP_PATH = '/api/mcp'
-export const PROTECTED_RESOURCE_METADATA_PATH = `/.well-known/oauth-protected-resource${MCP_PATH}`
+
+// Where the 401 challenge points MCP clients. Under /api because RunCloud's
+// nginx returns 403 for dot paths such as /.well-known/*; clients must follow
+// `resource_metadata` from WWW-Authenticate. The RFC 9728 well-known URL is
+// served too, for clients that probe it directly once nginx lets it through.
+export const PROTECTED_RESOURCE_METADATA_PATH = `${MCP_PATH}/oauth-protected-resource`
+export const WELL_KNOWN_METADATA_PATH = `/.well-known/oauth-protected-resource${MCP_PATH}`
 
 // Behind the RunCloud/nginx proxy request.url is the internal address, so
 // prefer NEXT_PUBLIC_SITE_URL, then the forwarded headers.
@@ -21,4 +29,8 @@ export function protectedResourceMetadata(request: Request) {
     bearer_methods_supported: ['header'],
     resource_name: 'RS Planner',
   }
+}
+
+export function protectedResourceMetadataResponse(request: Request) {
+  return NextResponse.json(protectedResourceMetadata(request))
 }

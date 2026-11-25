@@ -112,7 +112,10 @@ Claude ──POST /api/mcp (Bearer token)──► Planner ──zapytania z tok
 
 1. Claude wysyła zapytanie bez tokena i dostaje `401` z nagłówkiem
    `WWW-Authenticate`, który wskazuje metadane zasobu
-   (`/.well-known/oauth-protected-resource/api/mcp`).
+   (`/api/mcp/oauth-protected-resource`). Metadane są pod `/api`, bo nginx na
+   RunCloud zwraca 403 dla ścieżek z kropką, w tym `/.well-known/*`. Standardowy
+   adres `/.well-known/oauth-protected-resource/api/mcp` też jest obsłużony
+   w kodzie, ale działa dopiero, gdy nginx go przepuści.
 2. Z metadanych Claude odczytuje serwer autoryzacji (Supabase Auth), rejestruje
    się jako aplikacja (dynamic client registration) i otwiera logowanie.
 3. Supabase przekierowuje na `/oauth/consent` w Plannerze. Użytkownik loguje się
@@ -125,7 +128,8 @@ Claude ──POST /api/mcp (Bearer token)──► Planner ──zapytania z tok
 | Ścieżka | Rola |
 |---|---|
 | `src/app/api/mcp/route.ts` | Endpoint MCP (Streamable HTTP, bezstanowy) |
-| `src/app/.well-known/oauth-protected-resource/[[...resource]]/route.ts` | Metadane zasobu (RFC 9728) |
+| `src/app/api/mcp/oauth-protected-resource/route.ts` | Metadane zasobu (RFC 9728), adres podawany w `401` |
+| `src/app/.well-known/oauth-protected-resource/[[...resource]]/route.ts` | Te same metadane pod standardowym adresem |
 | `src/app/oauth/consent/` | Ekran zgody i akcje Zezwól / Odmów |
 | `src/lib/mcp/auth.ts` | Weryfikacja tokena, klient Supabase z tokenem użytkownika |
 | `src/lib/mcp/config.ts` | Adresy i metadane |
@@ -149,13 +153,13 @@ Narzędzia korzystają z tych samych funkcji co UI (`calcUtilization`,
 | JWT signing keys | asymetryczne (ES256) | `getClaims` nie zweryfikuje tokenów przez JWKS |
 | `NEXT_PUBLIC_SITE_URL` | `https://planner.rocksoft.pl` | Zły `resource` w metadanych, Claude odrzuci połączenie |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | jak dla aplikacji | Brak weryfikacji tokenów i dostępu do danych |
-| nginx (RunCloud) | `/.well-known/*` trafia do Next.js | Claude nie znajdzie metadanych |
+| nginx (RunCloud) | `/api/*` trafia do Next.js | Claude nie znajdzie metadanych ani endpointu |
 
 Connector nie potrzebuje `SUPABASE_SERVICE_ROLE_KEY` ani `COMPETENCY_API_KEYS`.
 
 ### Sprawdzenie po wdrożeniu
 
-1. `https://planner.rocksoft.pl/.well-known/oauth-protected-resource/api/mcp`
+1. `https://planner.rocksoft.pl/api/mcp/oauth-protected-resource`
    zwraca JSON z `"resource": "https://planner.rocksoft.pl/api/mcp"`.
 2. `POST https://planner.rocksoft.pl/api/mcp` bez tokena zwraca `401`
    z nagłówkiem `WWW-Authenticate: Bearer resource_metadata="…"`.
@@ -170,7 +174,8 @@ Connector nie potrzebuje `SUPABASE_SERVICE_ROLE_KEY` ani `COMPETENCY_API_KEYS`.
   klienta MCP na bazie w pamięci (`fake-supabase.ts`);
 - `src/lib/mcp/tools/tools.test.ts`: lista narzędzi i ich oznaczenia,
   walidacja przed bazą, wyliczanie dostępności;
-- `src/lib/mcp/mcp.test.ts`: token, metadane, bezpieczny `next` po logowaniu.
+- `src/lib/mcp/mcp.test.ts`: token, metadane, bezpieczny `next` po logowaniu;
+- `src/lib/mcp/routes.test.ts`: odpowiedź `401` i oba adresy metadanych.
 
 ### Dodanie narzędzia
 
@@ -184,7 +189,7 @@ Connector nie potrzebuje `SUPABASE_SERVICE_ROLE_KEY` ani `COMPETENCY_API_KEYS`.
 
 | Objaw | Przyczyna |
 |---|---|
-| Claude od razu odrzuca adres connectora | Metadane zwracają 404 (nginx) albo zły `resource` (`NEXT_PUBLIC_SITE_URL`) |
+| Claude od razu odrzuca adres connectora | Metadane (`/api/mcp/oauth-protected-resource`) nie zwracają JSON-a albo mają zły `resource` (`NEXT_PUBLIC_SITE_URL`) |
 | Ekran zgody: „Nie można przetworzyć żądania” | Wygasłe żądanie albo wyłączone Dynamic OAuth Apps; połącz ponownie |
 | Po zalogowaniu Planner pokazuje Timeline zamiast zgody | Logowanie nie zaczęło się z ekranu zgody; połącz ponownie z Claude |
 | Narzędzie zwraca „Brak uprawnień…” | RLS w bazie nie pozwala tej osobie na zmianę |
@@ -192,6 +197,10 @@ Connector nie potrzebuje `SUPABASE_SERVICE_ROLE_KEY` ani `COMPETENCY_API_KEYS`.
 
 ### Znane ograniczenia
 
+- nginx na RunCloud blokuje `/.well-known/*` (403). Claude korzysta z adresu
+  z nagłówka `401`, więc to nie przeszkadza. Klient, który szuka metadanych
+  wyłącznie pod adresem `/.well-known`, nie połączy się, dopóki nginx nie
+  przepuści `/.well-known/oauth-protected-resource` do Next.js.
 - Token z Supabase nie jest przypisany wyłącznie do connectora: endpoint
   przyjmuje każdy ważny token użytkownika Plannera. Uprawnienia są i tak te
   same co w aplikacji.
