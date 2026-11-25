@@ -1,17 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-export interface McpUser {
-  id: string
-  email: string | null
-  /** OAuth client that obtained the token (e.g. Claude), when issued via the OAuth server. */
-  clientId: string | null
-}
-
 export interface McpContext {
-  user: McpUser
-  /** Supabase client acting AS the user: every query goes through RLS. */
+  user: { id: string; email: string | null }
+  // Acts AS the user (their access token), so every query goes through RLS.
   supabase: SupabaseClient
-  token: string
 }
 
 export type McpAuthResult =
@@ -25,8 +17,7 @@ function supabaseFor(token?: string): SupabaseClient {
   })
 }
 
-// Module-level client used only to verify tokens: getClaims() verifies the
-// asymmetric (ES256) signature against the project's JWKS and caches the keys.
+// Reused across requests so getClaims() keeps its cached JWKS.
 let verifier: SupabaseClient | null = null
 
 export function bearerToken(request: Request): string | null {
@@ -34,9 +25,8 @@ export function bearerToken(request: Request): string | null {
   return match?.[1]?.trim() || null
 }
 
-// Authenticate an MCP request by its OAuth access token (issued by Supabase
-// Auth's OAuth 2.1 server). Never uses the service-role key: the returned
-// client carries the user's token, so RLS applies exactly as in the app.
+// Verifies the OAuth access token issued by Supabase Auth (ES256 signature
+// against the project's JWKS). Never uses the service-role key.
 export async function authenticateMcpRequest(request: Request): Promise<McpAuthResult> {
   const token = bearerToken(request)
   if (!token) return { ok: false, reason: 'missing_token' }
@@ -48,13 +38,11 @@ export async function authenticateMcpRequest(request: Request): Promise<McpAuthR
     return { ok: false, reason: 'invalid_token' }
   }
 
-  const clientId = typeof claims.client_id === 'string' ? claims.client_id : null
   return {
     ok: true,
     context: {
-      user: { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : null, clientId },
+      user: { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : null },
       supabase: supabaseFor(token),
-      token,
     },
   }
 }

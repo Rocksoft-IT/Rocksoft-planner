@@ -3,9 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { CONSENT_PATH } from '@/lib/oauth'
 import { approveAuthorization, denyAuthorization } from './actions'
 
-// OAuth consent screen. Supabase Auth (OAuth 2.1 server, configured with
-// Authorization Path = /oauth/consent) sends the user here with
-// ?authorization_id=… when a client such as Claude asks for access to RS Planner.
+// OAuth consent screen: Supabase Auth (Authorization Path = /oauth/consent)
+// sends the user here when a client such as Claude asks for access.
 export default async function ConsentPage({
   searchParams,
 }: {
@@ -38,7 +37,7 @@ export default async function ConsentPage({
     )
   }
 
-  // Already consented earlier: Supabase returns the redirect straight away.
+  // Already consented earlier.
   if (!('authorization_id' in data)) redirect(data.redirect_url)
 
   const clientName = data.client.name || 'Aplikacja zewnętrzna'

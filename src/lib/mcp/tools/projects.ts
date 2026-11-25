@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { McpContext } from '../auth'
-import { errorResult, ilikePattern, ISO_DATE, jsonResult } from '../result'
+import { errorResult, ilikePattern, ISO_DATE, jsonResult } from './helpers'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200

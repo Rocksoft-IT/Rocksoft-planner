@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { safeLoginNext } from '@/lib/oauth'
-import { ilikePattern } from './result'
-import { protectedResourceMetadata, PROTECTED_RESOURCE_METADATA_PATH } from './config'
+import { ilikePattern } from './tools/helpers'
+import { protectedResourceMetadata } from './config'
 import { bearerToken } from './auth'
 
 describe('safeLoginNext', () => {
@@ -17,14 +17,14 @@ describe('safeLoginNext', () => {
 })
 
 describe('ilikePattern', () => {
-  it('escapes wildcards', () => {
+  it('escapes LIKE wildcards', () => {
     expect(ilikePattern('ab')).toBe('%ab%')
     expect(ilikePattern('50%_x')).toBe('%50\\%\\_x%')
   })
 })
 
 describe('bearerToken', () => {
-  it('reads a bearer token', () => {
+  it('reads only a bearer token', () => {
     expect(bearerToken(new Request('http://x', { headers: { Authorization: 'Bearer abc.def' } }))).toBe('abc.def')
     expect(bearerToken(new Request('http://x', { headers: { Authorization: 'Basic abc' } }))).toBeNull()
     expect(bearerToken(new Request('http://x'))).toBeNull()
@@ -39,11 +39,10 @@ describe('protectedResourceMetadata', () => {
   })
   afterEach(() => {
     process.env = { ...env }
-    vi.restoreAllMocks()
   })
 
   it('points at the MCP endpoint and Supabase Auth', () => {
-    const meta = protectedResourceMetadata(new Request('http://localhost:3000' + PROTECTED_RESOURCE_METADATA_PATH))
+    const meta = protectedResourceMetadata(new Request('http://localhost:3000/x'))
     expect(meta.resource).toBe('https://planner.example.pl/api/mcp')
     expect(meta.authorization_servers).toEqual(['https://proj.supabase.co/auth/v1'])
   })

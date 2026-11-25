@@ -4,9 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CONSENT_PATH } from '@/lib/oauth'
 
-// Approve or deny an OAuth authorization request (e.g. Claude connecting to the
-// RS Planner MCP server). Supabase Auth issues the authorization code and hands
-// back the client's redirect URL; we just send the browser there.
+// Supabase Auth records the decision and returns the client's redirect URL.
 async function decide(formData: FormData, approve: boolean) {
   const authorizationId = String(formData.get('authorization_id') ?? '')
   if (!authorizationId) redirect(CONSENT_PATH)
