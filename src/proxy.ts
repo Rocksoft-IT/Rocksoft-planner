@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { CONSENT_PATH } from '@/lib/oauth'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -37,6 +38,10 @@ export async function proxy(request: NextRequest) {
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
+    // Return to the OAuth consent screen after sign-in (see safeLoginNext).
+    if (pathname === CONSENT_PATH) {
+      url.search = `?${new URLSearchParams({ next: `${pathname}${request.nextUrl.search}` })}`
+    }
     return NextResponse.redirect(url)
   }
 
@@ -51,6 +56,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // /api/* is excluded — the public competency API authenticates via its own
-  // API-key check (src/lib/api/auth.ts), not the browser session redirect.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // API-key check (src/lib/api/auth.ts) and /api/mcp via OAuth bearer tokens,
+  // not the browser session redirect. /.well-known/* is public OAuth metadata.
+  matcher: ['/((?!api|\\.well-known|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

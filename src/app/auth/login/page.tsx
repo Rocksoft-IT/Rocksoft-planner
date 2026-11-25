@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { safeLoginNext } from '@/lib/oauth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,7 +27,9 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/timeline')
+    // Coming from the OAuth consent screen (e.g. connecting Claude): go back there.
+    const next = safeLoginNext(new URLSearchParams(window.location.search).get('next'))
+    router.push(next ?? '/timeline')
     router.refresh()
   }
 
